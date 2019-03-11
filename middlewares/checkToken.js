@@ -82,22 +82,3 @@ module.exports.isOwnerOrAdmin = async (req, res, next) => {
     next();
   }
 };
-
-/* Check if requesting user is owner or admin user */
-module.exports.auth = async (req, res, next) => {
-  if (!(req.cookies.shop && req.signedCookies.access_token)) {
-    res.clearCookie('shop');
-    res.clearCookie('access_token');
-    res.redirect('/shopify/install');
-  } else {
-    next();
-  }
-};
-
-module.exports.notAuth = async (req, res, next) => {
-  if (req.cookies.shop && req.signedCookies.access_token) {
-    res.redirect('/shopify/app?shop=' + req.cookies.shop);
-  } else {
-    next();
-  }
-};

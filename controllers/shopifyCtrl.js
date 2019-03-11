@@ -1,9 +1,12 @@
 const request = require('request-promise');
-const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes } = require('./../helpers/common');
+const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes, generateRandom } = require('./../helpers/common');
 const mongoose = require('mongoose');
 const utils = require('./../helpers/utils');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
+const usersModel = require('./../models/usersModel');
 var url = require('url');
+const jwt = require('jsonwebtoken');
+
 
 
 module.exports.accessToken = async (req, res) => {
@@ -53,7 +56,6 @@ module.exports.install = async (req, res, next) => {
                 res.redirect(installUrl);
             }
         }
-
     } catch (err) {
         console.log(err);
         next(new Error('Not Found'))
@@ -62,12 +64,12 @@ module.exports.install = async (req, res, next) => {
 
 
 module.exports.auth = async (req, res, next) => {
+
     let securityPass = false;
     let appId = process.env.appId;
     let appSecret = process.env.appSecret;
     let shop = req.query.shop;
     let code = req.query.code;
-
 
     const regex = /^[a-z\d_.-]+[.]myshopify[.]com$/;
 
@@ -104,16 +106,31 @@ module.exports.auth = async (req, res, next) => {
 
         request.post(accessTokenRequestUrl, { json: accessTokenPayload })
             .then(async (response) => {
-                console.log(response)
-                console.log('shop token ' + response.access_token);
-                let options = {
-                    maxAge: 1000 * 60 * 15, // would expire after 15 minutes
-                    httpOnly: true, // The cookie only accessible by the web server
-                    signed: true // Indicates if the cookie should be signed
-                }
-                res.cookie('access_token', response.access_token, signedCookies)
-                res.cookie('shop', shop, normalCookes)
-                res.redirect('/shopify/app?shop=' + shop);
+                let url = 'https://' + shop + '/admin/shop.json';
+                let accessToken = response.access_token;
+                shopifyReuest.get(url, accessToken).then(async (response) => {
+                    let rcResponse = new ApiResponse();
+
+                    let UserObj = {
+                        name: response.body.shop.name,
+                        domain: response.body.shop.domain,
+                        hasDiscounts: response.body.shop.has_discounts,
+                        storeId: response.body.shop.id,
+                        email: response.body.shop.email,
+                        phone: response.body.shop.phone,
+                        token: accessToken
+                    };
+
+                    const user = new usersModel(UserObj);
+                    const userSave = await user.save();
+                    rcResponse.data = userSave;
+
+                })
+                    .catch(function (err) {
+                        console.log(err.error);
+                        console.log(err.statusCode);
+                        next(new Error('Not Found'))
+                    });;
             })
             .catch((error) => {
                 res.status(error.statusCode).send(error.error);
@@ -126,7 +143,7 @@ module.exports.auth = async (req, res, next) => {
 
 module.exports.app = async (req, res, next) => {
     try {
-       // let url = 'https://' + req.cookies.shop + '/admin/products.json?ids=9169617540,9169694276';
+        // let url = 'https://' + req.cookies.shop + '/admin/products.json?ids=9169617540,9169694276';
         let url = 'https://' + req.cookies.shop + '/admin/products.json?title=Charcoal';
 
         shopifyReuest.get(url, req.signedCookies.access_token).then(function (response) {
@@ -149,10 +166,51 @@ module.exports.app = async (req, res, next) => {
 
 }
 
+module.exports.setPassword = async (req, res) => {
+    /* Contruct response object */
+    let rcResponse = new ApiResponse();
+    let httpStatus = 200;
 
+    /* Check body params */
+    if (!req.body.email || !req.body.password || !req.body.domain) {
+        SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
+        httpStatus = 400;
+        return res.status(httpStatus).send(rcResponse);
+    }
 
+    try {
 
-module.exports.getProduct = async (req, res) => {
+        /* Check if email exists */
+        const findUser = await usersModel.findOne({ email: req.body.email, domain: req.body.domain }).lean().exec();
+        if (findUser) {
+            const passHash = await utils.generatePasswordHash(req.body.password);
+            const updateUser = await restaurantsModel.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash } }, { new: true }).lean().exec();
+
+            const encodedData = {
+                userId: updateUser._id,
+                token: updateUser.token,
+                shopUrl: updateUser.domain,
+                email: updateUser.email
+            };
+            // generate accessToken using JWT
+            const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+            let resObj = {
+                token: jwtToken,
+                data: updateUser
+            }
+            rcResponse.data = resObj;
+        }
+    } catch (err) {
+
+        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+        httpStatus = 500;
+
+    }
+    return res.status(httpStatus).send(rcResponse);
+
+}
+
+module.exports.getProducts = async (req, res) => {
     /* Contruct response object */
     let rcResponse = new ApiResponse();
     let httpStatus = 200;

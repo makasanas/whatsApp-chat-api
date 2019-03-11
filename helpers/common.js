@@ -77,9 +77,19 @@ const signedCookies = {
 }
 
 const normalCookes = {
-  maxAge:  1000 * 60 * 10, // would expire after 15 minutes
+  maxAge: 1000 * 60 * 10, // would expire after 15 minutes
   httpOnly: false, // The cookie only accessible by the web server
   signed: false // Indicates if the cookie should be signed
+}
+
+function generateRandom(length) {
+  var text = "";
+  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=";
+
+  for (var i = 0; i < length; i++)
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+  return text;
 }
 
 module.exports = {
@@ -87,7 +97,8 @@ module.exports = {
   ErrMessages,
   RequestErrorMsg,
   UserRoles,
-  ApiResponse, 
+  ApiResponse,
   signedCookies,
-  normalCookes
+  normalCookes,
+  generateRandom
 };
