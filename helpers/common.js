@@ -13,7 +13,7 @@ const ErrMessages = {
   InvalidToken: 'Access token is invalid',
   InvalidAdminKey: 'Invalid Admin key',
   NoImage: 'Please select a valid image file',
-  RestaurantExists: 'A restaurant with the same name exists, please try with another name',
+  ShopExists: 'A Shop already exists please try to login into your shop',
   userNotFound: 'User not found'
 };
 

@@ -42,10 +42,11 @@ module.exports.login = async (req, res) => {
 
         const userObj = {
           _id: findUser._id,
-          role: findUser.role,
-          name: findUser.name,
+          shopUrl: findUser.shopUrl,
+          storeName: findUser.storeName,
           email: findUser.email,
           phone: findUser.phone,
+          storeId: findUser.storeId,
           token: token
         };
         rcResponse.data = userObj;
