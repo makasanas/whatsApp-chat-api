@@ -24,8 +24,10 @@ router.get('/shopify/accesstoken', shopifyCtrl.accessToken);
 router.get('/shopify/install', shopifyCtrl.install);
 router.get('/shopify/auth', shopifyCtrl.auth);
 router.get('/shopify/app', shopifyCtrl.app);
-router.get('/shopify/setPassword', shopifyCtrl.setPassword);
-router.get('/shopify/products', shopifyCtrl.getProducts);
+router.post('/shopify/setPassword', shopifyCtrl.setPassword);
+router.get('/shopify/products', checkToken.validateToken, shopifyCtrl.getProducts);
+router.post('/shopify/products', checkToken.validateToken, shopifyCtrl.insertProducts);
+
 
 
 
