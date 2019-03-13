@@ -60,62 +60,6 @@ module.exports.accessToken = async (req, res) => {
         console.log(err);
         next(new Error('Not Found'))
     }
-<<<<<<< HEAD
-};
-
-
-module.exports.auth = async (req, res) => {
-    /* Contruct response object */
-    let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-
-    try {
-        let securityPass = false;
-        let appId = process.env.appId;
-        let appSecret = process.env.appSecret;
-        let shop = req.query.shop;
-        let code = req.query.code;
-
-        const regex = /^[a-z\d_.-]+[.]myshopify[.]com$/;
-
-        if (shop.match(regex)) {
-            console.log('regex is ok');
-            securityPass = true;
-        } else {
-            //exit
-            securityPass = false;
-        }
-
-        // 1. Parse the string URL to object
-        let urlObj = url.parse(req.url);
-        // 2. Get the 'query string' portion
-        let query = urlObj.search.slice(1);
-        if (utils.verify(query)) {
-            //get token
-            console.log('get token');
-            securityPass = true;
-        } else {
-            //exit
-            securityPass = false;
-        }
-
-        if (securityPass && regex) {
-
-            //Exchange temporary code for a permanent access token
-            let accessTokenRequestUrl = 'https://' + shop + '/admin/oauth/access_token';
-            let accessTokenPayload = {
-                client_id: appId,
-                client_secret: appSecret,
-                code,
-            };
-
-            await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
-                console.log(response);
-                let url = 'https://' + shop + '/admin/shop.json';
-                let accessToken = response.access_token;
-                await shopifyReuest.get(url, accessToken).then(async (response) => {
-                    console.log(response.body);
-=======
 }; */
 
 function securityCheck(req) {
@@ -168,7 +112,6 @@ module.exports.auth = async (req, res, next) => {
                 let url = 'https://' + shopUrl + '/admin/shop.json';
                 let accessToken = response.access_token;
                 await shopifyReuest.get(url, accessToken).then(async (response) => {
->>>>>>> 6637c539ed7ea9bb5b8683251df2326cfd2a533c
                     let UserObj = {
                         storeName: response.body.shop.name,
                         shopUrl: response.body.shop.domain,
@@ -176,29 +119,6 @@ module.exports.auth = async (req, res, next) => {
                         storeId: response.body.shop.id,
                         email: response.body.shop.email,
                         phone: response.body.shop.phone,
-<<<<<<< HEAD
-                    };
-                    console.log(UserObj);
-                    const user = new usersModel(UserObj);
-                    const userSave = await user.save();
-                    rcResponse.data = userSave;
-                }).catch(function (err) {
-                    SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-                    httpStatus = 500;
-                });
-            }).catch((error) => {
-                SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-                httpStatus = 500;
-            });
-        }
-        else {
-            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-            httpStatus = 500;
-        }
-    } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
-=======
                         accessToken: accessToken
                     };
                     const user = new usersModel(UserObj);
@@ -248,7 +168,6 @@ module.exports.auth = async (req, res, next) => {
             SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
             httpStatus = 500;
         }
->>>>>>> 6637c539ed7ea9bb5b8683251df2326cfd2a533c
     }
     return res.status(httpStatus).send(rcResponse);
 };
