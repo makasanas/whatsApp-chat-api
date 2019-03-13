@@ -7,7 +7,8 @@
     "node": "8.9.0"
   },
   "scripts": {
-    "start": "nodemon ./bin/www"
+    "start": "nodemon ./bin/www",
+    "dev": "PORT=4000 nodemon ./bin/www"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -63,54 +63,58 @@ module.exports.install = async (req, res, next) => {
     }
 };
 
-module.exports.auth = async (req, res, next) => {
 
-    let securityPass = false;
-    let appId = process.env.appId;
-    let appSecret = process.env.appSecret;
-    let shop = req.query.shop;
-    let code = req.query.code;
+module.exports.auth = async (req, res) => {
+    /* Contruct response object */
+    let rcResponse = new ApiResponse();
+    let httpStatus = 200;
 
-    const regex = /^[a-z\d_.-]+[.]myshopify[.]com$/;
+    try {
+        let securityPass = false;
+        let appId = process.env.appId;
+        let appSecret = process.env.appSecret;
+        let shop = req.query.shop;
+        let code = req.query.code;
 
-    if (shop.match(regex)) {
-        console.log('regex is ok');
-        securityPass = true;
-    } else {
-        //exit
-        securityPass = false;
-    }
+        const regex = /^[a-z\d_.-]+[.]myshopify[.]com$/;
 
-    // 1. Parse the string URL to object
-    let urlObj = url.parse(req.url);
-    // 2. Get the 'query string' portion
-    let query = urlObj.search.slice(1);
-    if (utils.verify(query)) {
-        //get token
-        console.log('get token');
-        securityPass = true;
-    } else {
-        //exit
-        securityPass = false;
-    }
+        if (shop.match(regex)) {
+            console.log('regex is ok');
+            securityPass = true;
+        } else {
+            //exit
+            securityPass = false;
+        }
 
-    if (securityPass && regex) {
+        // 1. Parse the string URL to object
+        let urlObj = url.parse(req.url);
+        // 2. Get the 'query string' portion
+        let query = urlObj.search.slice(1);
+        if (utils.verify(query)) {
+            //get token
+            console.log('get token');
+            securityPass = true;
+        } else {
+            //exit
+            securityPass = false;
+        }
 
-        //Exchange temporary code for a permanent access token
-        let accessTokenRequestUrl = 'https://' + shop + '/admin/oauth/access_token';
-        let accessTokenPayload = {
-            client_id: appId,
-            client_secret: appSecret,
-            code,
-        };
+        if (securityPass && regex) {
 
-        request.post(accessTokenRequestUrl, { json: accessTokenPayload })
-            .then(async (response) => {
+            //Exchange temporary code for a permanent access token
+            let accessTokenRequestUrl = 'https://' + shop + '/admin/oauth/access_token';
+            let accessTokenPayload = {
+                client_id: appId,
+                client_secret: appSecret,
+                code,
+            };
+
+            await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
+                console.log(response);
                 let url = 'https://' + shop + '/admin/shop.json';
                 let accessToken = response.access_token;
-                shopifyReuest.get(url, accessToken).then(async (response) => {
-                    let rcResponse = new ApiResponse();
-
+                await shopifyReuest.get(url, accessToken).then(async (response) => {
+                    console.log(response.body);
                     let UserObj = {
                         name: response.body.shop.name,
                         domain: response.body.shop.domain,
@@ -118,28 +122,31 @@ module.exports.auth = async (req, res, next) => {
                         storeId: response.body.shop.id,
                         email: response.body.shop.email,
                         phone: response.body.shop.phone,
-                        token: accessToken
                     };
-
+                    console.log(UserObj);
                     const user = new usersModel(UserObj);
                     const userSave = await user.save();
                     rcResponse.data = userSave;
-
-                })
-                    .catch(function (err) {
-                        console.log(err.error);
-                        console.log(err.statusCode);
-                        next(new Error('Not Found'))
-                    });;
-            })
-            .catch((error) => {
-                res.status(error.statusCode).send(error.error);
+                }).catch(function (err) {
+                    SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+                    httpStatus = 500;
+                });
+            }).catch((error) => {
+                SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+                httpStatus = 500;
             });
+        }
+        else {
+            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+            httpStatus = 500;
+        }
+    } catch (err) {
+        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+        httpStatus = 500;
     }
-    else {
-        res.redirect('/installerror');
-    }
+    return res.status(httpStatus).send(rcResponse);
 };
+
 
 module.exports.app = async (req, res, next) => {
     try {
