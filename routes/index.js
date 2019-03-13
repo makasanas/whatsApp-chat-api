@@ -20,11 +20,11 @@ const shopifyCtrl = require('./../controllers/shopifyCtrl');
 /*****************************
  Shopify
  *****************************/
-router.get('/shopify/accesstoken', shopifyCtrl.accessToken);
-router.get('/shopify/install', shopifyCtrl.install);
+// router.get('/shopify/accesstoken', shopifyCtrl.accessToken);
+// router.get('/shopify/install', shopifyCtrl.install);
 router.get('/shopify/auth', shopifyCtrl.auth);
-router.get('/shopify/app', shopifyCtrl.app);
-router.post('/shopify/setPassword', shopifyCtrl.setPassword);
+// router.get('/shopify/app', shopifyCtrl.app);
+router.post('/shopify/setPassword', checkToken.validateToken, shopifyCtrl.setPassword);
 router.get('/shopify/products', checkToken.validateToken, shopifyCtrl.getProducts);
 router.post('/shopify/products', checkToken.validateToken, shopifyCtrl.insertProducts);
 
@@ -34,13 +34,9 @@ router.post('/shopify/products', checkToken.validateToken, shopifyCtrl.insertPro
 /*****************************
  USERS
  *****************************/
-router.post('/user/login', authCtrl.login);
 
 /* Authenticate User */
-router.post('/user/login', authCtrl.login);
-
-/* Register new User */
-router.post('/user/register', authCtrl.register);
+router.post('/shopify/login', authCtrl.login);
 
 /* Get User profile information */
 router.get('/user/profile', checkToken.validateToken, authCtrl.getUserProfile);

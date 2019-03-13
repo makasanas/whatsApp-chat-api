@@ -7,16 +7,17 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
-  name: { type: String, required: true },
-  domain: { type: String },
+  storeName: { type: String },
+  shopUrl: { type: String, unique: true, required: true },
   hasDiscounts: { type: Boolean },
   storeId: { type: Number },
   email: { type: String, unique: true, required: true },
   password: { type: String },
-  phone: { type: String, required: true },
-  token: { type: String, unique: true, },
-  createdAt: { type: Date, default: Date.now() },
-  deleted: { type: Boolean, default: false }
+  phone: { type: String },
+  accessToken: { type: String, unique: true, required: true },
+  created: { type: Date, default: Date.now() },
+  deleted: { type: Boolean, default: false },
+  updated: { type: Date, default: Date.now() }
 });
 
 module.exports = mongoose.model('Users', userSchema);
