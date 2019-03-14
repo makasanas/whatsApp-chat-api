@@ -34,8 +34,10 @@ module.exports.login = async (req, res) => {
       if (comparePassword) {
         /* Password matched */
         const encodedData = {
-          userId: findUser._id,
-          role: findUser.role
+          id: findUser._id,
+          accessToken: findUser.accessToken,
+          shopUrl: findUser.shopUrl,
+          email: findUser.email
         };
         // generate accessToken using JWT
         const token = jwt.sign(encodedData, process.env['SECRET']);

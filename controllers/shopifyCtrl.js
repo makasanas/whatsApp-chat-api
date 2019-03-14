@@ -239,9 +239,11 @@ module.exports.getProducts = async (req, res) => {
         query += req.query.title ? 'title=' + req.query.title : '';
         query += req.query.limit ? '&limit=' + req.query.limit : '';
         query += req.query.page ? '&page=' + req.query.page : '';
-
+        
         let productUrl = 'https://' + req.decoded.shopUrl + '/admin/products.json' + query;
         let countUrl = 'https://' + req.decoded.shopUrl + '/admin/products/count.json' + countQuery;
+        console.log(productUrl);
+        console.log(countUrl);
 
         let options = {
             method: 'GET',
