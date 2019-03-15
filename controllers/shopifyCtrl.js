@@ -128,7 +128,8 @@ module.exports.auth = async (req, res, next) => {
                         id: userSave._id,
                         accessToken: userSave.accessToken,
                         shopUrl: userSave.shopUrl,
-                        email: userSave.email
+                        email: userSave.email,
+                        role:userSave.role
                     };
                     // generate accessToken using JWT
                     const jwtToken = jwt.sign(encodedData, process.env['SECRET']);

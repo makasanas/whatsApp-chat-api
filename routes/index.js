@@ -9,7 +9,7 @@ const express = require('express');
 const router = express.Router();
 const dbConnection = require('./../config/dbConnection');
 const authCtrl = require('./../controllers/authCtrl');
-const restaurantCtrl = require('./../controllers/restaurantCtrl');
+const productCtrl = require('./../controllers/productCtrl');
 const checkToken = require('./../middlewares/checkToken');
 const fileHandler = require('./../helpers/fileHandler');
 const commentsCtrl = require('./../controllers/commentsCtrl');
@@ -46,5 +46,27 @@ router.put('/user/:userId', checkToken.validateToken, checkToken.isAdminUser, au
 
 /* user password update */
 router.put('/user/updatepassword/:userId', checkToken.validateToken, checkToken.isAdminUser, authCtrl.userPasswordUpdate);
+
+
+
+/*****************************
+ RESTAURANTS
+ *****************************/
+
+/* Create a new product */
+router.post('/products', checkToken.validateToken,  productCtrl.createNewProduct);
+
+/* Get list of products */
+router.get('/products', checkToken.validateToken,  productCtrl.getListOfProductsOwned);
+
+/* Get product detail by id */
+router.get('/products/:productId', checkToken.validateToken, productCtrl.getProductDetails);
+
+/* Update product details by id */
+router.put('/products/:productId', checkToken.validateToken, productCtrl.updateProductDetails);
+
+/* Delete a product */
+router.delete('/products/:productId', checkToken.validateToken,  productCtrl.deleteProduct);
+
 
 module.exports = router;

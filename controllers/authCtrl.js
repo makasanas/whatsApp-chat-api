@@ -37,7 +37,8 @@ module.exports.login = async (req, res) => {
           id: findUser._id,
           accessToken: findUser.accessToken,
           shopUrl: findUser.shopUrl,
-          email: findUser.email
+          email: findUser.email,
+          role:findUser.role
         };
         // generate accessToken using JWT
         const token = jwt.sign(encodedData, process.env['SECRET']);

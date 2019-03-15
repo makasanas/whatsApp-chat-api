@@ -15,6 +15,7 @@ const userSchema = new Schema({
   password: { type: String },
   phone: { type: String },
   accessToken: { type: String, unique: true, required: true },
+  role: { type: Number, default: 2 },
   created: { type: Date, default: Date.now() },
   deleted: { type: Boolean, default: false },
   updated: { type: Date, default: Date.now() }

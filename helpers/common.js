@@ -14,7 +14,8 @@ const ErrMessages = {
   InvalidAdminKey: 'Invalid Admin key',
   NoImage: 'Please select a valid image file',
   ShopExists: 'A Shop already exists please try to login into your shop',
-  userNotFound: 'User not found'
+  userNotFound: 'User not found',
+  ProductExists:'Product alreday enable with discount'
 };
 
 /**
@@ -54,8 +55,7 @@ const RequestErrorMsg = (errKey, requestObj = null, errorObj = null) => {
  */
 function UserRoles() {
   this.admin = 1;
-  this.user = 2;
-  this.owner = 3;
+  this.owner = 2;
 };
 
 /**

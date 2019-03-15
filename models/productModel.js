@@ -9,16 +9,18 @@ const Schema = mongoose.Schema;
 const productSchema = new Schema({
     title: { type: String, required: true },
     shopeUrl: { type: String, required: true },
-    userId: { type: String, required: true },
-    type: { type: String },
-    vendor: { type: String },
-    price: { type: Number },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    productId: { type: Number, unique: true, required: true },
     description: { type: String },
     image: { type: String },
     isBargain: { type: Boolean },
-    discountType: { type: String },
+    discountType: { type: String, required: true },
     discountValue: { type: Number },
-    createdAt: { type: Date, default: Date.now() },
+    created: { type: Date, default: Date.now() },
+    updated: { type: Date, default: Date.now() },
     deleted: { type: Boolean, default: false }
 });
 
