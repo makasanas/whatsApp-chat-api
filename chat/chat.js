@@ -43,21 +43,14 @@ const uuid = require('uuid');
 
 
 module.exports.process = (client) => {
-    // client.on('join', (data) => {
-    //     console.log("cliensg getting connect")
-    //   //  this.sendTextMessageToDialogFlow("message");
-    //     client.emit('messages', 'Hello from server sanjay');
+    client.on('join', (data) => {
+        console.log("cliensg getting connect")
+    });
 
-
-    // });
-
-
-    client.on('message', async (message) => {
+    client.on('frontend-message', async (message) => {
         console.log(message);
         let replay = await this.sendTextMessageToDialogFlow(message);
-        console.log("replay");
-        console.log(replay);
-        client.emit('message', replay);
+        client.emit('backend-message', replay);
     });
 }
 
@@ -230,7 +223,6 @@ module.exports.generateMaxBargainingCount = (maxValue) => {
 
 
 module.exports.sendTextMessageToDialogFlow = async (textMessage) => {
-
     this.projectId = "bargain-bot"
     let privateKey = "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCZePn7P1/wCtDN\nwY4O+5QUxW1HjmWnvcftAcjFgPe2R92x8VNK9V/HNRJdqKeAgqY33prIagKh746w\nOHExaXjMUHJtdiLcEuJEV1PptOT9Ml1altdEkdnva2H9l+o42uMx5X+CSAreY88A\n48UjDZfc/ZGIhzcYUlVewn5MSx+324uKmVP40W2KVS6pdvqS4wP+mEAUVMWbPz8x\nkJWwKrDmoHcfPj4O+YID/zcsqTgpv/uW45qEz1a8ON5ts2HyQaKfcwPIfO72EYSA\nQUYAs7MT+VkkR1+Ng4BZbVXkcYl6fvQYRRiJk5hMBWV79IsKzLXdwMzMuup/RMQ2\n5FMvHtpfAgMBAAECggEAFA1b8CluzLYaY7/bN/bupADK+fNPhz6t0rg4diHB0TBg\n9YEipmPFW18CTXgd8UBgx7eklp9PRRQ/8E4M8Bf9Sgi6zWAxnCU1fhjA5INs+0Nr\nh3diR1nH1Vc89ZLgmK7KH44CU9CQ5voNz7/IKqp510x5iZKihAwsjlXa2vdifLWV\nShRTh1Slv4m21XkOOAMUngAfg3JmYTBZ4jFDoLKox/UUwE+iphBJCsmfRrJmU1oA\n0B8tbd9dor5P8mMySBoM1Z6BK4gOBgMBofWvqKvYZbGaavXuegaokKNsWJrKAYRF\n+gjOm1nsi4PYqK73XOZdfcS8Z2Iq6LwOVbsgtkNnDQKBgQDXGJfM/7T9xzS9uEaZ\nb8wMkzcTwXCI1Br1jgQj4+4xRa9UGvK7sjlIYQAhZw1vKSlthgDbDmH+DiprWrit\nzMWB/kbLc7I77FR1Suh0HOeQ9kDRJLRK8H6ISutHu8eFqIKCwsKA/LQ6a4fe5iat\n/p+prxB3kLKltxdBuQI+ABvI0wKBgQC2qGZCwRRaJr+a06T5webWx6S218PKL7ac\nEU4EB0YL0g5oye9jjs4Iw3MFt8QgAkweChwEtOwXzk++OnQb4kRtS2JW2sgmyndi\nzOiPNaoMjfFfE/BLj0ch7EvxXhciZn6MUk19x5VpFcJq1xb24JW2yeAgpxcNxSJk\nHj1p6ftwxQKBgAZ/m7Z500IHjrRcqOVh10xZ9kQGiBvaLKZWkBF1hXC/pjhoSAUb\nsVdaduKLdoBxQespLUVw/czrKKTtrL6zfRQcVo83A5+D2Fli1fsMFILwrayj6z6I\nXYpImSslpTWIjcjdkXrMJ7XMIeK+GVUQaEp8G4dBO+R9z5oQuNyerDg5AoGAIw8R\nibCLmn4jerEy0ilwiDsLl3i0gMNFtpDvu4A15qDr2RshUqefTjlNg4RxJX+rYnyo\nQhMD2dHkpmuLy6pTXfMBLhCSKDfmUFVqMcqoF/7KnGg0UBxxF8bGEM7xe83WblKB\nwymiuOfPSDh+lOYodkwrM7k+iIsU/ch8Gy8o7s0CgYBgjVOdRZsnfaB7s3/Y84ij\nAOXERWXj6Da3fG+/tSAEYv+spEFOBesmgjGizh0INSah5KR6bpehht6qIHmNsJqZ\nNmiuC4Ppt27mVpy0hOdZ1QdFem9TdEfG4YHdWYkMGwCEoNS2osZv0BksIq/0hg+F\nz+XCydIpylFp2pAJcRqsrA==\n-----END PRIVATE KEY-----\n"
     let clientEmail = "bargain-bot@appspot.gserviceaccount.com"
@@ -270,7 +262,8 @@ module.exports.sendTextMessageToDialogFlow = async (textMessage) => {
             return {
                 message: 'offred discount ' + firstNumber,
                 maxBargainingCount: maxBargainingCount,
-                lastOffer: firstNumber
+                lastOffer: firstNumber,
+                count: textMessage.count
             };
         } else {
             if (textMessage.maxBargainingCount > textMessage.count) {
@@ -279,22 +272,18 @@ module.exports.sendTextMessageToDialogFlow = async (textMessage) => {
                 return {
                     message: 'offred discount ' + (nextDiscount + textMessage.lastOffer),
                     maxBargainingCount: textMessage.maxBargainingCount,
-                    lastOffer: nextDiscount + textMessage.lastOffer
+                    lastOffer: nextDiscount + textMessage.lastOffer,
+                    count: textMessage.count
                 };
             } else {
                 return {
                     message: 'offred discount ' + textMessage.lastOffer,
                     maxBargainingCount: textMessage.maxBargainingCount,
-                    lastOffer: textMessage.lastOffer
+                    lastOffer: textMessage.lastOffer,
+                    count: textMessage.count
                 };
             }
         }
-
-        // console.log(firstNumber);
-        // console.log(nextDiscount);
-
-        // console.log('DialogFlow.sendTextMessageToDialogFlow: Detected intent');
-        // return responses
     }
     catch (err) {
         console.error('DialogFlow.sendTextMessageToDialogFlow ERROR:', err);
