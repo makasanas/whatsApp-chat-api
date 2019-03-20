@@ -4,6 +4,8 @@ Date : 2nd Aug 2018
 Description : This file consist of functions related to restaurants
 */
 
+
+
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const productModel = require('./../models/productModel');
@@ -17,6 +19,16 @@ async function asyncForEach(array, callback) {
 
 /* Create new restaurant */
 module.exports.createNewProduct = async (req, res) => {
+
+//   {
+//     "title": "Fossil, leather, Watchs",
+//     "productId": 9169753476,
+//     "description": "Analogue watch with a round case, has a stainless steel back",
+//     "image": "https://cdn.shopify.com/s/files/1/1509/6342/products/11474708652160-Fossil-Men-Watches-3911474708652013-1.jpg?v=1476099927",
+//     "isBargain": true,
+//     "discountType": "percentage",
+//     "discountValue": 25
+// }
   /* Contruct response object */
   let rcResponse = new ApiResponse();
   let httpStatus = 200;
@@ -89,7 +101,7 @@ module.exports.getProductDetails = async (req, res) => {
   const { decoded } = req;
 
   try {
-    let productInfo = await productModel.findOne({ _id:req.params.productId, deleted:false }).lean().exec();
+    let productInfo = await productModel.findOne({ productId:req.params.productId, deleted:false }).lean().exec();
     productInfo = productInfo;
     rcResponse.data = productInfo;
   } catch (err) {
@@ -98,6 +110,8 @@ module.exports.getProductDetails = async (req, res) => {
   }
   return res.status(httpStatus).send(rcResponse);
 };
+
+
 
 /* Update restaurant details */
 module.exports.updateProductDetails = async (req, res) => {
