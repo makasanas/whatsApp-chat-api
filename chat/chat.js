@@ -1,6 +1,8 @@
 
 const dialogflow = require('dialogflow');
 const uuid = require('uuid');
+const productModel = require('./../models/productModel');
+
 
 // module.exports.runSample = async (message, projectId = 'bargain-bot') => {
 
@@ -43,14 +45,35 @@ const uuid = require('uuid');
 
 
 module.exports.process = (client) => {
+    let timeout;
     client.on('join', (data) => {
         console.log("cliensg getting connect")
     });
 
     client.on('frontend-message', async (message) => {
         console.log(message);
+        clearTimeout(timeout);
         let replay = await this.sendTextMessageToDialogFlow(message);
         client.emit('backend-message', replay);
+    });
+
+    client.on('productId-message', async (message) => {
+        console.log(message);
+        let product = await this.checkBargaining(message)
+        client.emit('product-eligible', product.productEligible);
+        console.log(product);
+
+        if(product.productEligible){
+          var replay = await  this.firstMessage(product.productInfo);
+        var date1 = new Date("7/13/2010");
+
+          timeout =  setTimeout(() => {
+            var date2 = new Date("12/15/2010");
+            var timeDiff = Math.abs(date2.getTime() - date1.getTime());
+            console.log(timeDiff);
+            client.emit('backend-message', replay);
+          }, 20000);
+        }
     });
 }
 
@@ -69,7 +92,7 @@ let firstNumber = [
     {
         maxValue: 10,
         range: {
-            max: 3,
+            max: 2,
             min: 1
         },
         count:{
@@ -80,19 +103,30 @@ let firstNumber = [
     {
         maxValue: 20,
         range: {
-            max: 7,
-            min: 3
+            max: 4,
+            min: 1
         },
         count:{
-            max:4,
+            max:3,
             min:2
         }
     },
     {
         maxValue: 30,
         range: {
-            max: 10,
-            min: 5
+            max: 5,
+            min: 1
+        },
+        count:{
+            max: 4,
+            min: 2
+        }
+    },
+    {
+        maxValue: 40,
+        range: {
+            max: 7,
+            min: 1
         },
         count:{
             max: 5,
@@ -100,25 +134,14 @@ let firstNumber = [
         }
     },
     {
-        maxValue: 40,
-        range: {
-            max: 15,
-            min: 8
-        },
-        count:{
-            max: 6,
-            min: 3
-        }
-    },
-    {
         maxValue: 50,
         range: {
-            max: 17,
-            min: 10
+            max: 9,
+            min: 1
         },
         count:{
-            max: 7,
-            min: 4
+            max: 5,
+            min: 3
         }
     }
 ];
@@ -142,29 +165,29 @@ let nextDiscountLogic = [
     {
         maxValue: 20,
         range: {
-            max: 5,
+            max: 4,
             min: 2
         }
     },
     {
         maxValue: 30,
         range: {
-            max: 6,
-            min: 3
+            max: 5,
+            min: 2
         }
     },
     {
         maxValue: 40,
         range: {
-            max: 7,
-            min: 4
+            max: 5,
+            min: 3
         }
     },
     {
         maxValue: 50,
         range: {
-            max: 8,
-            min: 5
+            max: 6,
+            min: 3
         }
     }
 ]
@@ -207,7 +230,6 @@ module.exports.generateFirstNumber = (maxValue) => {
 }
 
 module.exports.generateMaxBargainingCount = (maxValue) => {
-    return this.getRandomInt(2, 5);
     if (maxValue > 50)
         maxValue = 50
     var matchCondition = firstNumber.filter((logic) => {
@@ -253,40 +275,63 @@ module.exports.sendTextMessageToDialogFlow = async (textMessage) => {
         console.log(responses[0].queryResult.parameters);
         console.log(responses[0].queryResult.intent.displayName);
         var number = parseInt(responses[0].queryResult.parameters.fields.percentage1.stringValue.replace(/\%|,/g, ''))
-        
-        console.log(textMessage);
-        if (!textMessage.lastOffer) {
-            var firstNumber = this.generateFirstNumber(number);
-            var maxBargainingCount = this.generateMaxBargainingCount(number);
+        let productInfo = await productModel.findOne({ productId:textMessage.productId, deleted:false }).lean().exec();
+        let maxNumber = productInfo.discountValue > number ? number : productInfo.discountValue;
+        var maxBargainingCount =  textMessage.maxBargainingCount? textMessage.maxBargainingCount : this.generateMaxBargainingCount(maxNumber);
+        let offredDiscount = 0;
+        if(productInfo){
+            if (!textMessage.lastOffer) {
+                offredDiscount = this.generateFirstNumber(maxNumber);
+                lastOffer = offredDiscount
+            } else {
+                if (textMessage.maxBargainingCount > textMessage.count) {
+                    var diff = maxNumber - textMessage.lastOffer;
+                    var nextDiscount = this.generateNextDiscount(diff);
+                    offredDiscount = nextDiscount + textMessage.lastOffer
+                } else {
+                   offredDiscount = textMessage.lastOffer
+                }
+            }
 
+            offredDiscount = offredDiscount > maxNumber ? maxNumber : maxNumber;
             return {
-                message: 'offred discount ' + firstNumber,
+                message: 'offred discount ' + offredDiscount,
                 maxBargainingCount: maxBargainingCount,
-                lastOffer: firstNumber,
+                lastOffer: offredDiscount,
                 count: textMessage.count
             };
-        } else {
-            if (textMessage.maxBargainingCount > textMessage.count) {
-                var diff = number - textMessage.lastOffer;
-                var nextDiscount = this.generateNextDiscount(diff);
-                return {
-                    message: 'offred discount ' + (nextDiscount + textMessage.lastOffer),
-                    maxBargainingCount: textMessage.maxBargainingCount,
-                    lastOffer: nextDiscount + textMessage.lastOffer,
-                    count: textMessage.count
-                };
-            } else {
-                return {
-                    message: 'offred discount ' + textMessage.lastOffer,
-                    maxBargainingCount: textMessage.maxBargainingCount,
-                    lastOffer: textMessage.lastOffer,
-                    count: textMessage.count
-                };
-            }
         }
+
+        
+       
     }
     catch (err) {
         console.error('DialogFlow.sendTextMessageToDialogFlow ERROR:', err);
         throw err
     }
+}
+
+module.exports.checkBargaining = async (message) => {
+    let productInfo = await productModel.findOne({ productId:message.productId, deleted:false }).lean().exec();
+    if(productInfo){
+        return {
+            productInfo: productInfo,
+            productEligible: true
+        }
+    }else{
+        return {
+            productEligible: false
+        }
+    }
+}
+
+module.exports.firstMessage = async (product) => {
+    var offredDiscount = this.generateFirstNumber(product.discountValue);
+    var maxBargainingCount =  this.generateMaxBargainingCount(product.discountValue);
+    return {
+        message: 'offred discount ' + offredDiscount ,
+        maxBargainingCount: maxBargainingCount,
+        count: 0,
+        lastOffer: offredDiscount
+    };
 }
