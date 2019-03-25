@@ -292,8 +292,9 @@ module.exports.sendTextMessageToDialogFlow = async (textMessage) => {
                    offredDiscount = textMessage.lastOffer
                 }
             }
-
-            offredDiscount = offredDiscount > maxNumber ? maxNumber : maxNumber;
+            console.log(offredDiscount);
+            offredDiscount = offredDiscount > maxNumber ? maxNumber : offredDiscount;
+            console.log(offredDiscount)
             return {
                 message: 'offred discount ' + offredDiscount,
                 maxBargainingCount: maxBargainingCount,
