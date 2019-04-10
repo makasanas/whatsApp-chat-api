@@ -7,23 +7,17 @@ Description : This file consist of list of routes for the APIs
 /* DEPENDENCIES */
 const express = require('express');
 const router = express.Router();
-const dbConnection = require('./../config/dbConnection');
 const authCtrl = require('./../controllers/authCtrl');
 const productCtrl = require('./../controllers/productCtrl');
 const checkToken = require('./../middlewares/checkToken');
 const fileHandler = require('./../helpers/fileHandler');
-const commentsCtrl = require('./../controllers/commentsCtrl');
-const adminCtrl = require('./../controllers/adminCtrl');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
-
+const recurringCtrl = require('./../controllers/recurringCtrl');
 
 /*****************************
  Shopify
  *****************************/
-// router.get('/shopify/accesstoken', shopifyCtrl.accessToken);
-// router.get('/shopify/install', shopifyCtrl.install);
 router.get('/shopify/auth', shopifyCtrl.auth);
-// router.get('/shopify/app', shopifyCtrl.app);
 router.post('/shopify/setPassword', checkToken.validateToken, shopifyCtrl.setPassword);
 router.get('/shopify/products', checkToken.validateToken, shopifyCtrl.getProducts);
 router.post('/shopify/products', checkToken.validateToken, shopifyCtrl.insertProducts);
@@ -67,6 +61,24 @@ router.put('/products/:productId', checkToken.validateToken, productCtrl.updateP
 
 /* Delete a product */
 router.delete('/products/:productId', checkToken.validateToken,  productCtrl.deleteProduct);
+
+router.post('/webhooks/orders/create', checkToken.validateToken,  productCtrl.orders);
+
+
+
+router.post('/recurring/plan/', checkToken.validateToken,  recurringCtrl.create);
+
+router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan);
+
+router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlan);
+
+router.delete('/recurring/plan/deactive/:planId', checkToken.validateToken,  recurringCtrl.deactivePlan);
+
+
+
+
+
+
 
 
 module.exports = router;

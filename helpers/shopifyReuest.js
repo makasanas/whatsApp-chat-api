@@ -35,3 +35,18 @@ module.exports.get = async (url, token) => {
     };
     return request.get(options);
 }
+
+module.exports.delete = async (url, token) => {
+    let options = {
+        method: 'DELETE',
+        uri: url,
+        json: true,
+        resolveWithFullResponse: true,//added this to view status code
+        headers: {
+            'X-Shopify-Access-Token': token,
+            'content-type': 'application/json'
+        },
+    };
+    return request.delete(options);
+}
+

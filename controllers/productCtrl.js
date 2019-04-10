@@ -11,6 +11,10 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./..
 const productModel = require('./../models/productModel');
 const mongoose = require('mongoose');
 
+const getRawBody = require('raw-body')
+const crypto = require('crypto')
+const secretKey = '91836d2e840312d9267dca48dec93fe7'
+
 async function asyncForEach(array, callback) {
   for (let index = 0; index < array.length; index++) {
     await callback(array[index], index, array)
@@ -160,4 +164,34 @@ module.exports.deleteProduct = async (req, res) => {
     httpStatus = 500;
   }
   return res.status(httpStatus).send(rcResponse);
+};
+
+
+/* Delete a restaurant */
+module.exports.orders = async (req, res) => {
+  console.log('🎉 We got an order!')
+
+  // We'll compare the hmac to our own hash
+  const hmac = req.get('X-Shopify-Hmac-Sha256')
+
+  // Use raw-body to get the body (buffer)
+  const body = await getRawBody(req)
+
+  // Create a hash using the body and our key
+  const hash = crypto
+    .createHmac('sha256', secretKey)
+    .update(body, 'utf8', 'hex')
+    .digest('base64')
+
+  // Compare our hash to Shopify's hash
+  if (hash === hmac) {
+    // It's a match! All good
+    console.log('Phew, it came from Shopify!')
+    res.sendStatus(200)
+  } else {
+    // No match! This request didn't originate from Shopify
+    console.log('Danger! Not from Shopify!')
+    res.sendStatus(403)
+  }
+
 };

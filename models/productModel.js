@@ -11,7 +11,7 @@ const productSchema = new Schema({
     shopeUrl: { type: String, required: true },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'Users'
     },
     productId: { type: Number, unique: true, required: true },
     description: { type: String },
