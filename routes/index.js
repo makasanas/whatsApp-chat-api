@@ -9,6 +9,7 @@ const express = require('express');
 const router = express.Router();
 const authCtrl = require('./../controllers/authCtrl');
 const productCtrl = require('./../controllers/productCtrl');
+const dbConnection = require('./../config/dbConnection');
 const checkToken = require('./../middlewares/checkToken');
 const fileHandler = require('./../helpers/fileHandler');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
@@ -73,12 +74,6 @@ router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan)
 router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlan);
 
 router.delete('/recurring/plan/deactive/:planId', checkToken.validateToken,  recurringCtrl.deactivePlan);
-
-
-
-
-
-
 
 
 module.exports = router;

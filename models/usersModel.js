@@ -13,6 +13,7 @@ const userSchema = new Schema({
   storeId: { type: Number },
   email: { type: String, unique: true, required: true },
   password: { type: String },
+  passwordSet: { type: Boolean, default: false },
   phone: { type: String },
   accessToken: { type: String, unique: true, required: true },
   role: { type: Number, default: 2 },

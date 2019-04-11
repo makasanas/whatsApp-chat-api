@@ -7,6 +7,7 @@ const usersModel = require('./../models/usersModel');
 const productModel = require('./../models/productModel');
 var url = require('url');
 const jwt = require('jsonwebtoken');
+const activePlan = require('./../models/activePlan');
 
 
 
@@ -121,25 +122,46 @@ module.exports.auth = async (req, res, next) => {
                         phone: response.body.shop.phone,
                         accessToken: accessToken
                     };
+
+                    
+
                     const user = new usersModel(UserObj);
                     const userSave = await user.save();
+
+                    let currentPlan =  {        
+                        shopUrl: response.body.shop.domain,
+                        userId:userSave._id,
+                        planName: "Free",
+                        planPrice: 0,
+                        status : "active",
+                        type: "Lifetime",
+                        started: Date.now()
+                    }
+
+                    const plan = new activePlan(currentPlan);
+                    const planSave = await plan.save();
 
                     const encodedData = {
                         id: userSave._id,
                         accessToken: userSave.accessToken,
                         shopUrl: userSave.shopUrl,
                         email: userSave.email,
-                        role:userSave.role
+                        role:userSave.role,
+                        plan:currentPlan.planName,
+                        type:currentPlan.type,
+                        started:currentPlan.started
                     };
                     // generate accessToken using JWT
                     const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
 
+                    let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet:userSave.passwordSet };
 
-                    let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId };
-
-                    rcResponse.data = { ...resObj, token: jwtToken };
+                    rcResponse.data = { ...resObj, token: jwtToken, ...planSave };
                 }).catch(function (error) {
-                    if (error.statusCode) {
+                    if (error.code === 11000) {
+                        SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
+                        httpStatus = 400;
+                    }else if (error.statusCode) {
                         SetResponse(rcResponse, error.statusCode, error.error, false);
                         httpStatus = error.statusCode;
                     } else {
@@ -162,6 +184,7 @@ module.exports.auth = async (req, res, next) => {
             httpStatus = 400;
         }
     } catch (err) {
+        
         if (err.code === 11000) {
             SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
             httpStatus = 400;
@@ -174,26 +197,6 @@ module.exports.auth = async (req, res, next) => {
 };
 
 
-module.exports.app = async (req, res, next) => {
-    try {
-        // let url = 'https://' + req.cookies.shop + '/admin/products.json?ids=9169617540,9169694276';
-        let url = 'https://' + req.cookies.shop + '/admin/products.json?title=Charcoal';
-
-        shopifyReuest.get(url, req.signedCookies.access_token).then(function (response) {
-            res.render('app', {});
-        })
-            .catch(function (err) {
-                console.log(err.error);
-                console.log(err.statusCode);
-                next(new Error('Not Found'))
-            });;
-        ;
-    } catch (err) {
-        console.log(err);
-        next(new Error('Not Found'))
-    }
-
-};
 
 module.exports.setPassword = async (req, res) => {
     /* Contruct response object */
@@ -205,7 +208,7 @@ module.exports.setPassword = async (req, res) => {
         const findUser = await usersModel.findOne({ _id: req.decoded.id }).lean().exec();
         if (findUser) {
             const passHash = await utils.generatePasswordHash(req.body.password);
-            const updateUser = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash } }, { new: true }).lean().exec();
+            const updateUser = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet:true } }, { new: true }).lean().exec();
 
             delete updateUser['password'];
             delete updateUser['accessToken'];
@@ -223,7 +226,6 @@ module.exports.setPassword = async (req, res) => {
 
     }
     return res.status(httpStatus).send(rcResponse);
-
 };
 
 module.exports.getProducts = async (req, res) => {
@@ -297,7 +299,6 @@ module.exports.insertProducts = async (req, res) => {
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
         httpStatus = 500;
-
     }
     return res.status(httpStatus).send(rcResponse);
 };

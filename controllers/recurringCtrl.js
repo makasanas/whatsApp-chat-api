@@ -17,9 +17,7 @@ module.exports.create = async (req, res) => {
         await shopifyReuest.post(url, decoded.accessToken, req.body).then(function (response) {
             rcResponse.data = response.body;
         }).catch(function (err) {
-            console.log(err.error);
-            console.log(err.statusCode);
-            next(new Error('Not Found'))
+            SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
         });
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -39,9 +37,7 @@ module.exports.getPlan = async (req, res) => {
         await shopifyReuest.get(url, decoded.accessToken).then(function (response) {
             rcResponse.data = response.body;
         }).catch(function (err) {
-            console.log(err.error);
-            console.log(err.statusCode);
-            next(new Error('Not Found'))
+            SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
         });
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -58,7 +54,7 @@ module.exports.activePlan = async (req, res) => {
     try {
         let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/'+params.planId+'/activate.json';
         await shopifyReuest.post(url, decoded.accessToken).then(async function (response) {
-
+            console.log(response.body);
             let data = {
                 shopUrl: decoded.shopUrl,
                 userId: decoded.id,
@@ -67,12 +63,12 @@ module.exports.activePlan = async (req, res) => {
                 planPrice: response.body.recurring_application_charge.price,
                 status : response.body.recurring_application_charge.status,
                 started: response.body.recurring_application_charge.activated_on,
-                started: response.body.recurring_application_charge.activated_on,
-                trial_days: response.body.recurring_application_charge.trial_days,
-                trial_ends_on: response.body.recurring_application_charge.trial_ends_on
+                cancelled_on: response.body.recurring_application_charge.cancelled_on,
+                type:'monthly'
             }
 
             const findPlan = await activePlan.findOne({ userId:  decoded.id }).lean().exec();
+            console.log(findPlan);
 
             if (findPlan) {
                 const updateProduct = await activePlan.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
@@ -102,6 +98,7 @@ module.exports.deactivePlan = async (req, res) => {
         let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/'+params.planId+'.json';
         await shopifyReuest.delete(url, decoded.accessToken).then(async function (response) {
             rcResponse.data = response.body;
+            console.log(response.body);
             data = {
                 status:"cancelled"
             }
