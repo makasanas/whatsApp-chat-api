@@ -36,15 +36,15 @@ module.exports.createNewProduct = async (req, res) => {
   /* Contruct response object */
   let rcResponse = new ApiResponse();
   let httpStatus = 200;
+  let productObj = {};
   const { decoded } = req;
-
   if (!req.body.title || !req.body.productId || !req.body.discountType) {
     SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
     httpStatus = 400;
   }
   console.log(req.decoded);
   try {
-    let productObj = {
+     productObj = {
       title: req.body.title,
       shopeUrl: req.decoded.shopUrl,
       userId:  req.decoded.id,
@@ -62,8 +62,11 @@ module.exports.createNewProduct = async (req, res) => {
     rcResponse.data = productSave;
   } catch (err) {
     if (err.code === 11000) {
-      SetResponse(rcResponse, 400, RequestErrorMsg('ProductExists', req, null), false);
-      httpStatus = 400;
+      productObj['deleted'] = false;
+      console.log(productObj);
+      const updateProduct = await productModel.findOneAndUpdate({ productId: productObj.productId }, { $set: productObj }, { new: true }).lean().exec();
+      console.log(updateProduct);
+      rcResponse.data = updateProduct;
     } else {
       SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
       httpStatus = 500;
@@ -82,7 +85,7 @@ module.exports.getListOfProductsOwned = async (req, res) => {
   let page = query.page ? parseInt(query.page) : 1 ;
   let limit = query.limit ?   parseInt(query.limit) : 10 ;
   let skip = (page - 1) * limit;
-  console.log(skip,)
+
   try {
     let productList = await productModel.find({ shopeUrl: decoded.shopUrl, deleted:false }).sort({created:-1}).skip(skip).limit(limit);
     let count = await productModel.count({ shopeUrl: decoded.shopUrl, deleted:false });
@@ -152,7 +155,7 @@ module.exports.deleteProduct = async (req, res) => {
   const { decoded } = req;
 
   try {
-    const deleteProdcut = await productModel.update({ _id: req.params.productId}, { $set: { deleted: true } }).lean().exec();
+    const deleteProdcut = await productModel.update({ _id: req.params.productId}, { $set: { deleted: true, isBargain:false  } }).lean().exec();
     if (deleteProdcut.nModified) {
       rcResponse.message = 'Product has been deleted successfully';
     } else {

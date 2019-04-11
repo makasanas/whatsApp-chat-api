@@ -68,8 +68,8 @@ module.exports.login = async (req, res) => {
 					return res.status(httpStatus).send(rcResponse);
 				}
 			} else {
-				SetResponse(rcResponse, 403, RequestErrorMsg('PasswordNotSet', req, null), false);
-				httpStatus = 403;
+				SetResponse(rcResponse, 400, RequestErrorMsg('PasswordNotSet', req, null), false);
+				httpStatus = 400;
 				return res.status(httpStatus).send(rcResponse);
 			}
 		} else {
