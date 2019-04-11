@@ -15,7 +15,8 @@ const ErrMessages = {
   NoImage: 'Please select a valid image file',
   ShopExists: 'A Shop already exists please try to login into your shop',
   userNotFound: 'User not found',
-  ProductExists:'Product alreday enable with discount'
+  ProductExists:'Product alreday enable with discount',
+  PasswordNotSet:'Your register with us but password is not set so follow installation process again'
 };
 
 /**

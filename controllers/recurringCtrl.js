@@ -3,7 +3,6 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./..
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
 const activePlan = require('./../models/activePlan');
 
-
 module.exports.create = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
@@ -26,26 +25,19 @@ module.exports.create = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 }
 
-
 module.exports.getPlan = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     const { decoded } = req;
     try {
-       
-        let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges.json';
-        await shopifyReuest.get(url, decoded.accessToken).then(function (response) {
-            rcResponse.data = response.body;
-        }).catch(function (err) {
-            SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
-        });
+        const findPlan = await activePlan.findOne({ userId:  decoded.id }).lean().exec();
+        rcResponse.data = findPlan
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
         httpStatus = 500;
     }
     return res.status(httpStatus).send(rcResponse);
 }
-
 
 module.exports.activePlan = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -68,7 +60,6 @@ module.exports.activePlan = async (req, res) => {
             }
 
             const findPlan = await activePlan.findOne({ userId:  decoded.id }).lean().exec();
-            console.log(findPlan);
 
             if (findPlan) {
                 const updateProduct = await activePlan.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
@@ -78,7 +69,6 @@ module.exports.activePlan = async (req, res) => {
                 const planSave = await plan.save();
                 rcResponse.data = planSave
             }
-
         }).catch(function (err) {
             console.log(err);
             SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);

@@ -109,59 +109,70 @@ module.exports.auth = async (req, res, next) => {
                 code,
             };
 
-            await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
-                let url = 'https://' + shopUrl + '/admin/shop.json';
-                let accessToken = response.access_token;
-                await shopifyReuest.get(url, accessToken).then(async (response) => {
-                    let UserObj = {
-                        storeName: response.body.shop.name,
-                        shopUrl: response.body.shop.domain,
-                        hasDiscounts: response.body.shop.has_discounts,
-                        storeId: response.body.shop.id,
-                        email: response.body.shop.email,
-                        phone: response.body.shop.phone,
-                        accessToken: accessToken
-                    };
-
-                    
-
-                    const user = new usersModel(UserObj);
-                    const userSave = await user.save();
-
-                    let currentPlan =  {        
-                        shopUrl: response.body.shop.domain,
-                        userId:userSave._id,
-                        planName: "Free",
-                        planPrice: 0,
-                        status : "active",
-                        type: "Lifetime",
-                        started: Date.now()
-                    }
-
-                    const plan = new activePlan(currentPlan);
-                    const planSave = await plan.save();
-
-                    const encodedData = {
-                        id: userSave._id,
-                        accessToken: userSave.accessToken,
-                        shopUrl: userSave.shopUrl,
-                        email: userSave.email,
-                        role:userSave.role,
-                        plan:currentPlan.planName,
-                        type:currentPlan.type,
-                        started:currentPlan.started
-                    };
-                    // generate accessToken using JWT
-                    const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-
-                    let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet:userSave.passwordSet };
-
-                    rcResponse.data = { ...resObj, token: jwtToken, ...planSave };
-                }).catch(function (error) {
-                    if (error.code === 11000) {
-                        SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
-                        httpStatus = 400;
-                    }else if (error.statusCode) {
+            const findUser = await usersModel.findOne({ shopUrl: shopUrl }).lean().exec();
+            if(!findUser){
+                await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
+                    let url = 'https://' + shopUrl + '/admin/shop.json';
+                    let accessToken = response.access_token;
+                    await shopifyReuest.get(url, accessToken).then(async (response) => {
+                        let UserObj = {
+                            storeName: response.body.shop.name,
+                            shopUrl: response.body.shop.domain,
+                            hasDiscounts: response.body.shop.has_discounts,
+                            storeId: response.body.shop.id,
+                            email: response.body.shop.email,
+                            phone: response.body.shop.phone,
+                            accessToken: accessToken
+                        };
+                        
+                        const user = new usersModel(UserObj);
+                        const userSave = await user.save();
+    
+                        let currentPlan =  {        
+                            shopUrl: response.body.shop.domain,
+                            userId:userSave._id,
+                            planName: "Free",
+                            planPrice: 0,
+                            status : "active",
+                            type: "Lifetime",
+                            started: Date.now()
+                        }
+    
+                        const plan = new activePlan(currentPlan);
+                        const planSave = await plan.save();
+    
+                        const encodedData = {
+                            id: userSave._id,
+                            accessToken: userSave.accessToken,
+                            shopUrl: userSave.shopUrl,
+                            email: userSave.email,
+                            role:userSave.role,
+                            plan:currentPlan.planName,
+                            type:currentPlan.type,
+                            started:currentPlan.started
+                        };
+                        // generate accessToken using JWT
+                        const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+    
+                        
+                        let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet:userSave.passwordSet };
+                        let planObj = { planName: currentPlan.planName,status: currentPlan.status, type: currentPlan.type, started:currentPlan.started }
+    
+                        rcResponse.data = { ...resObj, token: jwtToken, plan:planObj };
+                    }).catch(function (error) {
+                        if (error.code === 11000) {
+                            SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
+                            httpStatus = 400;
+                        }else if (error.statusCode) {
+                            SetResponse(rcResponse, error.statusCode, error.error, false);
+                            httpStatus = error.statusCode;
+                        } else {
+                            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
+                            httpStatus = 500;
+                        }
+                    });
+                }).catch((error) => {
+                    if (error.statusCode) {
                         SetResponse(rcResponse, error.statusCode, error.error, false);
                         httpStatus = error.statusCode;
                     } else {
@@ -169,15 +180,29 @@ module.exports.auth = async (req, res, next) => {
                         httpStatus = 500;
                     }
                 });
-            }).catch((error) => {
-                if (error.statusCode) {
-                    SetResponse(rcResponse, error.statusCode, error.error, false);
-                    httpStatus = error.statusCode;
-                } else {
-                    SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
-                    httpStatus = 500;
-                }
-            });
+            }else{
+                const userSave = findUser;
+                const currentPlan = await activePlan.findOne({ shopUrl: shopUrl }).lean().exec();
+                
+                const encodedData = {
+                    id: userSave._id,
+                    accessToken: userSave.accessToken,
+                    shopUrl: userSave.shopUrl,
+                    email: userSave.email,
+                    role:userSave.role,
+                    plan:currentPlan.planName,
+                    type:currentPlan.type,
+                    started:currentPlan.started
+                };
+
+                const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+    
+                        
+                let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet:userSave.passwordSet };
+                let planObj = { planName: currentPlan.planName,status: currentPlan.status, type: currentPlan.type, started:currentPlan.started }
+
+                rcResponse.data = { ...resObj, token: jwtToken, plan:planObj };
+            }
         }
         else {
             SetResponse(rcResponse, 400, "Invalid Shop Domain or Url Verification failed", false);
