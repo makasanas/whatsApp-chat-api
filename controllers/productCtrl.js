@@ -23,17 +23,6 @@ async function asyncForEach(array, callback) {
 
 /* Create new restaurant */
 module.exports.createNewProduct = async (req, res) => {
-
-//   {
-//     "title": "Fossil, leather, Watchs",
-//     "productId": 9169753476,
-//     "description": "Analogue watch with a round case, has a stainless steel back",
-//     "image": "https://cdn.shopify.com/s/files/1/1509/6342/products/11474708652160-Fossil-Men-Watches-3911474708652013-1.jpg?v=1476099927",
-//     "isBargain": true,
-//     "discountType": "percentage",
-//     "discountValue": 25
-// }
-  /* Contruct response object */
   let rcResponse = new ApiResponse();
   let httpStatus = 200;
   let productObj = {};
@@ -51,7 +40,6 @@ module.exports.createNewProduct = async (req, res) => {
       productId: req.body.productId,
       description: req.body.description,
       image: req.body.image,
-      isBargain:  req.body.isBargain,
       discountType: req.body.discountType,
       discountValue: req.body.discountValue
     };
@@ -100,6 +88,26 @@ module.exports.getListOfProductsOwned = async (req, res) => {
   return res.status(httpStatus).send(rcResponse);
 };
 
+
+/* Get list of restaurants for the owner */
+module.exports.getCount = async (req, res) => {
+  /* Contruct response object */
+  let rcResponse = new ApiResponse();
+  let httpStatus = 200;
+  const { query, decoded } = req;
+
+  try {
+    let count = await productModel.count({ shopeUrl: decoded.shopUrl, deleted:false });
+    rcResponse.data = {
+        count:count
+    }
+  } catch (err) {
+    SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+    httpStatus = 500;
+  }
+  return res.status(httpStatus).send(rcResponse);
+};
+
 /* Get details of the restaurant */
 module.exports.getProductDetails = async (req, res) => {
   /* Contruct response object */
@@ -132,7 +140,6 @@ module.exports.updateProductDetails = async (req, res) => {
       title: req.body.title,
       description: req.body.description,
       image: req.body.image,
-      isBargain:  req.body.isBargain,
       discountType: req.body.discountType,
       discountValue: req.body.discountValue
     };
@@ -155,7 +162,7 @@ module.exports.deleteProduct = async (req, res) => {
   const { decoded } = req;
 
   try {
-    const deleteProdcut = await productModel.update({ _id: req.params.productId}, { $set: { deleted: true, isBargain:false  } }).lean().exec();
+    const deleteProdcut = await productModel.update({ _id: req.params.productId}, { $set: { deleted: true } }).lean().exec();
     if (deleteProdcut.nModified) {
       rcResponse.message = 'Product has been deleted successfully';
     } else {

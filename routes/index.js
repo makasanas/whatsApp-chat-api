@@ -54,6 +54,9 @@ router.post('/products', checkToken.validateToken,  productCtrl.createNewProduct
 /* Get list of products */
 router.get('/products', checkToken.validateToken,  productCtrl.getListOfProductsOwned);
 
+// get product count 
+router.get('/products/count', checkToken.validateToken,  productCtrl.getCount);
+
 /* Get product detail by id */
 router.get('/products/:productId', checkToken.validateToken, productCtrl.getProductDetails);
 
@@ -62,6 +65,7 @@ router.put('/products/:productId', checkToken.validateToken, productCtrl.updateP
 
 /* Delete a product */
 router.delete('/products/:productId', checkToken.validateToken,  productCtrl.deleteProduct);
+
 
 router.post('/webhooks/orders/create', checkToken.validateToken,  productCtrl.orders);
 

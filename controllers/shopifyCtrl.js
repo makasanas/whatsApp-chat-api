@@ -270,8 +270,6 @@ module.exports.getProducts = async (req, res) => {
         
         let productUrl = 'https://' + req.decoded.shopUrl + '/admin/products.json' + query;
         let countUrl = 'https://' + req.decoded.shopUrl + '/admin/products/count.json' + countQuery;
-        console.log(productUrl);
-        console.log(countUrl);
 
         let options = {
             method: 'GET',
@@ -298,7 +296,7 @@ module.exports.getProducts = async (req, res) => {
 
         await Promise.all(promiseArray).then(async responses => {
             let result = responses[0].products.map(product => product.id);
-            await productModel.find( {  productId: { $in : result }  }, async function(err, products){
+            await productModel.find( {  productId: { $in : result }, deleted:false  }, async function(err, products){
                 console.log(products);
                await products.forEach( (product) => {
                     var index = result.indexOf(product.productId)
