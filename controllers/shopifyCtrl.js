@@ -295,22 +295,26 @@ module.exports.getProducts = async (req, res) => {
         promiseArray.push(request(options1))
 
         await Promise.all(promiseArray).then(async responses => {
-            let result = responses[0].products.map(product => product.id);
+            let result = await responses[0].products.map(product => product.id);
             await productModel.find( {  productId: { $in : result }, deleted:false  }, async function(err, products){
-                console.log(products);
-               await products.forEach( (product) => {
-                    var index = result.indexOf(product.productId)
-                    console.log(index);
+               await products.forEach(async (product) => {
+                    var index = await result.indexOf(product.productId)
                     responses[0].products[index]['added'] = true;
                 });
+                console.log("find perform");
                 rcResponse.data = { ...responses[0], ...responses[1] }
             });
         })
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
         httpStatus = 500;
+        return res.status(httpStatus).send(rcResponse);
+
     }
+    console.log("response get called")
     return res.status(httpStatus).send(rcResponse);
+
+    // return res.status(httpStatus).send(rcResponse);
 };
 
 module.exports.insertProducts = async (req, res) => {

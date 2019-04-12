@@ -16,7 +16,8 @@ const ErrMessages = {
   ShopExists: 'A Shop already exists please try to login into your shop',
   userNotFound: 'User not found',
   ProductExists:'Product alreday enable with discount',
-  PasswordNotSet:'Your register with us but password is not set so follow installation process again'
+  PasswordNotSet:'Your register with us but password is not set so follow installation process again',
+  PlanLimit:'you exceed to your plan limit please upgrade plan to add more product',
 };
 
 /**
@@ -58,6 +59,27 @@ function UserRoles() {
   this.admin = 1;
   this.owner = 2;
 };
+
+
+plans = [
+  {
+    name:'Free',
+    product: 5
+  },
+  {
+    name:'Silver',
+    product: 50
+  },
+  {
+    name:'Gold',
+    product: 100
+  },
+  {
+    name:'Platinum',
+    product: 250
+  }
+]
+
 
 /**
  * ApiResponse
@@ -101,5 +123,6 @@ module.exports = {
   ApiResponse,
   signedCookies,
   normalCookes,
-  generateRandom
+  generateRandom,
+  plans
 };

@@ -5,7 +5,10 @@ Description : This file consist of middleware functions to use while requesting 
 */
 
 const jwt = require('jsonwebtoken');
-const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, UserRoles } = require('./../helpers/common');
+const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, UserRoles, plans, PlanLimit } = require('./../helpers/common');
+const activePlan = require('./../models/activePlan');
+const productModel = require('./../models/productModel');
+
 
 // validates access token for user
 exports.validateToken = function (req, res, next) {
@@ -76,6 +79,26 @@ module.exports.isOwnerOrAdmin = async (req, res, next) => {
   const roles = new UserRoles();
   if (req.decoded.role === roles.user) {
     SetResponse(rcResponse, 403, RequestErrorMsg('NotAuthorized', req, null), false);
+    httpStatus = 403;
+    return res.status(httpStatus).send(rcResponse);
+  } else {
+    next();
+  }
+};
+
+
+module.exports.planCheck = async (req, res, next) => {
+  /* Contruct response object */
+  let rcResponse = new ApiResponse();
+  
+  const currentPlan = await activePlan.findOne({ userId: req.decoded.id }).lean().exec();
+  const count = await productModel.count({ userId: req.decoded.id, deleted:false });
+  var activePaln = plans.find(plan => plan.name == currentPlan.planName)
+
+  console.log(currentPlan,count,activePaln);
+
+  if (activePaln.product <= count) {
+    SetResponse(rcResponse, 403, RequestErrorMsg('PlanLimit', req, null), false);
     httpStatus = 403;
     return res.status(httpStatus).send(rcResponse);
   } else {

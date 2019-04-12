@@ -49,7 +49,7 @@ router.put('/user/updatepassword/:userId', checkToken.validateToken, checkToken.
  *****************************/
 
 /* Create a new product */
-router.post('/products', checkToken.validateToken,  productCtrl.createNewProduct);
+router.post('/products', checkToken.validateToken, checkToken.planCheck,  productCtrl.createNewProduct);
 
 /* Get list of products */
 router.get('/products', checkToken.validateToken,  productCtrl.getListOfProductsOwned);
@@ -65,7 +65,6 @@ router.put('/products/:productId', checkToken.validateToken, productCtrl.updateP
 
 /* Delete a product */
 router.delete('/products/:productId', checkToken.validateToken,  productCtrl.deleteProduct);
-
 
 router.post('/webhooks/orders/create', checkToken.validateToken,  productCtrl.orders);
 
