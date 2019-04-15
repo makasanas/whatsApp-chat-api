@@ -55,6 +55,7 @@ module.exports.activePlan = async (req, res) => {
                 planPrice: response.body.recurring_application_charge.price,
                 status : response.body.recurring_application_charge.status,
                 started: response.body.recurring_application_charge.activated_on,
+                nextBillDate: response.body.recurring_application_charge.activated_on,
                 cancelled_on: response.body.recurring_application_charge.cancelled_on,
                 type:'monthly'
             }

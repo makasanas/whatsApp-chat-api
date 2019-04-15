@@ -18,6 +18,7 @@ const ErrMessages = {
   ProductExists:'Product alreday enable with discount',
   PasswordNotSet:'Your register with us but password is not set so follow installation process again',
   PlanLimit:'you exceed to your plan limit please upgrade plan to add more product',
+  RequestNotFromShopify:'Request not from shopify'
 };
 
 /**

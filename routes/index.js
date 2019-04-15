@@ -66,7 +66,8 @@ router.put('/products/:productId', checkToken.validateToken, productCtrl.updateP
 /* Delete a product */
 router.delete('/products/:productId', checkToken.validateToken,  productCtrl.deleteProduct);
 
-router.post('/webhooks/orders/create', checkToken.validateToken,  productCtrl.orders);
+
+router.post('/webhooks/orders/create', checkToken.validateWebhook,  productCtrl.orders);
 
 
 

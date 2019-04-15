@@ -19,6 +19,7 @@ const planSchema = new Schema({
     status : { type: String, required: true },
     type: { type: String, required: true },
     started: { type: Date, default: Date.now() },
+    nextBillDate: { type: Date },
     cancelled_on:{ type: Date, default: Date.now() },
     created: { type: Date, default: Date.now() },
     updated: { type: Date, default: Date.now() },

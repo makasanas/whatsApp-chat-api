@@ -9,8 +9,10 @@ Description : This file consist of functions related to restaurants
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const productModel = require('./../models/productModel');
-const mongoose = require('mongoose');
+const ordersModel = require('./../models/ordersModel');
+const discountModel = require('./../models/discountModel');
 
+const mongoose = require('mongoose');
 const getRawBody = require('raw-body')
 const crypto = require('crypto')
 const secretKey = '91836d2e840312d9267dca48dec93fe7'
@@ -179,29 +181,28 @@ module.exports.deleteProduct = async (req, res) => {
 
 /* Delete a restaurant */
 module.exports.orders = async (req, res) => {
-  console.log('🎉 We got an order!')
+  let rcResponse = new ApiResponse();
+  let httpStatus = 200;
+  rcResponse.message = 'ok';
 
-  // We'll compare the hmac to our own hash
-  const hmac = req.get('X-Shopify-Hmac-Sha256')
-
-  // Use raw-body to get the body (buffer)
-  const body = await getRawBody(req)
-
-  // Create a hash using the body and our key
-  const hash = crypto
-    .createHmac('sha256', secretKey)
-    .update(body, 'utf8', 'hex')
-    .digest('base64')
-
-  // Compare our hash to Shopify's hash
-  if (hash === hmac) {
-    // It's a match! All good
-    console.log('Phew, it came from Shopify!')
-    res.sendStatus(200)
-  } else {
-    // No match! This request didn't originate from Shopify
-    console.log('Danger! Not from Shopify!')
-    res.sendStatus(403)
+  let data =  {
+    orderId: req.body.id,
+    shopUrl:  req.get('x-shopify-shop-domain'),
+    discount_applications: req.body.discount_applications,
+    product: req.body.line_items,
+    discount_codes:  req.body.discount_codes
   }
 
+
+  let result = await data.discount_codes.map(coupen => coupen.code);
+
+  await discountModel.findone( {  discount_code: { $in : result }, shopUrl:data.shopUrl }).populate('productId').exec((err, doc) => {
+    console.log(doc);
+  });
+
+  const order = new ordersModel(data);
+  const orderSave = await order.save();
+  rcResponse.data = orderSave;
+
+  return res.status(httpStatus).send(rcResponse);
 };

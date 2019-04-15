@@ -5,10 +5,11 @@ Description : This file consist of middleware functions to use while requesting 
 */
 
 const jwt = require('jsonwebtoken');
-const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, UserRoles, plans, PlanLimit } = require('./../helpers/common');
+const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, UserRoles, plans, RequestNotFromShopify, PlanLimit } = require('./../helpers/common');
 const activePlan = require('./../models/activePlan');
 const productModel = require('./../models/productModel');
-
+const crypto = require('crypto')
+const secretKey = '91836d2e840312d9267dca48dec93fe7'
 
 // validates access token for user
 exports.validateToken = function (req, res, next) {
@@ -105,3 +106,23 @@ module.exports.planCheck = async (req, res, next) => {
     next();
   }
 };
+
+
+module.exports.validateWebhook = async (req,res,next) => {
+
+  let rcResponse = new ApiResponse();
+      const hash = await crypto
+      .createHmac('sha256', secretKey)
+      .update(Buffer.from(req.rawbody))   
+      .digest('base64')
+      console.log("shopifyhash" , hash);
+    console.log("shopifyhash" ,req.headers['x-shopify-hmac-sha256']);
+
+  if (hash == req.headers['x-shopify-hmac-sha256']) {
+      next()
+  } else {
+    SetResponse(rcResponse, 403, RequestErrorMsg('RequestNotFromShopify', req, null), false);
+    httpStatus = 403;
+    return res.status(httpStatus).send(rcResponse);
+  }
+}

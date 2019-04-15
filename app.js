@@ -18,9 +18,9 @@ app.set('view engine', 'jade');
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
 app.use(compression());
-app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser('s a n j a y'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'assets')));
@@ -52,7 +52,20 @@ process.on('SIGINT', function () {
   });
 });
 
+app.use(bodyParser.json({
+  type:'*/*',
+  limit: '50mb',
+  verify: function(req, res, buf) {
+      if (req.url.startsWith('/webhooks')){
+        req.rawbody = buf;
+      }
+  }
+ })
+);
+
 app.use('/', routes);
+
+
 
 // catch 404 and forward to error handler
 app.use(function (err, req, res, next) {
