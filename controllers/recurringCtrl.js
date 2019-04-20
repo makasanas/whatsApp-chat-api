@@ -30,6 +30,7 @@ module.exports.getPlan = async (req, res) => {
     let httpStatus = 200;
     const { decoded } = req;
     try {
+        console.log(decoded.id);
         const findPlan = await activePlan.findOne({ userId:  decoded.id }).lean().exec();
         rcResponse.data = findPlan
     } catch (err) {

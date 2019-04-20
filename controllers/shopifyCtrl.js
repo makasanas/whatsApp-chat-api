@@ -303,6 +303,7 @@ module.exports.getProducts = async (req, res) => {
                 });
                 console.log("find perform");
                 rcResponse.data = { ...responses[0], ...responses[1] }
+                return res.status(httpStatus).send(rcResponse);
             });
         })
     } catch (err) {
@@ -312,7 +313,6 @@ module.exports.getProducts = async (req, res) => {
 
     }
     console.log("response get called")
-    return res.status(httpStatus).send(rcResponse);
 
     // return res.status(httpStatus).send(rcResponse);
 };
@@ -323,7 +323,7 @@ module.exports.insertProducts = async (req, res) => {
     let httpStatus = 200;
 
     /* Check body params */
-    if (!req.body.shopeUrl || !req.body.userId || !req.body.title || !req.body.price) {
+    if (!req.body.shopUrl || !req.body.userId || !req.body.title || !req.body.price) {
         SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
         httpStatus = 400;
         return res.status(httpStatus).send(rcResponse);

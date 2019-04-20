@@ -16,7 +16,7 @@ const discountSchema = new Schema({
     price_rule_id: { type: Number, required: true },
     discount_code: { type: String, required: true },
     discount_code_id: { type: Number, required: true },
-    shopeUrl: { type: String, required: true },
+    shopUrl: { type: String, required: true },
     used: { type: Boolean, default: false },
     orderId: { type: Number },
     created: { type: Date, default: Date.now() },

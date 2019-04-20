@@ -37,7 +37,7 @@ module.exports.createNewProduct = async (req, res) => {
   try {
      productObj = {
       title: req.body.title,
-      shopeUrl: req.decoded.shopUrl,
+      shopUrl: req.decoded.shopUrl,
       userId:  req.decoded.id,
       productId: req.body.productId,
       description: req.body.description,
@@ -77,8 +77,8 @@ module.exports.getListOfProductsOwned = async (req, res) => {
   let skip = (page - 1) * limit;
 
   try {
-    let productList = await productModel.find({ shopeUrl: decoded.shopUrl, deleted:false }).sort({created:-1}).skip(skip).limit(limit);
-    let count = await productModel.count({ shopeUrl: decoded.shopUrl, deleted:false });
+    let productList = await productModel.find({ shopUrl: decoded.shopUrl, deleted:false }).sort({created:-1}).skip(skip).limit(limit);
+    let count = await productModel.count({ shopUrl: decoded.shopUrl, deleted:false });
     rcResponse.data = {
         products: productList,
         count:count
@@ -99,7 +99,7 @@ module.exports.getCount = async (req, res) => {
   const { query, decoded } = req;
 
   try {
-    let count = await productModel.count({ shopeUrl: decoded.shopUrl, deleted:false });
+    let count = await productModel.count({ shopUrl: decoded.shopUrl, deleted:false });
     rcResponse.data = {
         count:count
     }

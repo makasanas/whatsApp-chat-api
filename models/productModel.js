@@ -8,7 +8,7 @@ const Schema = mongoose.Schema;
 
 const productSchema = new Schema({
     title: { type: String, required: true },
-    shopeUrl: { type: String, required: true },
+    shopUrl: { type: String, required: true },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Users'

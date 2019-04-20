@@ -182,18 +182,17 @@ module.exports.process = (client) => {
         client.emit('backend-message', replay);
     });
 
-    client.on('productId-message', async (message) => {
-        console.log(message);
-        let product = await this.checkBargaining(message)
-        client.emit('product-eligible', product.productEligible);
-        console.log(product);
+    client.on('checkProduct-message', async (message) => {
+        let product = await this.checkBargaining(message);
 
-        if (product.productEligible) {
-            var replay = await this.firstMessage(product.productInfo);
-            timeout = setTimeout(() => {
-                client.emit('backend-message', replay);
-            }, 20000);
-        }
+        client.emit('product-eligible', product);
+
+        // if (product.productEligible) {
+        //     var replay = await this.firstMessage(product.productInfo);
+        //     timeout = setTimeout(() => {
+        //         client.emit('backend-message', replay);
+        //     }, 20000);
+        // }
     });
 }
 
@@ -479,17 +478,25 @@ module.exports.sendTextMessageToDialogFlow = async (textMessage) => {
         throw err
     }
 }
+module.exports.coupenCode = async(length) => {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    for(var i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
 
 module.exports.generateCoupon = async (message) => {
-    console.log(message);
     let productInfo = await productModel.findOne({ productId: message.productId, deleted: false }).populate('userId').lean().exec();
-    let discountCount = await discountModel.count({ shopeUrl: productInfo.shopeUrl, deleted: false }) + 1;
+    let discountCount = await discountModel.count({ shopUrl: productInfo.shopUrl, deleted: false }) + 1;
     let replay ={}
     console.log(productInfo, discountCount);
     var ends_at = new Date();
     ends_at.setDate(ends_at.getDate() + 1);
-    let coupen = 'BR' + productInfo.shopeUrl.substring(0,2).toUpperCase() + discountCount;
-    console.log(coupen);
+    let code = await this.coupenCode(8);
+    console.log(code);
+    let coupen = 'BR' + productInfo.shopUrl.substring(0,2).toUpperCase() + code;
 
     let price_rule = {
         "price_rule": {
@@ -515,11 +522,11 @@ module.exports.generateCoupon = async (message) => {
     }
 
     console.log(price_rule);
-    await shopifyReuest.post('https://' + productInfo.shopeUrl + '/admin/price_rules.json', productInfo.userId.accessToken, price_rule).then(async (response) => {
+    await shopifyReuest.post('https://' + productInfo.shopUrl + '/admin/price_rules.json', productInfo.userId.accessToken, price_rule).then(async (response) => {
         console.log(response.body);
         price_rule = response.body;
         console.log(response.body.price_rule.id);
-        await shopifyReuest.post('https://' + productInfo.shopeUrl + '/admin/price_rules/' + response.body.price_rule.id + '/discount_codes.json', productInfo.userId.accessToken, discount_code).then(async (response) => {
+        await shopifyReuest.post('https://' + productInfo.shopUrl + '/admin/price_rules/' + response.body.price_rule.id + '/discount_codes.json', productInfo.userId.accessToken, discount_code).then(async (response) => {
             console.log(response.body);
             let data = {
                 productId: productInfo._id,
@@ -528,7 +535,7 @@ module.exports.generateCoupon = async (message) => {
                 price_rule_id:  response.body.discount_code.price_rule_id,
                 discount_code: response.body.discount_code.code,
                 discount_code_id: response.body.discount_code.id,
-                shopeUrl: productInfo.shopeUrl
+                shopUrl: productInfo.shopUrl
             }
             const discount = new discountModel(data);
             const discountSave = await discount.save();
@@ -538,7 +545,30 @@ module.exports.generateCoupon = async (message) => {
                 count: message.count,
                 lastOffer: discountSave.discountValue
             };
+        }).catch( (err)=> {
+            replay =  {
+                message: "something happen wrong please try again",
+                maxBargainingCount: message.maxBargainingCount,
+                count: message.count
+            };
         });
+    }).catch( (err) => {
+        console.log(err.error);
+        if(err.error.value){
+            replay =  {
+                message: "something happen wrong with discount value",
+                maxBargainingCount: message.maxBargainingCount,
+                count: message.count
+            };
+        }else if(err.error.errors.code){
+            this.generateCoupon(message);
+        }else{
+            replay =  {
+                message: "something happen wrong please try again",
+                maxBargainingCount: message.maxBargainingCount,
+                count: message.count
+            };
+        }
     });
 
     return replay;
@@ -572,10 +602,13 @@ module.exports.generateCoupon = async (message) => {
 
 
 module.exports.checkBargaining = async (message) => {
-    let productInfo = await productModel.findOne({ productId: message.productId, deleted: false }).lean().exec();
+    let productInfo = await productModel.findOne({ productId: parseInt(message.productId), shopUrl: message.shopUrl, deleted: false }).lean().exec();
+    console.log(productInfo);
     if (productInfo) {
         return {
-            productInfo: productInfo,
+            productId: productInfo.productId,
+            discountType: productInfo.discountType,
+            discountValue: productInfo.discountValue,
             productEligible: true
         }
     } else {
