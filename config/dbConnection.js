@@ -5,6 +5,9 @@ Description : This file consist of code for MongoDB connection
 */
 
 var mongoose = require('mongoose');
+mongoose.set('useNewUrlParser', true);
+mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
 
 // database connection
 mongoose.connect(process.env['MONGO_URL'], { useNewUrlParser: true, poolSize: 10, auto_reconnect: true });
