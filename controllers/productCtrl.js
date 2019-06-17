@@ -185,6 +185,8 @@ module.exports.orders = async (req, res) => {
   let httpStatus = 200;
   rcResponse.message = 'ok';
 
+  console.log(req.body);
+
   let data =  {
     orderId: req.body.id,
     shopUrl:  req.get('x-shopify-shop-domain'),
