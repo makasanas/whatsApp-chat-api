@@ -14,6 +14,7 @@ const checkToken = require('./../middlewares/checkToken');
 const fileHandler = require('./../helpers/fileHandler');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
 const recurringCtrl = require('./../controllers/recurringCtrl');
+const chatCtrl = require('./../controllers/chatCtrl');
 
 /*****************************
  Shopify
@@ -24,7 +25,12 @@ router.get('/shopify/products', checkToken.validateToken, shopifyCtrl.getProduct
 router.post('/shopify/products', checkToken.validateToken, shopifyCtrl.insertProducts);
 
 
-
+/*****************************
+ Chat User Session 
+ *****************************/
+router.post('/chat/session', chatCtrl.createSession);
+router.get('/chat/session/:_id', chatCtrl.getSession);
+router.put('/chat/session/:_id', chatCtrl.updateSession);
 
 /*****************************
  USERS
