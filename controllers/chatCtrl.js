@@ -1,6 +1,7 @@
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const sessionModel = require('./../models/sessionModel');
+const ObjectId = require('mongoose').Types.ObjectId; 
 
 /* Create Session */
 module.exports.createSession = async (req, res) => {
@@ -12,7 +13,8 @@ module.exports.createSession = async (req, res) => {
     }
     try {
         let session = new sessionModel({
-            sessionData: req.body.sessionData
+            sessionData: req.body.sessionData,
+            productId: req.body.productId
         })
         await session.save().then((data) => {
             console.log(data);
@@ -71,10 +73,13 @@ module.exports.createSession = async (req, res) => {
         httpStatus = 400;
     }
     try {
-		const sessionData = await sessionModel.findOne({ _id: req.params._id,}).lean().exec();
-		console.log(sessionData);
-
+		await sessionModel.findOne({ _id: ObjectId(req.params._id), 'productId': req.params.productId}, function(err, obj) {
+            console.log(obj);
+            console.log(err);
+        const sessionData = obj;
 		rcResponse.data = sessionData;
+        })
+		
     }
     catch(err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);

@@ -29,7 +29,7 @@ router.post('/shopify/products', checkToken.validateToken, shopifyCtrl.insertPro
  Chat User Session 
  *****************************/
 router.post('/chat/session', chatCtrl.createSession);
-router.get('/chat/session/:_id', chatCtrl.getSession);
+router.get('/chat/session/:_id/:productId', chatCtrl.getSession);
 router.put('/chat/session/:_id', chatCtrl.updateSession);
 
 /*****************************
