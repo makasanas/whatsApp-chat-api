@@ -11,6 +11,7 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./..
 const productModel = require('./../models/productModel');
 const ordersModel = require('./../models/ordersModel');
 const discountModel = require('./../models/discountModel');
+const analyticOrderModel = require('./../models/analyticOrderModel');
 
 const mongoose = require('mongoose');
 const getRawBody = require('raw-body')
@@ -35,10 +36,10 @@ module.exports.createNewProduct = async (req, res) => {
   }
   console.log(req.decoded);
   try {
-     productObj = {
+    productObj = {
       title: req.body.title,
       shopUrl: req.decoded.shopUrl,
-      userId:  req.decoded.id,
+      userId: req.decoded.id,
       productId: req.body.productId,
       description: req.body.description,
       image: req.body.image,
@@ -72,16 +73,16 @@ module.exports.getListOfProductsOwned = async (req, res) => {
   let httpStatus = 200;
   const { query, decoded } = req;
 
-  let page = query.page ? parseInt(query.page) : 1 ;
-  let limit = query.limit ?   parseInt(query.limit) : 10 ;
+  let page = query.page ? parseInt(query.page) : 1;
+  let limit = query.limit ? parseInt(query.limit) : 10;
   let skip = (page - 1) * limit;
 
   try {
-    let productList = await productModel.find({ shopUrl: decoded.shopUrl, deleted:false }).sort({created:-1}).skip(skip).limit(limit);
-    let count = await productModel.count({ shopUrl: decoded.shopUrl, deleted:false });
+    let productList = await productModel.find({ shopUrl: decoded.shopUrl, deleted: false }).sort({ created: -1 }).skip(skip).limit(limit);
+    let count = await productModel.count({ shopUrl: decoded.shopUrl, deleted: false });
     rcResponse.data = {
-        products: productList,
-        count:count
+      products: productList,
+      count: count
     }
   } catch (err) {
     SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -99,9 +100,9 @@ module.exports.getCount = async (req, res) => {
   const { query, decoded } = req;
 
   try {
-    let count = await productModel.count({ shopUrl: decoded.shopUrl, deleted:false });
+    let count = await productModel.count({ shopUrl: decoded.shopUrl, deleted: false });
     rcResponse.data = {
-        count:count
+      count: count
     }
   } catch (err) {
     SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -118,7 +119,7 @@ module.exports.getProductDetails = async (req, res) => {
   const { decoded } = req;
 
   try {
-    let productInfo = await productModel.findOne({ productId:req.params.productId, deleted:false }).lean().exec();
+    let productInfo = await productModel.findOne({ productId: req.params.productId, deleted: false }).lean().exec();
     productInfo = productInfo;
     rcResponse.data = productInfo;
   } catch (err) {
@@ -127,8 +128,6 @@ module.exports.getProductDetails = async (req, res) => {
   }
   return res.status(httpStatus).send(rcResponse);
 };
-
-
 
 /* Update restaurant details */
 module.exports.updateProductDetails = async (req, res) => {
@@ -164,7 +163,7 @@ module.exports.deleteProduct = async (req, res) => {
   const { decoded } = req;
 
   try {
-    const deleteProdcut = await productModel.update({ _id: req.params.productId}, { $set: { deleted: true } }).lean().exec();
+    const deleteProdcut = await productModel.update({ _id: req.params.productId }, { $set: { deleted: true } }).lean().exec();
     if (deleteProdcut.nModified) {
       rcResponse.message = 'Product has been deleted successfully';
     } else {
@@ -181,30 +180,78 @@ module.exports.deleteProduct = async (req, res) => {
 
 /* Delete a restaurant */
 module.exports.orders = async (req, res) => {
+  console.log("webhook is workingggggggggggggggggggggggg");
   let rcResponse = new ApiResponse();
   let httpStatus = 200;
   rcResponse.message = 'ok';
 
-  console.log(req.body);
+  try {
 
-  let data =  {
-    orderId: req.body.id,
-    shopUrl:  req.get('x-shopify-shop-domain'),
-    discount_applications: req.body.discount_applications,
-    product: req.body.line_items,
-    discount_codes:  req.body.discount_codes
+    //finding is coupon is used by BOT
+    let data = {
+      orderId: req.body.id,
+      shopUrl: req.get('x-shopify-shop-domain'),
+      discount_applications: req.body.discount_applications,
+      product: req.body.line_items,
+      discount_codes: req.body.discount_codes
+    }
+
+    //Saving current order
+    const createOrder = await ordersModel.create(data);
+
+    console.log(createOrder, "first log after webhook workeddddddddddddddddddddddd");
+
+    let result = await data.discount_codes.map(coupen => coupen.code);
+
+    console.log("result ====== = ==  = = = = ", result);
+
+    const discountList = await discountModel.findOne({ discount_code: result[0], shopUrl: data.shopUrl }).exec((err, doc) => {
+      console.log("findeddddd");
+      console.log(doc, "###############################");
+
+      let responseData = {}
+      if (doc) {
+
+        let products = [];
+        req.body.line_items.forEach(item => {
+
+          let profit = (item.price * doc.discountValue) / 100;
+
+          let product = {
+            price: item.price,
+            productDiscount: item.total_discount,
+            botDicount: doc.discountValue,
+            productQty: item.quantity,
+            botProfitAmount: profit * item.quantity
+          }
+          products.push(product);
+        });
+
+
+        let analyticData = {
+          orderId: createOrder._id,
+          discountId: doc._id,
+          orderNo: req.body.order_number,
+          orderAmount: req.body.total_price,
+          products: products
+        }
+
+        //Saving Analytics order
+        const createAnalytic = analyticOrderModel.create(analyticData);
+
+        responseData = createAnalytic;
+
+      } else {
+        responseData = createOrder;
+      }
+
+      rcResponse.data = responseData;
+
+      return res.status(httpStatus).send(rcResponse);
+
+    });
+  } catch (err) {
+    SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+    httpStatus = 500;
   }
-
-
-  let result = await data.discount_codes.map(coupen => coupen.code);
-
-  await discountModel.findone( {  discount_code: { $in : result }, shopUrl:data.shopUrl }).populate('productId').exec((err, doc) => {
-    console.log(doc);
-  });
-
-  const order = new ordersModel(data);
-  const orderSave = await order.save();
-  rcResponse.data = orderSave;
-
-  return res.status(httpStatus).send(rcResponse);
 };
