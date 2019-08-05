@@ -2,6 +2,8 @@
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
 const activePlan = require('./../models/activePlan');
+const userModel = require('./../models/usersModel');
+const productModel = require('./../models/productModel');
 
 module.exports.create = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -30,8 +32,7 @@ module.exports.getPlan = async (req, res) => {
     let httpStatus = 200;
     const { decoded } = req;
     try {
-        console.log(decoded.id);
-        const findPlan = await activePlan.findOne({ userId:  decoded.id }).lean().exec();
+        const findPlan = await activePlan.findOne({ userId: decoded.id }).lean().exec();
         rcResponse.data = findPlan
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -45,30 +46,62 @@ module.exports.activePlan = async (req, res) => {
     let httpStatus = 200;
     const { decoded, params } = req;
     try {
-        let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/'+params.planId+'/activate.json';
+        let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + params.planId + '/activate.json';
         await shopifyReuest.post(url, decoded.accessToken).then(async function (response) {
-            console.log(response.body);
+            let productCount = 0;
+            if (response.body.recurring_application_charge.name == "Free") {
+                productCount = 1;
+            } else if (response.body.recurring_application_charge.name == "Silver") {
+                productCount = 2;
+            } else if (response.body.recurring_application_charge.name == "Gold") {
+                productCount = 3;
+            } else {
+                productCount = 4;
+            }
             let data = {
                 shopUrl: decoded.shopUrl,
                 userId: decoded.id,
                 planName: response.body.recurring_application_charge.name,
                 planId: response.body.recurring_application_charge.id,
                 planPrice: response.body.recurring_application_charge.price,
-                status : response.body.recurring_application_charge.status,
+                status: response.body.recurring_application_charge.status,
                 started: response.body.recurring_application_charge.activated_on,
                 nextBillDate: response.body.recurring_application_charge.activated_on,
                 cancelled_on: response.body.recurring_application_charge.cancelled_on,
-                type:'monthly'
+                products: productCount,
+                type: 'monthly'
             }
 
-            const findPlan = await activePlan.findOne({ userId:  decoded.id }).lean().exec();
+            const findPlan = await activePlan.findOne({ userId: decoded.id }).lean().exec();
 
             if (findPlan) {
-                const updateProduct = await activePlan.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
-                rcResponse.data = updateProduct
-            }else{  
+                const updatePlan = await activePlan.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
+
+                let totalProducts = await productModel.find({ userId: decoded.id });
+                if (findPlan.products > productCount) {
+                    let deleteProduct = totalProducts.slice(productCount, totalProducts.length);
+                    let updatableProducts = deleteProduct.map(product => product._id);
+
+                    const updateProducts = await productModel.updateMany({ _id: { $in: updatableProducts } }, { $set: { deleted: true } }, { multi: true });
+                }
+
+                let userPlanData = {
+                    recurringPlanName: response.body.recurring_application_charge.name,
+                    recurringPlanId: updatePlan._id
+                }
+                const updateUserPlan = await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: userPlanData }, { new: true }).lean().exec();
+
+                rcResponse.data = updatePlan
+            } else {
                 const plan = new activePlan(data);
                 const planSave = await plan.save();
+
+                let userPlanData = {
+                    recurringPlanName: response.body.recurring_application_charge.name,
+                    recurringPlanId: planSave._id
+                }
+                const updateUserPlan = await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: userPlanData }, { new: true }).lean().exec();
+
                 rcResponse.data = planSave
             }
         }).catch(function (err) {
@@ -83,20 +116,25 @@ module.exports.activePlan = async (req, res) => {
 }
 
 module.exports.deactivePlan = async (req, res) => {
+
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     const { decoded, params } = req;
     try {
-        let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/'+params.planId+'.json';
+        const plan = await activePlan.findOne({ _id: params.planId }).lean().exec();
+        let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + plan.planId + '.json';
         await shopifyReuest.delete(url, decoded.accessToken).then(async function (response) {
             rcResponse.data = response.body;
-            console.log(response.body);
             data = {
-                status:"cancelled"
+                status: "cancelled"
             }
+            const updatePlan = await activePlan.findOneAndUpdate({ userId: decoded.id }, { $set: data }, { new: true }).lean().exec();
+            var date = new Date(updatePlan.started);
+            let expiryDate = date.setDate(date.getDate() + 30);
 
-            const updateProduct = await activePlan.findOneAndUpdate({ userId:  decoded.id }, { $set: data }, { new: true }).lean().exec();
-            rcResponse.data = updateProduct
+            const updateUserPlan = await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: { recurringPlanName: 'Free', recurringPlanExpiryDate: expiryDate } }, { new: true }).lean().exec();
+
+            rcResponse.data = updatePlan
         }).catch(function (err) {
             SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
         });

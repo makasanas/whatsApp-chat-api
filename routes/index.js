@@ -51,7 +51,7 @@ router.put('/user/updatepassword/:userId', checkToken.validateToken, checkToken.
 
 
 /*****************************
- RESTAURANTS
+ Products
  *****************************/
 
 /* Create a new product */
