@@ -73,7 +73,13 @@ router.put('/products/:productId', checkToken.validateToken, productCtrl.updateP
 router.delete('/products/:productId', checkToken.validateToken,  productCtrl.deleteProduct);
 
 
+/*****************************
+ Webhook
+ *****************************/
+
 router.post('/webhooks/orders/create', checkToken.validateWebhook,  productCtrl.orders);
+
+router.post('/webhooks/app/delete', checkToken.validateWebhook,  shopifyCtrl.deleteApp);
 
 
 
@@ -84,6 +90,5 @@ router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan)
 router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlan);
 
 router.delete('/recurring/plan/deactive/:planId', checkToken.validateToken,  recurringCtrl.deactivePlan);
-
 
 module.exports = router;

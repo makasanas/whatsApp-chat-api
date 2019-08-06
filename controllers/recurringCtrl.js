@@ -28,11 +28,14 @@ module.exports.create = async (req, res) => {
 }
 
 module.exports.getPlan = async (req, res) => {
+    console.log("innnnnnnnnnninnnnnnnnnnninnnnnnnnnnninnnnnnnnnnn")
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     const { decoded } = req;
     try {
+        console.log(decoded.id);
         const findPlan = await activePlan.findOne({ userId: decoded.id }).lean().exec();
+        console.log(findPlan, "**********")
         rcResponse.data = findPlan
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -126,7 +129,9 @@ module.exports.deactivePlan = async (req, res) => {
         await shopifyReuest.delete(url, decoded.accessToken).then(async function (response) {
             rcResponse.data = response.body;
             data = {
-                status: "cancelled"
+                status: "cancelled",
+                planName: "Free",
+                products:"1"
             }
             const updatePlan = await activePlan.findOneAndUpdate({ userId: decoded.id }, { $set: data }, { new: true }).lean().exec();
             var date = new Date(updatePlan.started);

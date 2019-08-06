@@ -37,7 +37,6 @@ module.exports.accessToken = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 };
 
-
 /* module.exports.install = async (req, res, next) => {
     try {
         if (!req.query.shop) {
@@ -110,8 +109,9 @@ module.exports.auth = async (req, res, next) => {
             };
 
             const findUser = await usersModel.findOne({ shopUrl: shopUrl }).lean().exec();
-            if(!findUser){
+            if (!findUser) {
                 await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
+                    console.log(response.access_token, "############")
                     let url = 'https://' + shopUrl + '/admin/shop.json';
                     let accessToken = response.access_token;
                     await shopifyReuest.get(url, accessToken).then(async (response) => {
@@ -122,48 +122,49 @@ module.exports.auth = async (req, res, next) => {
                             storeId: response.body.shop.id,
                             email: response.body.shop.email,
                             phone: response.body.shop.phone,
-                            accessToken: accessToken
+                            accessToken: accessToken,
+                            recurringPlanName: 'Free'
                         };
-                        
+
                         const user = new usersModel(UserObj);
                         const userSave = await user.save();
-    
-                        let currentPlan =  {        
+
+                        let currentPlan = {
                             shopUrl: response.body.shop.domain,
-                            userId:userSave._id,
+                            userId: userSave._id,
                             planName: "Free",
                             planPrice: 0,
-                            status : "active",
+                            status: "active",
                             type: "Lifetime",
                             started: Date.now()
                         }
-    
+
                         const plan = new activePlan(currentPlan);
                         const planSave = await plan.save();
-    
+
                         const encodedData = {
                             id: userSave._id,
                             accessToken: userSave.accessToken,
                             shopUrl: userSave.shopUrl,
                             email: userSave.email,
-                            role:userSave.role,
-                            plan:currentPlan.planName,
-                            type:currentPlan.type,
-                            started:currentPlan.started
+                            role: userSave.role,
+                            plan: currentPlan.planName,
+                            type: currentPlan.type,
+                            started: currentPlan.started
                         };
                         // generate accessToken using JWT
                         const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-    
-                        
-                        let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet:userSave.passwordSet };
-                        let planObj = { planName: currentPlan.planName,status: currentPlan.status, type: currentPlan.type, started:currentPlan.started }
-    
-                        rcResponse.data = { ...resObj, token: jwtToken, plan:planObj };
+
+
+                        let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
+                        let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
+
+                        rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
                     }).catch(function (error) {
                         if (error.code === 11000) {
                             SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
                             httpStatus = 400;
-                        }else if (error.statusCode) {
+                        } else if (error.statusCode) {
                             SetResponse(rcResponse, error.statusCode, error.error, false);
                             httpStatus = error.statusCode;
                         } else {
@@ -180,28 +181,28 @@ module.exports.auth = async (req, res, next) => {
                         httpStatus = 500;
                     }
                 });
-            }else{
+            } else {
                 const userSave = findUser;
                 const currentPlan = await activePlan.findOne({ shopUrl: shopUrl }).lean().exec();
-                
+
                 const encodedData = {
                     id: userSave._id,
                     accessToken: userSave.accessToken,
                     shopUrl: userSave.shopUrl,
                     email: userSave.email,
-                    role:userSave.role,
-                    plan:currentPlan.planName,
-                    type:currentPlan.type,
-                    started:currentPlan.started
+                    role: userSave.role,
+                    plan: currentPlan.planName,
+                    type: currentPlan.type,
+                    started: currentPlan.started
                 };
 
                 const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-    
-                        
-                let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet:userSave.passwordSet };
-                let planObj = { planName: currentPlan.planName,status: currentPlan.status, type: currentPlan.type, started:currentPlan.started }
 
-                rcResponse.data = { ...resObj, token: jwtToken, plan:planObj };
+
+                let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
+                let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
+
+                rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
             }
         }
         else {
@@ -209,7 +210,7 @@ module.exports.auth = async (req, res, next) => {
             httpStatus = 400;
         }
     } catch (err) {
-        
+
         if (err.code === 11000) {
             SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
             httpStatus = 400;
@@ -221,8 +222,6 @@ module.exports.auth = async (req, res, next) => {
     return res.status(httpStatus).send(rcResponse);
 };
 
-
-
 module.exports.setPassword = async (req, res) => {
     /* Contruct response object */
     let rcResponse = new ApiResponse();
@@ -233,7 +232,7 @@ module.exports.setPassword = async (req, res) => {
         const findUser = await usersModel.findOne({ _id: req.decoded.id }).lean().exec();
         if (findUser) {
             const passHash = await utils.generatePasswordHash(req.body.password);
-            const updateUser = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet:true } }, { new: true }).lean().exec();
+            const updateUser = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
 
             delete updateUser['password'];
             delete updateUser['accessToken'];
@@ -267,7 +266,7 @@ module.exports.getProducts = async (req, res) => {
         query += req.query.title ? 'title=' + req.query.title : '';
         query += req.query.limit ? '&limit=' + req.query.limit : '';
         query += req.query.page ? '&page=' + req.query.page : '';
-        
+
         let productUrl = 'https://' + req.decoded.shopUrl + '/admin/products.json' + query;
         let countUrl = 'https://' + req.decoded.shopUrl + '/admin/products/count.json' + countQuery;
 
@@ -296,8 +295,8 @@ module.exports.getProducts = async (req, res) => {
 
         await Promise.all(promiseArray).then(async responses => {
             let result = await responses[0].products.map(product => product.id);
-            await productModel.find( {  productId: { $in : result }, deleted:false  }, async function(err, products){
-               await products.forEach(async (product) => {
+            await productModel.find({ productId: { $in: result }, deleted: false }, async function (err, products) {
+                await products.forEach(async (product) => {
                     var index = await result.indexOf(product.productId)
                     responses[0].products[index]['added'] = true;
                 });
@@ -339,5 +338,17 @@ module.exports.insertProducts = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 };
 
+module.exports.deleteApp = async (req, res) => {
+    let rcResponse = new ApiResponse();
+    let httpStatus = 200;
+    try {
+        const updateUser = await usersModel.updateMany({ storeId: req.body.id }, { $set: { deleted: true } }, { new: true }).lean().exec();
 
+        rcResponse.data = updateUser
 
+    } catch (err) {
+        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+        httpStatus = 500;
+    }
+    return res.status(httpStatus).send(rcResponse);
+};
