@@ -100,8 +100,8 @@ module.exports.orders = async (req, res) => {
             productName:foundProduct.name,
             discountCode: result[0],
             qty: foundProduct.quantity,
-            originaldiscountAmount:originalDiscount,
-            botDicountAmount: botDiscount,
+            originaldiscount:originalDiscount,
+            botDicount: botDiscount,
             botProfit: originalDiscount - botDiscount,
             shopUrl: req.get('x-shopify-shop-domain')
           }
