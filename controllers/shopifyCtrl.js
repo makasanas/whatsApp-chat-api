@@ -136,7 +136,8 @@ module.exports.auth = async (req, res, next) => {
                             planPrice: 0,
                             status: "active",
                             type: "Lifetime",
-                            started: Date.now()
+                            started: Date.now(),
+                            products:process.env.Free
                         }
 
                         const plan = new activePlan(currentPlan);

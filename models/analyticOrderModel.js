@@ -15,15 +15,18 @@ const analyticOrderSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'discounts'
     },
+    productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Products'
+    },
     orderNo: { type: String },
-    orderAmount: { type: String },
-    products: { type: Array },
-    originalPrice: { type: String },
+    productName: { type: String },
+    discountCode: { type: String },
+    price: { type: Number },
+    qty: { type: Number },
     originaldiscount: { type: String },
     botDicount: { type: String },
-    originalProfit: { type: String },
     botProfit: { type: String },
-    originalProfit: { type: String },
     shopUrl: { type: String },
     created: { type: Date, default: Date.now() },
     updated: { type: Date, default: Date.now() },

@@ -53,13 +53,13 @@ module.exports.activePlan = async (req, res) => {
         await shopifyReuest.post(url, decoded.accessToken).then(async function (response) {
             let productCount = 0;
             if (response.body.recurring_application_charge.name == "Free") {
-                productCount = 1;
+                productCount = process.env.Free;
             } else if (response.body.recurring_application_charge.name == "Silver") {
-                productCount = 2;
+                productCount = process.env.Silver;
             } else if (response.body.recurring_application_charge.name == "Gold") {
-                productCount = 3;
+                productCount = process.env.Gold;
             } else {
-                productCount = 4;
+                productCount = process.env.Platinium;
             }
             let data = {
                 shopUrl: decoded.shopUrl,
@@ -131,7 +131,7 @@ module.exports.deactivePlan = async (req, res) => {
             data = {
                 status: "cancelled",
                 planName: "Free",
-                products:"1"
+                products:process.env.Free
             }
             const updatePlan = await activePlan.findOneAndUpdate({ userId: decoded.id }, { $set: data }, { new: true }).lean().exec();
             var date = new Date(updatePlan.started);
