@@ -11,6 +11,7 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./..
 const analyticOrderModel = require('./../models/analyticOrderModel');
 const discountModel = require('./../models/discountModel');
 const productModel = require('./../models/productModel');
+const ordersModel = require('./../models/ordersModel');
 
 const mongoose = require('mongoose');
 const getRawBody = require('raw-body')
@@ -59,6 +60,7 @@ module.exports.orders = async (req, res) => {
       discount_codes: req.body.discount_codes
     }
 
+
     //Saving current order
     const createOrder = await ordersModel.create(data);
 
@@ -75,11 +77,16 @@ module.exports.orders = async (req, res) => {
       let responseData = {}
       if (doc) {
 
-        const getProduct = productModel.findOne({ _id: doc.productId }).exec((err, product) => {
+        const getProduct = productModel.findOne({ _id: doc.productId }).exec(async (err, product) => {
 
-          var foundProduct = req.body.line_items.find(element => {
-            return element.id == product.productId;
+          console.log(product, "producttttttt");
+
+          var foundProduct = await req.body.line_items.find(element => {
+            console.log(element, "@@@@@@@@@@@@@@@@@@@@@@@@@@");
+
+            return element.product_id == product.productId;
           });
+          console.log(foundProduct,"foundedddd");
 
           let originalDiscount = ((foundProduct.price * foundProduct.quantity) * product.discountValue) / 100;
           let botDiscount = foundProduct.discount_allocations[0].amount;
