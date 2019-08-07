@@ -233,7 +233,8 @@ module.exports.orders = async (req, res) => {
           discountId: doc._id,
           orderNo: req.body.order_number,
           orderAmount: req.body.total_price,
-          products: products
+          products: products,
+          shopUrl:req.get('x-shopify-shop-domain')
         }
 
         //Saving Analytics order

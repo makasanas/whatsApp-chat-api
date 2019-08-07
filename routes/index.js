@@ -14,6 +14,7 @@ const checkToken = require('./../middlewares/checkToken');
 const fileHandler = require('./../helpers/fileHandler');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
 const recurringCtrl = require('./../controllers/recurringCtrl');
+const orderCtrl = require('./../controllers/orderCtrl');
 const chatCtrl = require('./../controllers/chatCtrl');
 
 /*****************************
@@ -90,5 +91,13 @@ router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan)
 router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlan);
 
 router.delete('/recurring/plan/deactive/:planId', checkToken.validateToken,  recurringCtrl.deactivePlan);
+
+
+/*****************************
+ Analytic Order
+ *****************************/
+
+router.get('/analyticOrders', checkToken.validateToken,  orderCtrl.getAnalyticOrders);
+
 
 module.exports = router;
