@@ -99,7 +99,6 @@ module.exports.auth = async (req, res, next) => {
         let code = req.query.code;
 
         if (securityCheck(req)) {
-
             //Exchange temporary code for a permanent access token
             let accessTokenRequestUrl = 'https://' + shopUrl + '/admin/oauth/access_token';
             let accessTokenPayload = {
@@ -107,74 +106,136 @@ module.exports.auth = async (req, res, next) => {
                 client_secret: appSecret,
                 code,
             };
+            let url;
+            let accessToken;
+            await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
+                url = 'https://' + shopUrl + '/admin/shop.json';
+                accessToken = response.access_token;
+            }).catch((error) => {
+                if (error.statusCode) {
+                    SetResponse(rcResponse, error.statusCode, error.error, false);
+                    httpStatus = error.statusCode;
+                } else {
+                    SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
+                    httpStatus = 500;
+                }
+            });
+
+            //Creating WebHook For Order And App Delete
+            let webhookRequestUrl = 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json';
+            let head = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Shopify-Access-Token': accessToken
+            }
+
+            let appUninstallHookPayload = {
+                "webhook": {
+                    "topic": "app/uninstalled",
+                    "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
+                    "format": "json"
+                }
+            }
+            let orderHookPayload = {
+                "webhook": {
+                    "topic": "orders/create",
+                    "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
+                    "format": "json"
+                }
+            }
+
+            let scriptPayload = {
+                "script_tag": {
+                  "event": "onload",
+                  "src": "https://bargain-bot.webrexstudio.com/chat/bargi.js",
+                  "display_scope": "online_store"
+                }
+              }
+
+            let promiseArray = [];
+            let options = {
+                method: 'POST',
+                uri: webhookRequestUrl,
+                body: appUninstallHookPayload,
+                json: true,
+                headers: head
+            };
+
+            let options1 = {
+                method: 'POST',
+                uri: webhookRequestUrl,
+                body: orderHookPayload,
+                json: true,
+                headers: head
+            };
+
+            let scriptRequest = {
+                method: 'POST',
+                uri: 'https://' + shopUrl + '/admin/api/2019-07/script_tags.json',
+                body: scriptPayload,
+                json: true,
+                headers: head
+            }
+
+            promiseArray.push(request(options))
+            promiseArray.push(request(options1))
+            promiseArray.push(request(scriptRequest))
+            
+
+            await Promise.all(promiseArray).then(async responses => { console.log(responses.length)});
 
             const findUser = await usersModel.findOne({ shopUrl: shopUrl }).lean().exec();
             if (!findUser) {
-                await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
-                    console.log(response.access_token, "############")
-                    let url = 'https://' + shopUrl + '/admin/shop.json';
-                    let accessToken = response.access_token;
-                    await shopifyReuest.get(url, accessToken).then(async (response) => {
-                        let UserObj = {
-                            storeName: response.body.shop.name,
-                            shopUrl: response.body.shop.domain,
-                            hasDiscounts: response.body.shop.has_discounts,
-                            storeId: response.body.shop.id,
-                            email: response.body.shop.email,
-                            phone: response.body.shop.phone,
-                            accessToken: accessToken,
-                            recurringPlanName: 'Free'
-                        };
+                await shopifyReuest.get(url, accessToken).then(async (response) => {
+                    let UserObj = {
+                        storeName: response.body.shop.name,
+                        shopUrl: response.body.shop.domain,
+                        hasDiscounts: response.body.shop.has_discounts,
+                        storeId: response.body.shop.id,
+                        email: response.body.shop.email,
+                        phone: response.body.shop.phone,
+                        accessToken: accessToken,
+                        recurringPlanName: 'Free'
+                    };
 
-                        const user = new usersModel(UserObj);
-                        const userSave = await user.save();
+                    const user = new usersModel(UserObj);
+                    const userSave = await user.save();
 
-                        let currentPlan = {
-                            shopUrl: response.body.shop.domain,
-                            userId: userSave._id,
-                            planName: "Free",
-                            planPrice: 0,
-                            status: "active",
-                            type: "Lifetime",
-                            started: Date.now(),
-                            products:process.env.Free
-                        }
+                    let currentPlan = {
+                        shopUrl: response.body.shop.domain,
+                        userId: userSave._id,
+                        planName: "Free",
+                        planPrice: 0,
+                        status: "active",
+                        type: "Lifetime",
+                        started: Date.now(),
+                        products: process.env.Free
+                    }
 
-                        const plan = new activePlan(currentPlan);
-                        const planSave = await plan.save();
+                    const plan = new activePlan(currentPlan);
+                    const planSave = await plan.save();
 
-                        const encodedData = {
-                            id: userSave._id,
-                            accessToken: userSave.accessToken,
-                            shopUrl: userSave.shopUrl,
-                            email: userSave.email,
-                            role: userSave.role,
-                            plan: currentPlan.planName,
-                            type: currentPlan.type,
-                            started: currentPlan.started
-                        };
-                        // generate accessToken using JWT
-                        const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+                    const encodedData = {
+                        id: userSave._id,
+                        accessToken: userSave.accessToken,
+                        shopUrl: userSave.shopUrl,
+                        email: userSave.email,
+                        role: userSave.role,
+                        plan: currentPlan.planName,
+                        type: currentPlan.type,
+                        started: currentPlan.started
+                    };
+                    // generate accessToken using JWT
+                    const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
 
+                    let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
+                    let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
 
-                        let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
-                        let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
-
-                        rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
-                    }).catch(function (error) {
-                        if (error.code === 11000) {
-                            SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
-                            httpStatus = 400;
-                        } else if (error.statusCode) {
-                            SetResponse(rcResponse, error.statusCode, error.error, false);
-                            httpStatus = error.statusCode;
-                        } else {
-                            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
-                            httpStatus = 500;
-                        }
-                    });
-                }).catch((error) => {
-                    if (error.statusCode) {
+                    rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
+                }).catch(function (error) {
+                    if (error.code === 11000) {
+                        SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
+                        httpStatus = 400;
+                    } else if (error.statusCode) {
                         SetResponse(rcResponse, error.statusCode, error.error, false);
                         httpStatus = error.statusCode;
                     } else {
@@ -183,7 +244,10 @@ module.exports.auth = async (req, res, next) => {
                     }
                 });
             } else {
-                const userSave = findUser;
+                console.log("in elseeeeeeeeeeeeeeee", findUser);
+                const userSave = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: accessToken, deleted: false } }, { new: true }).lean().exec();
+                console.log("updated userrrrrr", userSave)
+                // const userSave = findUser;
                 const currentPlan = await activePlan.findOne({ shopUrl: shopUrl }).lean().exec();
 
                 const encodedData = {
@@ -199,7 +263,6 @@ module.exports.auth = async (req, res, next) => {
 
                 const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
 
-
                 let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
                 let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
 
@@ -211,7 +274,6 @@ module.exports.auth = async (req, res, next) => {
             httpStatus = 400;
         }
     } catch (err) {
-
         if (err.code === 11000) {
             SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
             httpStatus = 400;
@@ -342,9 +404,10 @@ module.exports.insertProducts = async (req, res) => {
 module.exports.deleteApp = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
+    console.log(req.body, "request vodyyyyyyyyyyyh");
     try {
         const updateUser = await usersModel.updateMany({ storeId: req.body.id }, { $set: { deleted: true } }, { new: true }).lean().exec();
-
+        console.log("app deleteddddddddd", updateUser);
         rcResponse.data = updateUser
 
     } catch (err) {
