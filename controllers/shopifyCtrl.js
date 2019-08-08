@@ -90,6 +90,7 @@ function securityCheck(req) {
 };
 
 module.exports.auth = async (req, res, next) => {
+    console.log("aaaaaaa");
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     try {
@@ -120,68 +121,10 @@ module.exports.auth = async (req, res, next) => {
                     httpStatus = 500;
                 }
             });
-
-            //Creating WebHook For Order And App Delete
-            let webhookRequestUrl = 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json';
-            let head = {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Shopify-Access-Token': accessToken
-            }
-
-            let appUninstallHookPayload = {
-                "webhook": {
-                    "topic": "app/uninstalled",
-                    "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
-                    "format": "json"
-                }
-            }
-            let orderHookPayload = {
-                "webhook": {
-                    "topic": "orders/create",
-                    "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
-                    "format": "json"
-                }
-            }
-
-            let scriptPayload = {
-                "script_tag": {
-                  "event": "onload",
-                  "src": "https://bargain-bot.webrexstudio.com/chat/bargi.js",
-                  "display_scope": "online_store"
-                }
-              }
-
-            let promiseArray = [];
-            let options = {
-                method: 'POST',
-                uri: webhookRequestUrl,
-                body: appUninstallHookPayload,
-                json: true,
-                headers: head
-            };
-
-            let options1 = {
-                method: 'POST',
-                uri: webhookRequestUrl,
-                body: orderHookPayload,
-                json: true,
-                headers: head
-            };
-
-            let scriptRequest = {
-                method: 'POST',
-                uri: 'https://' + shopUrl + '/admin/api/2019-07/script_tags.json',
-                body: scriptPayload,
-                json: true,
-                headers: head
-            }
-
-            promiseArray.push(request(options))
-            promiseArray.push(request(options1))
-            promiseArray.push(request(scriptRequest))
             
+            console.log(accessToken, "hhhhhhhhhhhhh")
 
-            await Promise.all(promiseArray).then(async responses => { console.log(responses.length)});
+           
 
             const findUser = await usersModel.findOne({ shopUrl: shopUrl }).lean().exec();
             if (!findUser) {
@@ -268,6 +211,70 @@ module.exports.auth = async (req, res, next) => {
 
                 rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
             }
+
+            console.log("user created");
+
+            //  Creating WebHook For Order And App Delete
+            //  let webhookRequestUrl = 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json';
+            //  let head = {
+            //      'X-Shopify-Access-Token': accessToken
+            //  }
+ 
+            //  let appUninstallHookPayload = {
+            //      "webhook": {
+            //          "topic": "app/uninstalled",
+            //          "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
+            //          "format": "json"
+            //      }
+            //  }
+            //  let orderHookPayload = {
+            //      "webhook": {
+            //          "topic": "orders/create",
+            //          "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
+            //          "format": "json"
+            //      }
+            //  }
+ 
+            //  let scriptPayload = {
+            //      "script_tag": {
+            //        "event": "onload",
+            //        "src": "https://bargain-bot.webrexstudio.com/chat/bargi.js",
+            //        "display_scope": "online_store"
+            //      }
+            //    }
+ 
+            //  let promiseArray = [];
+            //  let options = {
+            //      method: 'POST',
+            //      uri: webhookRequestUrl,
+            //      body: appUninstallHookPayload,
+            //      json: true,
+            //      headers: head
+            //  };
+ 
+            //  let options1 = {
+            //      method: 'POST',
+            //      uri: webhookRequestUrl,
+            //      body: orderHookPayload,
+            //      json: true,
+            //      headers: head
+            //  };
+ 
+            //  let scriptRequest = {
+            //      method: 'POST',
+            //      uri: 'https://' + shopUrl + '/admin/api/2019-07/script_tags.json',
+            //      body: scriptPayload,
+            //      json: true,
+            //      headers: head
+            //  }
+ 
+            //  promiseArray.push(request(options))
+            //  promiseArray.push(request(options1))
+            //  promiseArray.push(request(scriptRequest))
+             
+            //  console.log("pushhhhh", promiseArray);
+            //  await Promise.all(promiseArray).then(async responses => { console.log("responsesss webhook createddddd")});
+
         }
         else {
             SetResponse(rcResponse, 400, "Invalid Shop Domain or Url Verification failed", false);
@@ -282,6 +289,7 @@ module.exports.auth = async (req, res, next) => {
             httpStatus = 500;
         }
     }
+    console.log("return");
     return res.status(httpStatus).send(rcResponse);
 };
 
