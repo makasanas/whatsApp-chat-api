@@ -49,6 +49,9 @@ router.put('/user/:userId', checkToken.validateToken, checkToken.isAdminUser, au
 /* user password update */
 router.put('/user/updatepassword/:userId', checkToken.validateToken, checkToken.isAdminUser, authCtrl.userPasswordUpdate);
 
+/* Get User profile information */
+router.post('/user/forgetPassword', authCtrl.forgetPassword);
+
 /*****************************
  Products
  *****************************/

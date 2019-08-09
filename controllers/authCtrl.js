@@ -11,6 +11,7 @@ const userModel = require('./../models/usersModel');
 const utils = require('./../helpers/utils');
 const ObjectId = require('mongoose').Types.ObjectId;
 const activePlan = require('./../models/activePlan');
+var nodemailer = require("nodemailer");
 
 
 /* Authenticate user */
@@ -53,7 +54,7 @@ module.exports.login = async (req, res) => {
 				email: findUser.email,
 				phone: findUser.phone,
 				storeId: findUser.storeId,
-				passwordSet:findUser.passwordSet,
+				passwordSet: findUser.passwordSet,
 				token: token,
 				plan: planObj
 			};
@@ -84,58 +85,6 @@ module.exports.login = async (req, res) => {
 	return res.status(httpStatus).send(rcResponse);
 };
 
-/* Register user */
-// module.exports.register = async (req, res) => {
-// 	/* Contruct response object */
-// 	let rcResponse = new ApiResponse();
-// 	let httpStatus = 200;
-
-// 	/* Check body params */
-// 	if (!req.body.email || !req.body.password || !req.body.name || !req.body.phone || !req.body.type) {
-// 		SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
-// 		httpStatus = 400;
-// 		return res.status(httpStatus).send(rcResponse);
-// 	}
-
-// 	/* Check admin Key, if it's Admin user */
-// 	if (parseInt(req.body.type) === 1 && req.body.adminKey !== process.env['ADMIN_KEY']) {
-// 		SetResponse(rcResponse, 401, RequestErrorMsg('InvalidAdminKey', req, null), false);
-// 		httpStatus = 401;
-// 		return res.status(httpStatus).send(rcResponse);
-// 	}
-
-// 	try {
-// 		const passHash = await utils.generatePasswordHash(req.body.password);
-// 		const userObj = {
-// 			name: req.body.name,
-// 			email: req.body.email,
-// 			phone: req.body.phone,
-// 			password: passHash,
-// 			role: parseInt(req.body.type)
-// 		};
-
-// 		const createUser = await userModel.create(userObj);
-
-// 		const encodedData = {
-// 			userId: createUser._id,
-// 			role: createUser.role
-// 		};
-// 		// generate accessToken using JWT
-// 		const token = jwt.sign(encodedData, process.env['SECRET']);
-
-// 		rcResponse.data = { _id: createUser._id, role: createUser.role, name: createUser.name, email: createUser.email, phone: createUser.phone, token: token };
-// 	} catch (err) {
-// 		if (err.code === 11000) {
-// 			SetResponse(rcResponse, 400, RequestErrorMsg('EmailExists', req, null), false);
-// 			httpStatus = 400;
-// 		} else {
-// 			SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-// 			httpStatus = 500;
-// 		}
-// 	}
-// 	return res.status(httpStatus).send(rcResponse);
-// };
-
 /* Get user's profile information */
 module.exports.getUserProfile = async (req, res) => {
 	/* Contruct response object */
@@ -145,12 +94,12 @@ module.exports.getUserProfile = async (req, res) => {
 	try {
 		const { decoded } = req;
 		console.log(decoded);
-		const userData = await userModel.findOne({ _id: decoded.id, deleted: false }, { password: 0, accessToken:0 }).lean().exec();
+		const userData = await userModel.findOne({ _id: decoded.id, deleted: false }, { password: 0, accessToken: 0 }).lean().exec();
 		const currentPlan = await activePlan.findOne({ shopUrl: userData.shopUrl }).lean().exec();
 		let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
 
 
-		rcResponse.data = { ...userData, plan:planObj };
+		rcResponse.data = { ...userData, plan: planObj };
 	} catch (err) {
 		SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
 		httpStatus = 500;
@@ -219,3 +168,63 @@ module.exports.userPasswordUpdate = async (req, res) => {
 	}
 	return res.status(httpStatus).send(rcResponse);
 };
+
+module.exports.forgetPassword = async (req, res) => {
+	/* Contruct response object */
+	let rcResponse = new ApiResponse();
+	let httpStatus = 200;
+
+	/* Check body params */
+	if (!req.body.email) {
+		SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
+		httpStatus = 400;
+		return res.status(httpStatus).send(rcResponse);
+	}
+
+	try {
+		/* Check if email exists */
+		const findUser = await userModel.findOne({ email: req.body.email }).lean().exec();
+		if (findUser) {
+
+			var smtpTransport = nodemailer.createTransport({
+				service: "Gmail",
+				host: "smtp.gmail.com",
+				auth: {
+					user: "dudharejiyarahul@gmail.com",
+					pass: "rd@2747rd"
+				}
+			});
+
+			let mailBody = "You are recived this mail because you have requested for reset password of your account in Bargain Bot. \n\n " +
+				"Please Click on the following link, or paste this into your browser to complete the process for reseting password. \n \n" +
+				"link generate \n \n" +
+				"If you did not request this, please ignore this email and your password will remain unchanged. \n";
+
+			var mailOptions = {
+				to: findUser.email,
+				subject: 'Reset Password | Bargain Bot',
+				text: mailBody
+			}
+			smtpTransport.sendMail(mailOptions, function (error, response) {
+				if (error) {
+					console.log(error);
+					res.end("error");
+				} else {
+					console.log("Message sent:");
+					
+					res.end("sent");
+				}
+			});
+
+		} else {
+			SetResponse(rcResponse, 403, RequestErrorMsg('userNotFound', req, null), false);
+			httpStatus = 403;
+			return res.status(httpStatus).send(rcResponse);
+		}
+	} catch (err) {
+		SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+		httpStatus = 500;
+	}
+	return res.status(httpStatus).send(rcResponse);
+}
+

@@ -13,8 +13,9 @@ var chat = require('../chat/chat');
 /**
  * Get port from environment and store in Express.
  */
-
 var port = normalizePort(process.env.PORT || '3000');
+console.log(port,"portttt")
+
 app.set('port', port);
 
 /**

@@ -157,13 +157,13 @@ module.exports.auth = async (req, res, next) => {
 
                     console.log("before");
                     //create Webhook
-                    let webhookArry = await createWebHook(accessToken, shopUrl);
+                    // let webhookArry = await createWebHook(accessToken, shopUrl);
 
                     console.log("after");
 
-                    console.log(webhookArry, "##############");
+                    // console.log(webhookArry, "##############");
 
-                    Promise.all(webhookArry).then(responses => {
+                    // Promise.all(webhookArry).then(responses => {
                         console.log("responsesss webhook createddddd")
                         const encodedData = {
                             id: userSave._id,
@@ -184,7 +184,7 @@ module.exports.auth = async (req, res, next) => {
                         rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
                         return res.status(httpStatus).send(rcResponse);
 
-                    });
+                    // });
 
                 }).catch(function (error) {
                     if (error.code === 11000) {

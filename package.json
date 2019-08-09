@@ -7,8 +7,9 @@
     "node": "8.9.0"
   },
   "scripts": {
-    "start": "nodemon ./bin/www",
-    "dev": "PORT=4000 nodemon ./bin/www"
+    "start-local": "MONGO_URL=mongodb://127.0.0.1:27017/bargainBotDB nodemon ./bin/www",
+    "start-dev": "NODE_ENV=dev PORT=4000 MONGO_URL=mongodb://127.0.0.1:27017/bargainBotDBDev nodemon ./bin/www",
+    "start-prod": "NODE_ENV=prod PORT=4001 MONGO_URL=mongodb://127.0.0.1:27017/bargainBotDBProd nodemon ./bin/www"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -31,6 +32,7 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "serve-favicon": "~2.3.0",
-    "socket.io": "^2.2.0"
+    "socket.io": "^2.2.0",
+    "nodemailer": "latest"
   }
 }
