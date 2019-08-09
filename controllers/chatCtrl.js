@@ -33,7 +33,6 @@ module.exports.findAndUpdateSession = async (data) => {
         data.maxBargainingCount ? updateData.maxBargainingCount = data.maxBargainingCount : null ;
         data.lastOffer ? updateData.lastOffer = data.lastOffer : null ;
         
-        console.log(updateData);
         await sessionModel.findByIdAndUpdate(ObjectId(data.session), updateData , {new: true})
         .then(session => {
             if(!session) {
@@ -66,7 +65,6 @@ module.exports.findAndUpdateSession = async (data) => {
                     message: "Note not found with id " + req.params.noteId
                 });
             }
-            console.log("anasew");
             rcResponse.data = session;
         }).catch(err => {
             if(err.kind === 'ObjectId') {
@@ -80,7 +78,6 @@ module.exports.findAndUpdateSession = async (data) => {
     catch(err) {
         return rcResponse.data;
     }
-    console.log("return");
 
     return rcResponse.data;
  };
@@ -131,8 +128,6 @@ module.exports.findAndUpdateSession = async (data) => {
     }
     try {
 		await sessionModel.findOne({ _id: ObjectId(req.params._id), 'productId': req.params.productId}).select('-sessionData.count -sessionData.maxBargainingCount').exec(function (err, obj) {
-            console.log(obj);
-            console.log(err);
             const sessionData = obj;
             rcResponse.data = sessionData;
             return res.status(httpStatus).send(rcResponse);
@@ -143,5 +138,4 @@ module.exports.findAndUpdateSession = async (data) => {
         httpStatus = 500;
         return res.status(httpStatus).send(rcResponse);
     }
-    console.log("httpStatus");
   };

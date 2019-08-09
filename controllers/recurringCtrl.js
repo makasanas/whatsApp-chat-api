@@ -28,14 +28,11 @@ module.exports.create = async (req, res) => {
 }
 
 module.exports.getPlan = async (req, res) => {
-    console.log("innnnnnnnnnninnnnnnnnnnninnnnnnnnnnninnnnnnnnnnn")
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     const { decoded } = req;
     try {
-        console.log(decoded.id);
         const findPlan = await activePlan.findOne({ userId: decoded.id }).lean().exec();
-        console.log(findPlan, "**********")
         rcResponse.data = findPlan
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -108,7 +105,6 @@ module.exports.activePlan = async (req, res) => {
                 rcResponse.data = planSave
             }
         }).catch(function (err) {
-            console.log(err);
             SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
         });
     } catch (err) {

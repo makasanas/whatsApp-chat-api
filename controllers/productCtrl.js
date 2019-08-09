@@ -34,7 +34,6 @@ module.exports.createNewProduct = async (req, res) => {
     SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
     httpStatus = 400;
   }
-  console.log(req.decoded);
   try {
     productObj = {
       title: req.body.title,
@@ -54,9 +53,7 @@ module.exports.createNewProduct = async (req, res) => {
   } catch (err) {
     if (err.code === 11000) {
       productObj['deleted'] = false;
-      console.log(productObj);
       const updateProduct = await productModel.findOneAndUpdate({ productId: productObj.productId }, { $set: productObj }, { new: true }).lean().exec();
-      console.log(updateProduct);
       rcResponse.data = updateProduct;
     } else {
       SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);

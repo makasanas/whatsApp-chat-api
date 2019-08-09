@@ -96,7 +96,6 @@ module.exports.planCheck = async (req, res, next) => {
   const count = await productModel.count({ userId: req.decoded.id, deleted:false });
   var activePaln = plans.find(plan => plan.name == currentPlan.planName)
 
-  console.log(currentPlan,count,activePaln);
 
   if (activePaln.product <= count) {
     SetResponse(rcResponse, 403, RequestErrorMsg('PlanLimit', req, null), false);
@@ -109,14 +108,11 @@ module.exports.planCheck = async (req, res, next) => {
 
 
 module.exports.validateWebhook = async (req,res,next) => {
-  console.log(req.body);
   let rcResponse = new ApiResponse();
       const hash = await crypto
       .createHmac('sha256', secretKey)
       .update(Buffer.from(req.rawbody))   
       .digest('base64')
-      console.log("shopifyhash" , hash);
-    console.log("shopifyhash" ,req.headers['x-shopify-hmac-sha256']);
 
   if (hash == req.headers['x-shopify-hmac-sha256']) {
       next()
