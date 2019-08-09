@@ -4,6 +4,7 @@ const uuid = require('uuid');
 const productModel = require('./../models/productModel');
 const discountModel = require('./../models/discountModel');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
+const chatCtrl = require('./../controllers/chatCtrl');
 
 
 
@@ -166,26 +167,75 @@ const intents = [
 module.exports.process = (client) => {
     let timeout;
     client.on('join', (data) => {
-        console.log("cliensg getting connect")
     });
 
     client.on('frontend-message', async (message) => {
-        console.log(message);
-        clearTimeout(timeout);
-        let replay = await this.sendTextMessageToDialogFlow(message);
-        client.emit('backend-message', replay);
+
+        //update session 
+        let session = await chatCtrl.findAndUpdateSession(message);
+        if(session.sessionData){
+            message = session.sessionData[session.sessionData.length -1]
+        }
+
+        message.count = session.count;
+        message.maxBargainingCount = session.maxBargainingCount;
+        message.lastOffer = session.lastOffer;
+
+        let reply = await this.sendTextMessageToDialogFlow(message);
+
+        //update session on reply
+        reply['type'] = 'recieved';
+        reply['session'] = session._id;
+        reply['productId'] = session.productId;
+        session = await chatCtrl.findAndUpdateSession(reply);
+
+        let replyMessage = {
+            message : reply.message,
+            type: reply.type,
+            coupon: reply.coupon
+        }
+        client.emit('backend-message', replyMessage);
     });
 
     client.on('generateCoupon-message', async (message) => {
-        let replay = await this.generateCoupon(message);
-        console.log(replay);
-        client.emit('backend-message', replay);
+        let session = await chatCtrl.findSession(message);
+        if(session.sessionData){
+            message = session.sessionData[session.sessionData.length -1]
+        }
+
+        message.count = session.count;
+        message.maxBargainingCount = session.maxBargainingCount;
+        message.lastOffer = session.lastOffer;
+        console.log(message);
+        let reply = await this.generateCoupon(message);
+        
+        reply.session = session._id;
+        reply.type = "recieved"
+
+        session = await chatCtrl.findAndUpdateSession(reply);
+
+        let replyMessage = {
+            message : reply.message,
+            type: reply.type,
+            coupon: reply.coupon
+        }
+        client.emit('backend-message', replyMessage);
     });
 
     client.on('checkProduct-message', async (message) => {
-        let product = await this.checkBargaining(message);
 
-        client.emit('product-eligible', product);
+        //check product
+        let product = await this.checkBargaining(message);
+        
+        // create session if not
+        let session = {};
+        if(product.productEligible && !message.session){
+            session = await chatCtrl.createSession(message);
+            message['session'] = session._id;
+        }
+
+        message['productEligible'] = product.productEligible;
+        client.emit('product-eligible', message);
 
         // if (product.productEligible) {
         //     var replay = await this.firstMessage(product.productInfo);
@@ -320,13 +370,11 @@ module.exports.getRandomInt = (min, max) => {
 
 
 module.exports.generateNextDiscount = (lastDiscount) => {
-    console.log(lastDiscount);
     if (lastDiscount > 50)
         lastDiscount = 50
     var matchCondition = nextDiscountLogic.filter((logic) => {
         return logic.maxValue >= lastDiscount
     });
-    console.log(matchCondition[0])
     if (matchCondition[0])
         return this.getRandomInt(matchCondition[0].range.min, matchCondition[0].range.max);
     else
@@ -459,7 +507,6 @@ module.exports.sendTextMessageToDialogFlow = async (textMessage) => {
 
     try {
         let responses = await this.sessionClient.detectIntent(request);
-        console.log(responses[0].queryResult.intent.displayName);
         var messageIntent = intents.filter((intent) => {
             return intent.value.toLowerCase() === responses[0].queryResult.intent.displayName.toLowerCase();
         });
@@ -491,11 +538,9 @@ module.exports.generateCoupon = async (message) => {
     let productInfo = await productModel.findOne({ productId: message.productId, deleted: false }).populate('userId').lean().exec();
     let discountCount = await discountModel.count({ shopUrl: productInfo.shopUrl, deleted: false }) + 1;
     let replay ={}
-    console.log(productInfo, discountCount);
     var ends_at = new Date();
     ends_at.setDate(ends_at.getDate() + 1);
     let code = await this.coupenCode(8);
-    console.log(code);
     let coupen = 'BR' + productInfo.shopUrl.substring(0,2).toUpperCase() + code;
 
     let price_rule = {
@@ -521,13 +566,9 @@ module.exports.generateCoupon = async (message) => {
         }
     }
 
-    console.log(price_rule);
     await shopifyReuest.post('https://' + productInfo.shopUrl + '/admin/price_rules.json', productInfo.userId.accessToken, price_rule).then(async (response) => {
-        console.log(response.body);
         price_rule = response.body;
-        console.log(response.body.price_rule.id);
         await shopifyReuest.post('https://' + productInfo.shopUrl + '/admin/price_rules/' + response.body.price_rule.id + '/discount_codes.json', productInfo.userId.accessToken, discount_code).then(async (response) => {
-            console.log(response.body);
             let data = {
                 productId: productInfo._id,
                 discountValue: message.lastOffer,
@@ -553,7 +594,6 @@ module.exports.generateCoupon = async (message) => {
             };
         });
     }).catch( (err) => {
-        console.log(err.error);
         if(err.error.value){
             replay =  {
                 message: "something happen wrong with discount value",
@@ -572,38 +612,11 @@ module.exports.generateCoupon = async (message) => {
     });
 
     return replay;
-    // https://dev-srore.myshopify.com/admin/price_rules.json
-    //    {
-    // "price_rule": {
-    //   "title": "15OFFCOLLECTION",
-    //   "target_type": "line_item",
-    //   "target_selection": "entitled",
-    //   "allocation_method": "across",
-    //   "value_type": "percentage",
-    //   "value": "-15.0",
-    //   "usage_limit": 1,
-    //   "customer_selection": "all",
-    //   "entitled_product_ids": [
-    //     9169694276
-    //   ],
-    //   "starts_at": "2017-01-19T17:59:10Z",
-    //   "ends_at":"2017-01-20T17:59:10Z"
-    // }
-    //   }
-
-    //https://dev-srore.myshopify.com/admin/price_rules/343720460339/discount_codes.json
-    // {
-    //     "discount_code": {
-    //       "code": "15OFFCOLLECTION"
-    //     }
-    //   }
-
 }
 
 
 module.exports.checkBargaining = async (message) => {
     let productInfo = await productModel.findOne({ productId: parseInt(message.productId), shopUrl: message.shopUrl, deleted: false }).lean().exec();
-    console.log(productInfo);
     if (productInfo) {
         return {
             productId: productInfo.productId,
