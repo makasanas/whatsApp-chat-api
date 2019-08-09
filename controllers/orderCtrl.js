@@ -45,7 +45,6 @@ module.exports.getAnalyticOrders = async (req, res) => {
 
 /* Order Analytics Create */
 module.exports.orders = async (req, res) => {
-  console.log("webhook is workingggggggggggggggggggggggg");
   let rcResponse = new ApiResponse();
   let httpStatus = 200;
   rcResponse.message = 'ok';
@@ -64,29 +63,22 @@ module.exports.orders = async (req, res) => {
     //Saving current order
     const createOrder = await ordersModel.create(data);
 
-    console.log(createOrder, "first log after webhook workeddddddddddddddddddddddd");
 
     let result = await data.discount_codes.map(coupen => coupen.code);
 
-    console.log("result ====== = ==  = = = = ", result);
 
     const discountList = await discountModel.findOne({ discount_code: result[0], shopUrl: data.shopUrl }).exec((err, doc) => {
-      console.log("findeddddd");
-      console.log(doc, "###############################");
 
       let responseData = {}
       if (doc) {
 
         const getProduct = productModel.findOne({ _id: doc.productId }).exec(async (err, product) => {
 
-          console.log(product, "producttttttt");
 
           var foundProduct = await req.body.line_items.find(element => {
-            console.log(element, "@@@@@@@@@@@@@@@@@@@@@@@@@@");
 
             return element.product_id == product.productId;
           });
-          console.log(foundProduct,"foundedddd");
 
           let originalDiscount = ((foundProduct.price * foundProduct.quantity) * product.discountValue) / 100;
           let botDiscount = foundProduct.discount_allocations[0].amount;

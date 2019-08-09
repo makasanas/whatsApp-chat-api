@@ -206,7 +206,6 @@ module.exports.process = (client) => {
         message.count = session.count;
         message.maxBargainingCount = session.maxBargainingCount;
         message.lastOffer = session.lastOffer;
-        console.log(message);
         let reply = await this.generateCoupon(message);
         
         reply.session = session._id;

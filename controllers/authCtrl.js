@@ -93,8 +93,7 @@ module.exports.getUserProfile = async (req, res) => {
 
 	try {
 		const { decoded } = req;
-		console.log(decoded);
-		const userData = await userModel.findOne({ _id: decoded.id, deleted: false }, { password: 0, accessToken: 0 }).lean().exec();
+		const userData = await userModel.findOne({ _id: decoded.id, deleted: false }, { password: 0, accessToken:0 }).lean().exec();
 		const currentPlan = await activePlan.findOne({ shopUrl: userData.shopUrl }).lean().exec();
 		let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
 
@@ -129,7 +128,6 @@ module.exports.userUpdate = async (req, res) => {
 		//   httpStatus = 400;
 		// }
 	} catch (err) {
-		console.log(err);
 		if (err.code == 11000) {
 			SetResponse(rcResponse, 400, RequestErrorMsg('EmailExists', req, null), false);
 			httpStatus = 400;
@@ -211,7 +209,7 @@ module.exports.forgetPassword = async (req, res) => {
 					res.end("error");
 				} else {
 					console.log("Message sent:");
-					
+
 					res.end("sent");
 				}
 			});

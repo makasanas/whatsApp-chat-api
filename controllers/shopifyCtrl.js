@@ -37,30 +37,6 @@ module.exports.accessToken = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 };
 
-/* module.exports.install = async (req, res, next) => {
-    try {
-        if (!req.query.shop) {
-            res.render('install', {});
-        } else {
-            var shop = req.query.shop;
-            var appId = process.env.appId;
-            var appScope = process.env.appScope;
-            var appshopUrl = process.env.appshopUrl;
-
-            //build the url
-            var installUrl = `https://${shop}/admin/oauth/authorize?client_id=${appId}&scope=${appScope}&redirect_uri=http://${appshopUrl}/shopify/auth`;
-
-            if (false) {
-                res.redirect('/shopify/app?shop=' + shop);
-            } else {
-                res.redirect(installUrl);
-            }
-        }
-    } catch (err) {
-        console.log(err);
-        next(new Error('Not Found'))
-    }
-}; */
 
 function securityCheck(req) {
     let securityPass = false;
@@ -89,16 +65,15 @@ function securityCheck(req) {
     return securityPass && regex;
 };
 
-module.exports.auth = async (req, res, next) => {
-    console.log("aaaaaaa");
-    let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-    try {
-        let appId = process.env.appId;
-        let appSecret = process.env.appSecret;
-        let shopUrl = req.query.shop;
-        let code = req.query.code;
+generatorAcessToekn = async(req, res) => {
+    let url;
+    let accessToken;
+    let appId = process.env.appId;
+    let appSecret = process.env.appSecret;
+    let shopUrl = req.query.shop;
+    let code = req.query.code;
 
+    try {
         if (securityCheck(req)) {
             //Exchange temporary code for a permanent access token
             let accessTokenRequestUrl = 'https://' + shopUrl + '/admin/oauth/access_token';
@@ -107,8 +82,7 @@ module.exports.auth = async (req, res, next) => {
                 client_secret: appSecret,
                 code,
             };
-            let url;
-            let accessToken;
+            
             await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
                 url = 'https://' + shopUrl + '/admin/shop.json';
                 accessToken = response.access_token;
@@ -121,116 +95,8 @@ module.exports.auth = async (req, res, next) => {
                     httpStatus = 500;
                 }
             });
-
-            console.log(accessToken, "hhhhhhhhhhhhh")
-
-            const findUser = await usersModel.findOne({ shopUrl: shopUrl }).lean().exec();
-            if (!findUser) {
-                await shopifyReuest.get(url, accessToken).then(async (response) => {
-                    let UserObj = {
-                        storeName: response.body.shop.name,
-                        shopUrl: response.body.shop.domain,
-                        hasDiscounts: response.body.shop.has_discounts,
-                        storeId: response.body.shop.id,
-                        email: response.body.shop.email,
-                        phone: response.body.shop.phone,
-                        accessToken: accessToken,
-                        recurringPlanName: 'Free'
-                    };
-
-                    const user = new usersModel(UserObj);
-                    const userSave = await user.save();
-
-                    let currentPlan = {
-                        shopUrl: response.body.shop.domain,
-                        userId: userSave._id,
-                        planName: "Free",
-                        planPrice: 0,
-                        status: "active",
-                        type: "Lifetime",
-                        started: Date.now(),
-                        products: process.env.Free
-                    }
-
-                    const plan = new activePlan(currentPlan);
-                    const planSave = await plan.save();
-
-                    console.log("before");
-                    //create Webhook
-                    // let webhookArry = await createWebHook(accessToken, shopUrl);
-
-                    console.log("after");
-
-                    // console.log(webhookArry, "##############");
-
-                    // Promise.all(webhookArry).then(responses => {
-                        console.log("responsesss webhook createddddd")
-                        const encodedData = {
-                            id: userSave._id,
-                            accessToken: userSave.accessToken,
-                            shopUrl: userSave.shopUrl,
-                            email: userSave.email,
-                            role: userSave.role,
-                            plan: currentPlan.planName,
-                            type: currentPlan.type,
-                            started: currentPlan.started
-                        };
-                        // generate accessToken using JWT
-                        const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-
-                        let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
-                        let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
-
-                        rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
-                        return res.status(httpStatus).send(rcResponse);
-
-                    // });
-
-                }).catch(function (error) {
-                    if (error.code === 11000) {
-                        SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
-                        httpStatus = 400;
-                    } else if (error.statusCode) {
-                        SetResponse(rcResponse, error.statusCode, error.error, false);
-                        httpStatus = error.statusCode;
-                    } else {
-                        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
-                        httpStatus = 500;
-                    }
-                });
-            } else {
-                console.log("in elseeeeeeeeeeeeeeee", findUser);
-                const userSave = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: accessToken, deleted: false } }, { new: true }).lean().exec();
-                console.log("updated userrrrrr", userSave)
-                // const userSave = findUser;
-                const currentPlan = await activePlan.findOne({ shopUrl: shopUrl }).lean().exec();
-
-                const encodedData = {
-                    id: userSave._id,
-                    accessToken: userSave.accessToken,
-                    shopUrl: userSave.shopUrl,
-                    email: userSave.email,
-                    role: userSave.role,
-                    plan: currentPlan.planName,
-                    type: currentPlan.type,
-                    started: currentPlan.started
-                };
-
-                const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-
-                let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
-                let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
-
-                rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
-                return res.status(httpStatus).send(rcResponse);
-            }
         }
-        else {
-            SetResponse(rcResponse, 400, "Invalid Shop Domain or Url Verification failed", false);
-            httpStatus = 400;
-            return res.status(httpStatus).send(rcResponse);
-        }
-    } catch (err) {
+    }catch (err) {
         if (err.code === 11000) {
             SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
             httpStatus = 400;
@@ -239,8 +105,136 @@ module.exports.auth = async (req, res, next) => {
             httpStatus = 500;
         }
     }
-    console.log("return");
 
+    return {
+        url: url,
+        accessToken:accessToken,
+        shopUrl: shopUrl
+    }
+}
+
+createShop = async (req, res, shopData, rcResponse, httpStatus) => {
+    try{
+        await shopifyReuest.get(shopData.url, shopData.accessToken).then(async (response) => {
+            let UserObj = {
+                storeName: response.body.shop.name,
+                shopUrl: response.body.shop.domain,
+                hasDiscounts: response.body.shop.has_discounts,
+                storeId: response.body.shop.id,
+                email: response.body.shop.email,
+                phone: response.body.shop.phone,
+                accessToken: shopData.accessToken,
+                recurringPlanName: 'Free'
+            };
+    
+            const user = new usersModel(UserObj);
+            const userSave = await user.save();
+    
+            let currentPlan = {
+                shopUrl: response.body.shop.domain,
+                userId: userSave._id,
+                planName: "Free",
+                planPrice: 0,
+                status: "active",
+                type: "Lifetime",
+                started: Date.now(),
+                products: process.env.Free
+            }
+    
+            const plan = new activePlan(currentPlan);
+            const planSave = await plan.save();
+    
+            const encodedData = {
+                id: userSave._id,
+                accessToken: userSave.accessToken,
+                shopUrl: userSave.shopUrl,
+                email: userSave.email,
+                role: userSave.role,
+                plan: currentPlan.planName,
+                type: currentPlan.type,
+                started: currentPlan.started
+            };
+            // generate accessToken using JWT
+            const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+    
+            let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
+            let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
+    
+            rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
+    
+        }).catch(function (error) {
+            if (error.statusCode) {
+                SetResponse(rcResponse, error.statusCode, error.error, false);
+                httpStatus = error.statusCode;
+            } else {
+                SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
+                httpStatus = 500;
+            }
+        })
+    }catch (err) {
+        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+        httpStatus = 500;
+    }
+
+    return {
+        httpStatus: httpStatus,
+        rcResponse: rcResponse
+    };
+}
+
+createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
+
+    const findUser = await usersModel.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
+    try {
+        if (!findUser) {
+            let webhookArry = await createWebHook(req, res, shopData.accessToken, shopData.shopUrl, rcResponse);
+
+
+            let response = await createShop(req, res, shopData, rcResponse, httpStatus);
+            httpStatus = response.httpStatus;
+            rcResponse = response.rcResponse;
+            
+        }else{
+            const userSave = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
+            const currentPlan = await activePlan.findOne({ userId: findUser._id }).lean().exec();
+            const encodedData = {
+                id: findUser._id,
+                accessToken: findUser.accessToken,
+                shopUrl: findUser.shopUrl,
+                email: findUser.email,
+                role: findUser.role,
+                plan: currentPlan.planName,
+                type: currentPlan.type,
+                started: currentPlan.started
+            };
+    
+            const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+    
+            let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
+            let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
+    
+            rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
+        }
+    } catch (err) {
+        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+        httpStatus = 500;
+    }
+
+    return {
+        httpStatus: httpStatus,
+        rcResponse:rcResponse
+    };
+}
+
+module.exports.auth = async (req, res, next) => {
+    let rcResponse = new ApiResponse();
+    let httpStatus = 200;
+
+    let shopData = await generatorAcessToekn(req, res);
+
+    let response = await createOrUpdateShop(req, res, shopData, rcResponse, httpStatus);
+
+    return res.status(response.httpStatus).send(response.rcResponse);
 };
 
 module.exports.setPassword = async (req, res) => {
@@ -321,7 +315,6 @@ module.exports.getProducts = async (req, res) => {
                     var index = await result.indexOf(product.productId)
                     responses[0].products[index]['added'] = true;
                 });
-                console.log("find perform");
                 rcResponse.data = { ...responses[0], ...responses[1] }
                 return res.status(httpStatus).send(rcResponse);
             });
@@ -332,7 +325,6 @@ module.exports.getProducts = async (req, res) => {
         return res.status(httpStatus).send(rcResponse);
 
     }
-    console.log("response get called")
 
     // return res.status(httpStatus).send(rcResponse);
 };
@@ -362,10 +354,9 @@ module.exports.insertProducts = async (req, res) => {
 module.exports.deleteApp = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
-    console.log(req.body, "request vodyyyyyyyyyyyh");
+
     try {
         const updateUser = await usersModel.updateMany({ storeId: req.body.id }, { $set: { deleted: true } }, { new: true }).lean().exec();
-        console.log("app deleteddddddddd", updateUser);
         rcResponse.data = updateUser
 
     } catch (err) {
@@ -376,63 +367,75 @@ module.exports.deleteApp = async (req, res) => {
 };
 
 
-function createWebHook(accessToken, shopUrl){
-    console.log("function callllll");
-    //  Creating WebHook For Order And App Delete
-    let webhookRequestUrl = 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json';
-    let head = {
-        'X-Shopify-Access-Token': accessToken
-    }
-    let appUninstallHookPayload = {
-        "webhook": {
-            "topic": "app/uninstalled",
-            "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
-            "format": "json"
-        }
-    }
-    let orderHookPayload = {
-        "webhook": {
-            "topic": "orders/create",
-            "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
-            "format": "json"
-        }
-    }
-    let scriptPayload = {
-        "script_tag": {
-            "event": "onload",
-            "src": "https://bargain-bot.webrexstudio.com/chat/bargi.js",
-            "display_scope": "online_store"
-        }
-    }
+ createWebHook = async (req, res, accessToken, shopUrl, rcResponse) => {
+
+    var hostname = "https://bargaining-bot-api.webrexstudio.com"
+
+    var requests = [
+        {
+            method: 'POST',
+            uri: 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json',
+            body: {
+                "webhook": {
+                    "topic": "app/uninstalled",
+                    "address": hostname+"/webhooks/app/delete",
+                    "format": "json"
+                }
+            },
+            json: true,
+            headers: {
+                'X-Shopify-Access-Token': accessToken
+            }
+        },
+        {
+            method: 'POST',
+            uri: 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json',
+            body: {
+                "webhook": {
+                    "topic": "orders/create",
+                    "address": hostname+"/webhooks/orders/create",
+                    "format": "json"
+                }
+            },
+            json: true,
+            headers: {
+                'X-Shopify-Access-Token': accessToken
+            }
+        },
+        {
+            method: 'POST',
+            uri: 'https://' + shopUrl + '/admin/api/2019-07/script_tags.json',
+            body: {
+                "script_tag": {
+                    "event": "onload",
+                    "src": hostname+"/chat/bargi.js",
+                    "display_scope": "online_store"
+                }
+            },
+            json: true,
+            headers: {
+                'X-Shopify-Access-Token': accessToken
+            }
+        },
+    ]
+
     let promiseArray = [];
-    let options = {
-        method: 'POST',
-        uri: webhookRequestUrl,
-        body: JSON.parse(appUninstallHookPayload),
-        json: true,
-        headers: head
-    };
 
-    let options1 = {
-        method: 'POST',
-        uri: webhookRequestUrl,
-        body: JSON.parse(orderHookPayload),
-        json: true,
-        headers: head
-    };
+    requests.forEach(singleRequest =>{
+        promiseArray.push(request(singleRequest))
+    });
 
-    let scriptRequest = {
-        method: 'POST',
-        uri: 'https://' + shopUrl + '/admin/api/2019-07/script_tags.json',
-        body: JSON.parse(scriptPayload),
-        json: true,
-        headers: head
-    }
+    await Promise.all(promiseArray).then(async responses => {
+        return responses;
+    }).catch(function(error) {
+        if (error.statusCode) {
+            SetResponse(rcResponse, error.statusCode, error.error, false);
+            httpStatus = error.statusCode;
+        } else {
+            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
+            httpStatus = 500;
+        }
+    });
 
-    promiseArray.push(request(options))
-    promiseArray.push(request(options1))
-    promiseArray.push(request(scriptRequest))
-    console.log(promiseArray);
-    return promiseArray;
-
+    return true;
 }
