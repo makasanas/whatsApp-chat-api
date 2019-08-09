@@ -121,10 +121,8 @@ module.exports.auth = async (req, res, next) => {
                     httpStatus = 500;
                 }
             });
-            
-            console.log(accessToken, "hhhhhhhhhhhhh")
 
-           
+            console.log(accessToken, "hhhhhhhhhhhhh")
 
             const findUser = await usersModel.findOne({ shopUrl: shopUrl }).lean().exec();
             if (!findUser) {
@@ -157,23 +155,37 @@ module.exports.auth = async (req, res, next) => {
                     const plan = new activePlan(currentPlan);
                     const planSave = await plan.save();
 
-                    const encodedData = {
-                        id: userSave._id,
-                        accessToken: userSave.accessToken,
-                        shopUrl: userSave.shopUrl,
-                        email: userSave.email,
-                        role: userSave.role,
-                        plan: currentPlan.planName,
-                        type: currentPlan.type,
-                        started: currentPlan.started
-                    };
-                    // generate accessToken using JWT
-                    const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+                    console.log("before");
+                    //create Webhook
+                    let webhookArry = await createWebHook(accessToken, shopUrl);
 
-                    let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
-                    let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
+                    console.log("after");
 
-                    rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
+                    console.log(webhookArry, "##############");
+
+                    Promise.all(webhookArry).then(responses => {
+                        console.log("responsesss webhook createddddd")
+                        const encodedData = {
+                            id: userSave._id,
+                            accessToken: userSave.accessToken,
+                            shopUrl: userSave.shopUrl,
+                            email: userSave.email,
+                            role: userSave.role,
+                            plan: currentPlan.planName,
+                            type: currentPlan.type,
+                            started: currentPlan.started
+                        };
+                        // generate accessToken using JWT
+                        const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+
+                        let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
+                        let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
+
+                        rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
+                        return res.status(httpStatus).send(rcResponse);
+
+                    });
+
                 }).catch(function (error) {
                     if (error.code === 11000) {
                         SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
@@ -210,75 +222,13 @@ module.exports.auth = async (req, res, next) => {
                 let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
 
                 rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
+                return res.status(httpStatus).send(rcResponse);
             }
-
-            console.log("user created");
-
-            //  Creating WebHook For Order And App Delete
-            //  let webhookRequestUrl = 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json';
-            //  let head = {
-            //      'X-Shopify-Access-Token': accessToken
-            //  }
- 
-            //  let appUninstallHookPayload = {
-            //      "webhook": {
-            //          "topic": "app/uninstalled",
-            //          "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
-            //          "format": "json"
-            //      }
-            //  }
-            //  let orderHookPayload = {
-            //      "webhook": {
-            //          "topic": "orders/create",
-            //          "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
-            //          "format": "json"
-            //      }
-            //  }
- 
-            //  let scriptPayload = {
-            //      "script_tag": {
-            //        "event": "onload",
-            //        "src": "https://bargain-bot.webrexstudio.com/chat/bargi.js",
-            //        "display_scope": "online_store"
-            //      }
-            //    }
- 
-            //  let promiseArray = [];
-            //  let options = {
-            //      method: 'POST',
-            //      uri: webhookRequestUrl,
-            //      body: appUninstallHookPayload,
-            //      json: true,
-            //      headers: head
-            //  };
- 
-            //  let options1 = {
-            //      method: 'POST',
-            //      uri: webhookRequestUrl,
-            //      body: orderHookPayload,
-            //      json: true,
-            //      headers: head
-            //  };
- 
-            //  let scriptRequest = {
-            //      method: 'POST',
-            //      uri: 'https://' + shopUrl + '/admin/api/2019-07/script_tags.json',
-            //      body: scriptPayload,
-            //      json: true,
-            //      headers: head
-            //  }
- 
-            //  promiseArray.push(request(options))
-            //  promiseArray.push(request(options1))
-            //  promiseArray.push(request(scriptRequest))
-             
-            //  console.log("pushhhhh", promiseArray);
-            //  await Promise.all(promiseArray).then(async responses => { console.log("responsesss webhook createddddd")});
-
         }
         else {
             SetResponse(rcResponse, 400, "Invalid Shop Domain or Url Verification failed", false);
             httpStatus = 400;
+            return res.status(httpStatus).send(rcResponse);
         }
     } catch (err) {
         if (err.code === 11000) {
@@ -290,7 +240,7 @@ module.exports.auth = async (req, res, next) => {
         }
     }
     console.log("return");
-    return res.status(httpStatus).send(rcResponse);
+
 };
 
 module.exports.setPassword = async (req, res) => {
@@ -424,3 +374,65 @@ module.exports.deleteApp = async (req, res) => {
     }
     return res.status(httpStatus).send(rcResponse);
 };
+
+
+function createWebHook(accessToken, shopUrl){
+    console.log("function callllll");
+    //  Creating WebHook For Order And App Delete
+    let webhookRequestUrl = 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json';
+    let head = {
+        'X-Shopify-Access-Token': accessToken
+    }
+    let appUninstallHookPayload = {
+        "webhook": {
+            "topic": "app/uninstalled",
+            "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
+            "format": "json"
+        }
+    }
+    let orderHookPayload = {
+        "webhook": {
+            "topic": "orders/create",
+            "address": "https://bargain-bot-api.webrexstudio.com/webhooks/app/delete",
+            "format": "json"
+        }
+    }
+    let scriptPayload = {
+        "script_tag": {
+            "event": "onload",
+            "src": "https://bargain-bot.webrexstudio.com/chat/bargi.js",
+            "display_scope": "online_store"
+        }
+    }
+    let promiseArray = [];
+    let options = {
+        method: 'POST',
+        uri: webhookRequestUrl,
+        body: JSON.parse(appUninstallHookPayload),
+        json: true,
+        headers: head
+    };
+
+    let options1 = {
+        method: 'POST',
+        uri: webhookRequestUrl,
+        body: JSON.parse(orderHookPayload),
+        json: true,
+        headers: head
+    };
+
+    let scriptRequest = {
+        method: 'POST',
+        uri: 'https://' + shopUrl + '/admin/api/2019-07/script_tags.json',
+        body: JSON.parse(scriptPayload),
+        json: true,
+        headers: head
+    }
+
+    promiseArray.push(request(options))
+    promiseArray.push(request(options1))
+    promiseArray.push(request(scriptRequest))
+    console.log(promiseArray);
+    return promiseArray;
+
+}
