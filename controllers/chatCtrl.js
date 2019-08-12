@@ -152,7 +152,7 @@ module.exports.findAndUpdateSession = async (data) => {
                 return res.status(httpStatus).send(rcResponse);
             }
 
-            if(Date.now(session.sessionData[session.sessionData.length -1].created) > Date.now() - (5*24*3600000)){
+            if(Date.now(session.sessionData[session.sessionData.length -1].created) < Date.now() - (5*24*3600000)){
                 session.sessionData = [];
                 session.maxBargainingCount = undefined;
                 session.lastOffer = undefined;

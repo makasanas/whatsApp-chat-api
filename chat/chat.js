@@ -262,7 +262,8 @@ module.exports.checkProduct = async (client, message) => {
         let replyMessage = {
             message : reply.message,
             type: message.type,
-            coupon: reply.coupon
+            coupon: reply.coupon,
+            firstMessage: true
         }
 
         client.emit('backend-message', replyMessage);
