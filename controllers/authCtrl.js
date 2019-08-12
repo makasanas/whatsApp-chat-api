@@ -267,6 +267,8 @@ module.exports.resetPassword = async (req, res) => {
 				user.password = passHash;
 				user.resetPasswordExpires = undefined;
 				user.resetPasswordToken = undefined;
+				user.passwordSet = true;
+
 				await user.save(function(err) { 
 					if(err){
 						SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
