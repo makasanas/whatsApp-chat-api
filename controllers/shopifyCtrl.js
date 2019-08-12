@@ -408,7 +408,7 @@ module.exports.deleteApp = async (req, res) => {
             body: {
                 "script_tag": {
                     "event": "onload",
-                    "src": hostname+"/chat/bargi.js",
+                    "src": 'https://bargaining-bot.webrexstudio.com/js/bargaining-bot.js',
                     "display_scope": "online_store"
                 }
             },

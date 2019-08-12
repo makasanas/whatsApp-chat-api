@@ -52,6 +52,9 @@ router.put('/user/updatepassword/:userId', checkToken.validateToken, checkToken.
 /* Get User profile information */
 router.post('/user/forgetPassword', authCtrl.forgetPassword);
 
+router.post('/user/reset/:token', authCtrl.resetPassword);
+
+
 /*****************************
  Products
  *****************************/

@@ -22,7 +22,9 @@ const userSchema = new Schema({
   role: { type: Number, default: 2 },
   created: { type: Date, default: Date.now() },
   deleted: { type: Boolean, default: false },
-  updated: { type: Date, default: Date.now() }
+  updated: { type: Date, default: Date.now() },
+  resetPasswordToken: { type : String},
+  resetPasswordExpires: { type: Date }
 });
 
 module.exports = mongoose.model('Users', userSchema);

@@ -15,10 +15,12 @@ const ErrMessages = {
   NoImage: 'Please select a valid image file',
   ShopExists: 'A Shop already exists please try to login into your shop',
   userNotFound: 'Email does not exists',
+  wrongHappened: 'Something wrong happened please try again',
   ProductExists:'Product alreday enable with discount',
   PasswordNotSet:'Your register with us but password is not set so follow installation process again',
   PlanLimit:'you exceed to your plan limit please upgrade plan to add more product',
-  RequestNotFromShopify:'Request not from shopify'
+  RequestNotFromShopify:'Request not from shopify',
+  tokenInvalid:'Password reset token is invalid or has expired.'
 };
 
 /**

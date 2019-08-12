@@ -12,7 +12,7 @@ const utils = require('./../helpers/utils');
 const ObjectId = require('mongoose').Types.ObjectId;
 const activePlan = require('./../models/activePlan');
 var nodemailer = require("nodemailer");
-
+var crypto = require('crypto');
 
 /* Authenticate user */
 module.exports.login = async (req, res) => {
@@ -167,6 +167,19 @@ module.exports.userPasswordUpdate = async (req, res) => {
 	return res.status(httpStatus).send(rcResponse);
 };
 
+
+const uuid = require('uuid/v4');
+
+const uuidPromise = (u) => new Promise((resolve, reject) => {
+  crypto.randomBytes(16, (err, random) => {
+    if (err) {
+      return reject(err);
+    }
+    resolve(u({random}));
+  });
+});
+
+
 module.exports.forgetPassword = async (req, res) => {
 	/* Contruct response object */
 	let rcResponse = new ApiResponse();
@@ -181,39 +194,49 @@ module.exports.forgetPassword = async (req, res) => {
 
 	try {
 		/* Check if email exists */
-		const findUser = await userModel.findOne({ email: req.body.email }).lean().exec();
+		const findUser = await userModel.findOne({ email: req.body.email }).exec();
 		if (findUser) {
 
-			var smtpTransport = nodemailer.createTransport({
-				service: "Gmail",
-				host: "smtp.gmail.com",
-				auth: {
-					user: "dudharejiyarahul@gmail.com",
-					pass: "rd@2747rd"
-				}
+			var token = await uuidPromise(uuid).then(u => { return u}).catch(e =>{
+				SetResponse(rcResponse, 403, RequestErrorMsg('userNotFound', req, null), false);
+				httpStatus = 403;
+				return res.status(httpStatus).send(rcResponse);
 			});
 
-			let mailBody = "You are recived this mail because you have requested for reset password of your account in Bargain Bot. \n\n " +
-				"Please Click on the following link, or paste this into your browser to complete the process for reseting password. \n \n" +
-				"link generate \n \n" +
-				"If you did not request this, please ignore this email and your password will remain unchanged. \n";
+			findUser.resetPasswordToken = token;
+			findUser.resetPasswordExpires = Date.now() + (24*3600000); // 24 hour
+			
+			await findUser.save();
+
+			var smtpTransport = nodemailer.createTransport({
+				host: "smtp.zoho.com",
+				port: 465,
+    			secure: true, //ssl
+				auth: {
+					user: "hello@webrexstudio.com",
+					pass: "Sanjay.143"
+				}
+			});
+			let mailBody = 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+			'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
+			req.body.appdomain + '/app/set-new-password/?token=' + token +'&email='+findUser.email+' \n\n' +
+			'If you did not request this, please ignore this email and your password will remain unchanged.\n'
 
 			var mailOptions = {
 				to: findUser.email,
 				subject: 'Reset Password | Bargain Bot',
-				text: mailBody
+				text: mailBody,
+				from:'Bargaining Bot <hello@webrexstudio.com>'
 			}
 			smtpTransport.sendMail(mailOptions, function (error, response) {
 				if (error) {
-					console.log(error);
-					res.end("error");
+					SetResponse(rcResponse, 404, RequestErrorMsg('wrongHappened', req, null), false);
+					httpStatus = 404;
+					return res.status(httpStatus).send(rcResponse);
 				} else {
-					console.log("Message sent:");
-
-					res.end("sent");
+					return res.status(httpStatus).send(rcResponse);
 				}
 			});
-
 		} else {
 			SetResponse(rcResponse, 403, RequestErrorMsg('userNotFound', req, null), false);
 			httpStatus = 403;
@@ -223,6 +246,39 @@ module.exports.forgetPassword = async (req, res) => {
 		SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
 		httpStatus = 500;
 	}
-	return res.status(httpStatus).send(rcResponse);
 }
 
+
+
+/* Get user's profile information */
+module.exports.resetPassword = async (req, res) => {
+	/* Contruct response object */
+	let rcResponse = new ApiResponse();
+	let httpStatus = 200;
+
+	try {
+		userModel.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, async function(err, user) {
+			if (!user) {
+				SetResponse(rcResponse, 404, RequestErrorMsg('tokenInvalid', req, null), false);
+				httpStatus = 404;
+				return res.status(httpStatus).send(rcResponse);
+			}else{
+				const passHash = await utils.generatePasswordHash(req.body.password);
+				user.password = passHash;
+				user.resetPasswordExpires = undefined;
+				user.resetPasswordToken = undefined;
+				await user.save(function(err) { 
+					if(err){
+						SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+						httpStatus = 500;
+					}
+					return res.status(httpStatus).send(rcResponse);
+				})
+			}
+			
+		});
+	} catch (err) {
+		SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+		httpStatus = 500;
+	}
+};
