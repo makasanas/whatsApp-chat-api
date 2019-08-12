@@ -478,7 +478,7 @@ module.exports.dynamicResponse = async (responses, textMessage, intent) => {
 
     return {
         message: intent.message[this.getRandomInt(0, intent.message.length - 1)].replace(/%d/g, ($0) => {
-            return offredDiscount
+            return offredDiscount + '%'
         }),
         maxBargainingCount: maxBargainingCount,
         lastOffer: offredDiscount,
@@ -491,7 +491,7 @@ module.exports.dynamicResponse = async (responses, textMessage, intent) => {
 module.exports.discountResponse = async (responses, textMessage, intent) => {
     return {
         message: intent.message[this.getRandomInt(0, intent.message.length - 1)].replace(/%d/g, ($0) => {
-            return textMessage.lastOffer
+            return textMessage.lastOffer+'%'
         }),
         maxBargainingCount: textMessage.maxBargainingCount,
         count: textMessage.count,
