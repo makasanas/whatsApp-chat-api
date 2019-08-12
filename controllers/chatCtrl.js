@@ -139,3 +139,32 @@ module.exports.findAndUpdateSession = async (data) => {
         return res.status(httpStatus).send(rcResponse);
     }
   };
+
+
+  
+  module.exports.findAndClearSession = async (data) => {
+    let rcResponse = new ApiResponse();
+    try {
+        await sessionModel.findById(ObjectId(data.session), async function (err, session) {
+            if(err){
+                SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+                httpStatus = 500;
+                return res.status(httpStatus).send(rcResponse);
+            }
+
+            if(Date.now(session.sessionData[session.sessionData.length -1].created) > Date.now() - (5*24*3600000)){
+                session.sessionData = [];
+                session.maxBargainingCount = undefined;
+                session.lastOffer = undefined;
+                session.count = undefined;
+            }
+
+            rcResponse.data = session;
+            await session.save();
+        });
+    }
+    catch(err) {
+        return rcResponse.data;
+    }
+    return rcResponse.data;
+ };

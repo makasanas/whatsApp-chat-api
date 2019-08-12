@@ -187,12 +187,14 @@ module.exports.process = (client) => {
         reply['type'] = 'recieved';
         reply['session'] = session._id;
         reply['productId'] = session.productId;
+
         session = await chatCtrl.findAndUpdateSession(reply);
 
         let replyMessage = {
             message : reply.message,
             type: reply.type,
-            coupon: reply.coupon
+            coupon: reply.coupon,
+            discountOffer: reply.discountOffer
         }
         client.emit('backend-message', replyMessage);
     });
@@ -221,33 +223,54 @@ module.exports.process = (client) => {
         client.emit('backend-message', replyMessage);
     });
 
+
+
     client.on('checkProduct-message', async (message) => {
-
-        //check product
-        let product = await this.checkBargaining(message);
-        
-        // create session if not
-        let session = {};
-        if(product.productEligible && !message.session){
-            session = await chatCtrl.createSession(message);
-            message['session'] = session._id;
-        }
-
-        message['productEligible'] = product.productEligible;
-        client.emit('product-eligible', message);
-
-        // if (product.productEligible) {
-        //     var replay = await this.firstMessage(product.productInfo);
-        //     timeout = setTimeout(() => {
-        //         client.emit('backend-message', replay);
-        //     }, 20000);
-        // }
+        await this.checkProduct(client, message);
     });
 }
 
-module.exports.runSample = async () => {
 
+module.exports.checkProduct = async (client, message) => {
+    message.productId = parseInt(message.productId);
+
+    //check product
+    let product = await this.checkBargaining(message);
+    
+    // create session if not
+    let session = {};
+    if(product.productEligible && !message.session){
+        session = await chatCtrl.createSession(message);
+        message['session'] = session._id;
+    }else{
+        session = await chatCtrl.findAndClearSession(message);
+        console.log(session);
+        message['session'] = session._id;
+    }
+
+    message['productEligible'] = product.productEligible;
+    client.emit('product-eligible', message);
+
+    
+    if (product.productEligible && session.sessionData && session.sessionData.length === 0) {
+        var reply = await this.firstMessage(product);
+        message.message = reply.message;
+        message['type'] = "recieved";
+
+        session = await chatCtrl.findAndUpdateSession(message);
+
+        let replyMessage = {
+            message : reply.message,
+            type: message.type,
+            coupon: reply.coupon
+        }
+
+        client.emit('backend-message', replyMessage);
+    }
 }
+
+
+
 
 module.exports.getRandomInt = (min, max) => {
     min = Math.ceil(min);
@@ -458,6 +481,7 @@ module.exports.dynamicResponse = async (responses, textMessage, intent) => {
         }),
         maxBargainingCount: maxBargainingCount,
         lastOffer: offredDiscount,
+        discountOffer: true,
         count: textMessage.count + 1
     };
 }
@@ -471,7 +495,8 @@ module.exports.discountResponse = async (responses, textMessage, intent) => {
         maxBargainingCount: textMessage.maxBargainingCount,
         count: textMessage.count,
         lastOffer: textMessage.lastOffer,
-        coupon: true
+        coupon: true,
+        discountOffer: true
     };
 }
 
@@ -631,12 +656,8 @@ module.exports.checkBargaining = async (message) => {
 }
 
 module.exports.firstMessage = async (product) => {
-    var offredDiscount = this.generateFirstNumber(product.discountValue);
-    var maxBargainingCount = this.generateMaxBargainingCount(product.discountValue);
     return {
-        message: 'offred discount ' + offredDiscount,
-        maxBargainingCount: maxBargainingCount,
+        message: 'I am bargaining bot. I can help you with this prodcut discount.',
         count: 0,
-        lastOffer: offredDiscount
     };
 }
