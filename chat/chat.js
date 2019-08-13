@@ -170,7 +170,6 @@ module.exports.process = (client) => {
     });
 
     client.on('frontend-message', async (message) => {
-
         //update session 
         let session = await chatCtrl.findAndUpdateSession(message);
         if(session.sessionData){
@@ -218,7 +217,8 @@ module.exports.process = (client) => {
         let replyMessage = {
             message : reply.message,
             type: reply.type,
-            coupon: reply.coupon
+            coupon: reply.coupon,
+            discount_code: reply.discount_code
         }
         client.emit('backend-message', replyMessage);
     });
@@ -244,7 +244,6 @@ module.exports.checkProduct = async (client, message) => {
         message['session'] = session._id;
     }else{
         session = await chatCtrl.findAndClearSession(message);
-        console.log(session);
         message['session'] = session._id;
     }
 
@@ -609,7 +608,8 @@ module.exports.generateCoupon = async (message) => {
                 message: "Here is your coupen " + discountSave.discount_code+" for "+ discountSave.discountValue +"% and coupe expire in one day",
                 maxBargainingCount: message.maxBargainingCount,
                 count: message.count,
-                lastOffer: discountSave.discountValue
+                lastOffer: discountSave.discountValue,
+                discount_code: discountSave.discount_code
             };
         }).catch( (err)=> {
             replay =  {
@@ -623,7 +623,7 @@ module.exports.generateCoupon = async (message) => {
             replay =  {
                 message: "something happen wrong with discount value",
                 maxBargainingCount: message.maxBargainingCount,
-                count: message.count
+                count: message.count,
             };
         }else if(err.error.errors.code){
             this.generateCoupon(message);
@@ -658,7 +658,7 @@ module.exports.checkBargaining = async (message) => {
 
 module.exports.firstMessage = async (product) => {
     return {
-        message: 'I am bargaining bot. I can help you with this prodcut discount.',
+        message: 'I am bargaining bot. I can help you with this product discount.',
         count: 0,
     };
 }
