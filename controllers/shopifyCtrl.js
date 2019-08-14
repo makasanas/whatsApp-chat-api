@@ -365,6 +365,7 @@ module.exports.deleteApp = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
 
+
     try {
         const user = await userModel.getUserByStoreId(req.body.id);
         if(user){
@@ -388,7 +389,6 @@ module.exports.deleteApp = async (req, res) => {
                 activePlan:deleteActivePlan,
             };
         }else{
-            httpStatus = 404
 			SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopNotExists', req, null), false);
         }
     } catch (err) {
