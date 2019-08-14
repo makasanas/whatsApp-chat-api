@@ -356,6 +356,7 @@ module.exports.deleteApp = async (req, res) => {
     let httpStatus = 200;
 
     try {
+        console.log(req.body);
         const updateUser = await usersModel.updateMany({ storeId: req.body.id }, { $set: { deleted: true } }, { new: true }).lean().exec();
         rcResponse.data = updateUser;
 
