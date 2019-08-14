@@ -110,6 +110,7 @@ module.exports.planCheck = async (req, res, next) => {
 
 module.exports.validateWebhook = async (req,res,next) => {
   let rcResponse = new ApiResponse();
+  console.log(req.url);
   console.log('🎉 We got an order!')
 
   // We'll compare the hmac to our own hash
