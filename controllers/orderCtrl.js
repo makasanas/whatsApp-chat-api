@@ -11,7 +11,7 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./..
 const analyticOrderSchema = require('./../schema/analyticOrder');
 const discountSchema = require('./../schema/discount');
 const productSchema = require('./../schema/product');
-const orderSchema = require('./../Schema/order');
+const orderSchema = require('./../schema/order');
 
 const mongoose = require('mongoose');
 const getRawBody = require('raw-body')

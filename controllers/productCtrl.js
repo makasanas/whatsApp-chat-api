@@ -9,7 +9,7 @@ Description : This file consist of functions related to restaurants
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const productSchema = require('./../schema/product');
-const orderSchema = require('./../Schema/order');
+const orderSchema = require('./../schema/order');
 const discountSchema = require('./../schema/discount');
 const analyticOrderSchema = require('./../schema/analyticOrder');
 
