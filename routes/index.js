@@ -97,9 +97,9 @@ router.post('/recurring/plan/', checkToken.validateToken,  recurringCtrl.create)
 
 router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan);
 
-router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlan);
+router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlanSchema);
 
-router.delete('/recurring/plan/deactive/:planId', checkToken.validateToken,  recurringCtrl.deactivePlan);
+router.delete('/recurring/plan/deactive/:planId', checkToken.validateToken,  recurringCtrl.deactivePlanSchema);
 
 
 /*****************************

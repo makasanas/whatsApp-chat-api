@@ -1,5 +1,5 @@
 /*
-FileName : productModel.js
+FileName : productSchema.js
 Date : 12th March 2019
 Description : This file consist of Product's model fields
 */

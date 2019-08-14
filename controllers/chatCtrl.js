@@ -1,13 +1,15 @@
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
-const sessionModel = require('./../models/sessionModel');
+const sessionSchema = require('./../schema/session');
+
+
 const ObjectId = require('mongoose').Types.ObjectId; 
 
 /* Create Session */
 module.exports.createSession = async (data) => {
     let rcResponse = new ApiResponse();
     try {
-        let session = new sessionModel({
+        let session = new sessionSchema({
             productId: data.productId,
             shopUrl: data.shopUrl
         })
@@ -33,7 +35,7 @@ module.exports.findAndUpdateSession = async (data) => {
         data.maxBargainingCount ? updateData.maxBargainingCount = data.maxBargainingCount : null ;
         data.lastOffer ? updateData.lastOffer = data.lastOffer : null ;
         
-        await sessionModel.findByIdAndUpdate(ObjectId(data.session), updateData , {new: true})
+        await sessionSchema.findByIdAndUpdate(ObjectId(data.session), updateData , {new: true})
         .then(session => {
             if(!session) {
                 return res.status(404).send({
@@ -59,7 +61,7 @@ module.exports.findAndUpdateSession = async (data) => {
  module.exports.findSession = async (data) => {
     let rcResponse = new ApiResponse();
     try {
-        await sessionModel.findById(ObjectId(data.session)).then(session => {
+        await sessionSchema.findById(ObjectId(data.session)).then(session => {
             if(!session) {
                 return res.status(404).send({
                     message: "Note not found with id " + req.params.noteId
@@ -92,7 +94,7 @@ module.exports.findAndUpdateSession = async (data) => {
         httpStatus = 400;
     }
     try {
-        await sessionModel.findByIdAndUpdate(req.params._id, {
+        await sessionSchema.findByIdAndUpdate(req.params._id, {
             sessionData: req.body.sessionData
         }, {new: true})
         .then(session => {
@@ -127,7 +129,7 @@ module.exports.findAndUpdateSession = async (data) => {
         httpStatus = 400;
     }
     try {
-		await sessionModel.findOne({ _id: ObjectId(req.params._id), 'productId': req.params.productId}).select('-sessionData.count -sessionData.maxBargainingCount').exec(function (err, obj) {
+		await sessionSchema.findOne({ _id: ObjectId(req.params._id), 'productId': req.params.productId}).select('-sessionData.count -sessionData.maxBargainingCount').exec(function (err, obj) {
             const sessionData = obj;
             rcResponse.data = sessionData;
             return res.status(httpStatus).send(rcResponse);
@@ -145,7 +147,7 @@ module.exports.findAndUpdateSession = async (data) => {
   module.exports.findAndClearSession = async (data) => {
     let rcResponse = new ApiResponse();
     try {
-        await sessionModel.findById(ObjectId(data.session), async function (err, session) {
+        await sessionSchema.findById(ObjectId(data.session), async function (err, session) {
             if(err){
                 SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
                 httpStatus = 500;

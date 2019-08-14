@@ -9,7 +9,7 @@ const ErrMessages = {
   InvalidParams: 'Invalid body parameters',
   NotAuthorized: 'You are not authorized to perform this operation',
   EmailExists: 'This email is already registered in the system, please try different email.',
-  InvalidPassword: 'Email or password is incorrect',
+  InvalidPassword: 'Shop Url or password is incorrect',
   InvalidToken: 'Access token is invalid',
   InvalidAdminKey: 'Invalid Admin key',
   NoImage: 'Please select a valid image file',

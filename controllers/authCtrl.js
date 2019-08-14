@@ -8,12 +8,10 @@ Description : This file consist of functions related to user's authentication
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const jwt = require('jsonwebtoken');
 const userSchema = require('./../schema/user');
-const userModel = require('./../models/user');
-
-
+const userModel = require('./../model/user');
 const utils = require('./../helpers/utils');
 const ObjectId = require('mongoose').Types.ObjectId;
-const activePlan = require('./../models/activePlan');
+const activePlanSchema = require('./../schema/activePlan');
 var nodemailer = require("nodemailer");
 var crypto = require('crypto');
 
@@ -24,7 +22,7 @@ module.exports.login = async (req, res) => {
 	let httpStatus = 200;
 
 	/* Check body params */
-	if (!req.body.email || !req.body.password) {
+	if (!req.body.shopUrl || !req.body.password) {
 		SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
 		httpStatus = 400;
 		return res.status(httpStatus).send(rcResponse);
@@ -32,9 +30,9 @@ module.exports.login = async (req, res) => {
 
 	try {
 		/* Check if email exists */
-		const findUser = await userSchema.findOne({ email: req.body.email }).lean().exec();
+		const findUser = await userSchema.findOne({ shopUrl: req.body.shopUrl }).lean().exec();
 		if (findUser) {
-			const currentPlan = await activePlan.findOne({ shopUrl: findUser.shopUrl }).lean().exec();
+			const currentPlan = await activePlanSchema.findOne({ shopUrl: findUser.shopUrl }).lean().exec();
 
 			const encodedData = {
 				id: findUser._id,
@@ -97,7 +95,7 @@ module.exports.getUserProfile = async (req, res) => {
 	try {
 		const { decoded } = req;
 		const userData = await userSchema.findOne({ _id: decoded.id, deleted: false }, { password: 0, accessToken:0 }).lean().exec();
-		const currentPlan = await activePlan.findOne({ shopUrl: userData.shopUrl }).lean().exec();
+		const currentPlan = await activePlanSchema.findOne({ shopUrl: userData.shopUrl }).lean().exec();
 		let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
 
 

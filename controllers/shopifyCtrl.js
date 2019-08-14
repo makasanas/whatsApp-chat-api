@@ -4,10 +4,10 @@ const mongoose = require('mongoose');
 const utils = require('./../helpers/utils');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
 const usersModel = require('./../schema/user');
-const productModel = require('./../models/productModel');
+const productSchema = require('../schema/product');
 var url = require('url');
 const jwt = require('jsonwebtoken');
-const activePlan = require('./../models/activePlan');
+const activePlanSchema = require('../schema/activePlan');
 
 
 
@@ -141,7 +141,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 products: process.env.Free
             }
     
-            const plan = new activePlan(currentPlan);
+            const plan = new activePlanSchema(currentPlan);
             const planSave = await plan.save();
     
             const encodedData = {
@@ -196,7 +196,7 @@ createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
             
         }else{
             const userSave = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
-            const currentPlan = await activePlan.findOne({ userId: findUser._id }).lean().exec();
+            const currentPlan = await activePlanSchema.findOne({ userId: findUser._id }).lean().exec();
             const encodedData = {
                 id: findUser._id,
                 accessToken: findUser.accessToken,
@@ -310,7 +310,7 @@ module.exports.getProducts = async (req, res) => {
 
         await Promise.all(promiseArray).then(async responses => {
             let result = await responses[0].products.map(product => product.id);
-            await productModel.find({ productId: { $in: result }, deleted: false }, async function (err, products) {
+            await productSchema.find({ productId: { $in: result }, deleted: false }, async function (err, products) {
                 await products.forEach(async (product) => {
                     var index = await result.indexOf(product.productId)
                     responses[0].products[index]['added'] = true;
@@ -341,7 +341,7 @@ module.exports.insertProducts = async (req, res) => {
         return res.status(httpStatus).send(rcResponse);
     }
     try {
-        const product = new productModel(req.body);
+        const product = new productSchema(req.body);
         const productSave = await product.save();
         rcResponse.data = productSave;
     } catch (err) {
@@ -357,7 +357,7 @@ module.exports.deleteApp = async (req, res) => {
 
     try {
         const updateUser = await usersModel.updateMany({ storeId: req.body.id }, { $set: { deleted: true } }, { new: true }).lean().exec();
-        rcResponse.data = updateUser
+        rcResponse.data = updateUser;
 
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);

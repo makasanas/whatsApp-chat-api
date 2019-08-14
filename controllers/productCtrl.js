@@ -8,10 +8,10 @@ Description : This file consist of functions related to restaurants
 
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
-const productModel = require('./../models/productModel');
-const ordersModel = require('./../models/ordersModel');
-const discountModel = require('./../models/discountModel');
-const analyticOrderModel = require('./../models/analyticOrderModel');
+const productSchema = require('./../schema/product');
+const orderSchema = require('./../Schema/order');
+const discountSchema = require('./../schema/discount');
+const analyticOrderSchema = require('./../schema/analyticOrder');
 
 const mongoose = require('mongoose');
 const getRawBody = require('raw-body')
@@ -47,13 +47,13 @@ module.exports.createNewProduct = async (req, res) => {
     };
     productObj = JSON.parse(JSON.stringify(productObj));
 
-    const product = new productModel(productObj);
+    const product = new productSchema(productObj);
     const productSave = await product.save();
     rcResponse.data = productSave;
   } catch (err) {
     if (err.code === 11000) {
       productObj['deleted'] = false;
-      const updateProduct = await productModel.findOneAndUpdate({ productId: productObj.productId }, { $set: productObj }, { new: true }).lean().exec();
+      const updateProduct = await productSchema.findOneAndUpdate({ productId: productObj.productId }, { $set: productObj }, { new: true }).lean().exec();
       rcResponse.data = updateProduct;
     } else {
       SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -75,8 +75,8 @@ module.exports.getListOfProductsOwned = async (req, res) => {
   let skip = (page - 1) * limit;
 
   try {
-    let productList = await productModel.find({ shopUrl: decoded.shopUrl, deleted: false }).sort({ created: -1 }).skip(skip).limit(limit);
-    let count = await productModel.count({ shopUrl: decoded.shopUrl, deleted: false });
+    let productList = await productSchema.find({ shopUrl: decoded.shopUrl, deleted: false }).sort({ created: -1 }).skip(skip).limit(limit);
+    let count = await productSchema.count({ shopUrl: decoded.shopUrl, deleted: false });
     rcResponse.data = {
       products: productList,
       count: count
@@ -97,7 +97,7 @@ module.exports.getCount = async (req, res) => {
   const { query, decoded } = req;
 
   try {
-    let count = await productModel.count({ shopUrl: decoded.shopUrl, deleted: false });
+    let count = await productSchema.count({ shopUrl: decoded.shopUrl, deleted: false });
     rcResponse.data = {
       count: count
     }
@@ -116,7 +116,7 @@ module.exports.getProductDetails = async (req, res) => {
   const { decoded } = req;
 
   try {
-    let productInfo = await productModel.findOne({ productId: req.params.productId, deleted: false }).lean().exec();
+    let productInfo = await productSchema.findOne({ productId: req.params.productId, deleted: false }).lean().exec();
     productInfo = productInfo;
     rcResponse.data = productInfo;
   } catch (err) {
@@ -142,7 +142,7 @@ module.exports.updateProductDetails = async (req, res) => {
       discountValue: req.body.discountValue
     };
     productObj = JSON.parse(JSON.stringify(productObj));
-    const updateProduct = await productModel.findOneAndUpdate({ _id: req.params.productId }, { $set: productObj }, { new: true }).lean().exec();
+    const updateProduct = await productSchema.findOneAndUpdate({ _id: req.params.productId }, { $set: productObj }, { new: true }).lean().exec();
     rcResponse.data = updateProduct;
     rcResponse.message = 'Product details has been updated successfully';
   } catch (err) {
@@ -160,7 +160,7 @@ module.exports.deleteProduct = async (req, res) => {
   const { decoded } = req;
 
   try {
-    const deleteProdcut = await productModel.update({ _id: req.params.productId }, { $set: { deleted: true } }).lean().exec();
+    const deleteProdcut = await productSchema.update({ _id: req.params.productId }, { $set: { deleted: true } }).lean().exec();
     if (deleteProdcut.nModified) {
       rcResponse.message = 'Product has been deleted successfully';
     } else {

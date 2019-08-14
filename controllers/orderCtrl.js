@@ -8,10 +8,10 @@ Description : This file consist of functions related to Orders
 
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
-const analyticOrderModel = require('./../models/analyticOrderModel');
-const discountModel = require('./../models/discountModel');
-const productModel = require('./../models/productModel');
-const ordersModel = require('./../models/ordersModel');
+const analyticOrderSchema = require('./../schema/analyticOrder');
+const discountSchema = require('./../schema/discount');
+const productSchema = require('./../schema/product');
+const orderSchema = require('./../Schema/order');
 
 const mongoose = require('mongoose');
 const getRawBody = require('raw-body')
@@ -30,8 +30,8 @@ module.exports.getAnalyticOrders = async (req, res) => {
   let skip = (page - 1) * limit;
 
   try {
-    let orderList = await analyticOrderModel.find({ shopUrl: decoded.shopUrl, deleted: false }).sort({ created: -1 }).skip(skip).limit(limit);
-    let count = await analyticOrderModel.count({ shopUrl: decoded.shopUrl, deleted: false });
+    let orderList = await analyticOrderSchema.find({ shopUrl: decoded.shopUrl, deleted: false }).sort({ created: -1 }).skip(skip).limit(limit);
+    let count = await analyticOrderSchema.count({ shopUrl: decoded.shopUrl, deleted: false });
     rcResponse.data = {
       orders: orderList,
       count: count
@@ -61,18 +61,18 @@ module.exports.orders = async (req, res) => {
 
 
     //Saving current order
-    const createOrder = await ordersModel.create(data);
+    const createOrder = await orderSchema.create(data);
 
 
     let result = await data.discount_codes.map(coupen => coupen.code);
 
 
-    const discountList = await discountModel.findOne({ discount_code: result[0], shopUrl: data.shopUrl }).exec((err, doc) => {
+    const discountList = await discountSchema.findOne({ discount_code: result[0], shopUrl: data.shopUrl }).exec((err, doc) => {
 
       let responseData = {}
       if (doc) {
 
-        const getProduct = productModel.findOne({ _id: doc.productId }).exec(async (err, product) => {
+        const getProduct = productSchema.findOne({ _id: doc.productId }).exec(async (err, product) => {
 
 
           var foundProduct = await req.body.line_items.find(element => {
@@ -98,7 +98,7 @@ module.exports.orders = async (req, res) => {
             shopUrl: req.get('x-shopify-shop-domain')
           }
           //Saving Analytics order
-          const createAnalytic = analyticOrderModel.create(analyticData);
+          const createAnalytic = analyticOrderSchema.create(analyticData);
 
           responseData = createAnalytic;
         });

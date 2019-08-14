@@ -1,9 +1,9 @@
 
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
-const activePlan = require('./../models/activePlan');
+const activePlanSchema = require('../schema/activePlan');
 const userModel = require('./../schema/user');
-const productModel = require('./../models/productModel');
+const productSchema = require('../schema/product');
 
 module.exports.create = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -32,7 +32,7 @@ module.exports.getPlan = async (req, res) => {
     let httpStatus = 200;
     const { decoded } = req;
     try {
-        const findPlan = await activePlan.findOne({ userId: decoded.id }).lean().exec();
+        const findPlan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
         rcResponse.data = findPlan
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -41,7 +41,7 @@ module.exports.getPlan = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 }
 
-module.exports.activePlan = async (req, res) => {
+module.exports.activePlanSchema = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     const { decoded, params } = req;
@@ -72,17 +72,17 @@ module.exports.activePlan = async (req, res) => {
                 type: 'monthly'
             }
 
-            const findPlan = await activePlan.findOne({ userId: decoded.id }).lean().exec();
+            const findPlan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
 
             if (findPlan) {
-                const updatePlan = await activePlan.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
+                const updatePlan = await activePlanSchema.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
 
-                let totalProducts = await productModel.find({ userId: decoded.id });
+                let totalProducts = await productSchema.find({ userId: decoded.id });
                 if (findPlan.products > productCount) {
                     let deleteProduct = totalProducts.slice(productCount, totalProducts.length);
                     let updatableProducts = deleteProduct.map(product => product._id);
 
-                    const updateProducts = await productModel.updateMany({ _id: { $in: updatableProducts } }, { $set: { deleted: true } }, { multi: true });
+                    const updateProducts = await productSchema.updateMany({ _id: { $in: updatableProducts } }, { $set: { deleted: true } }, { multi: true });
                 }
 
                 let userPlanData = {
@@ -93,7 +93,7 @@ module.exports.activePlan = async (req, res) => {
 
                 rcResponse.data = updatePlan
             } else {
-                const plan = new activePlan(data);
+                const plan = new activePlanSchema(data);
                 const planSave = await plan.save();
 
                 let userPlanData = {
@@ -114,13 +114,13 @@ module.exports.activePlan = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 }
 
-module.exports.deactivePlan = async (req, res) => {
+module.exports.deactivePlanSchema = async (req, res) => {
 
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     const { decoded, params } = req;
     try {
-        const plan = await activePlan.findOne({ _id: params.planId }).lean().exec();
+        const plan = await activePlanSchema.findOne({ _id: params.planId }).lean().exec();
         let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + plan.planId + '.json';
         await shopifyReuest.delete(url, decoded.accessToken).then(async function (response) {
             rcResponse.data = response.body;
@@ -129,7 +129,7 @@ module.exports.deactivePlan = async (req, res) => {
                 planName: "Free",
                 products:process.env.Free
             }
-            const updatePlan = await activePlan.findOneAndUpdate({ userId: decoded.id }, { $set: data }, { new: true }).lean().exec();
+            const updatePlan = await activePlanSchema.findOneAndUpdate({ userId: decoded.id }, { $set: data }, { new: true }).lean().exec();
             var date = new Date(updatePlan.started);
             let expiryDate = date.setDate(date.getDate() + 30);
 

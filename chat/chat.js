@@ -1,8 +1,8 @@
 
 const dialogflow = require('dialogflow');
 const uuid = require('uuid');
-const productModel = require('./../models/productModel');
-const discountModel = require('./../models/discountModel');
+const productSchema = require('../schema/product')
+const discountSchema = require('../schema/discount')
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
 const chatCtrl = require('./../controllers/chatCtrl');
 
@@ -464,7 +464,7 @@ module.exports.getOffredDiscount = (productInfo, textMessage, maxNumber) => {
 
 module.exports.dynamicResponse = async (responses, textMessage, intent) => {
 
-    let productInfo = await productModel.findOne({ productId: textMessage.productId, deleted: false }).lean().exec();
+    let productInfo = await productSchema.findOne({ productId: textMessage.productId, deleted: false }).lean().exec();
     let maxNumber = productInfo.discountValue;
     var maxBargainingCount = textMessage.maxBargainingCount ? textMessage.maxBargainingCount : this.generateMaxBargainingCount(maxNumber);
 
@@ -559,8 +559,8 @@ module.exports.coupenCode = async(length) => {
 }
 
 module.exports.generateCoupon = async (message) => {
-    let productInfo = await productModel.findOne({ productId: message.productId, deleted: false }).populate('userId').lean().exec();
-    let discountCount = await discountModel.count({ shopUrl: productInfo.shopUrl, deleted: false }) + 1;
+    let productInfo = await productSchema.findOne({ productId: message.productId, deleted: false }).populate('userId').lean().exec();
+    let discountCount = await discountSchema.count({ shopUrl: productInfo.shopUrl, deleted: false }) + 1;
     let replay ={}
     var ends_at = new Date();
     ends_at.setDate(ends_at.getDate() + 1);
@@ -602,7 +602,7 @@ module.exports.generateCoupon = async (message) => {
                 discount_code_id: response.body.discount_code.id,
                 shopUrl: productInfo.shopUrl
             }
-            const discount = new discountModel(data);
+            const discount = new discountSchema(data);
             const discountSave = await discount.save();
             replay =  {
                 message: "Here is your coupen " + discountSave.discount_code+" for "+ discountSave.discountValue +"% and coupe expire in one day",
@@ -641,7 +641,7 @@ module.exports.generateCoupon = async (message) => {
 
 
 module.exports.checkBargaining = async (message) => {
-    let productInfo = await productModel.findOne({ productId: parseInt(message.productId), shopUrl: message.shopUrl, deleted: false }).lean().exec();
+    let productInfo = await productSchema.findOne({ productId: parseInt(message.productId), shopUrl: message.shopUrl, deleted: false }).lean().exec();
     if (productInfo) {
         return {
             productId: productInfo.productId,

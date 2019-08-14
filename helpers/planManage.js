@@ -4,9 +4,9 @@ Date : 8th Aug 2019
 Description : This file consist of functions that can be used through the application for Recurring Plans
 */
 
-const activePlan = require('./../models/activePlan');
+const activePlanSchema = require('../schema/activePlan
 const userModel = require('./../schema/user');
-const productModel = require('./../models/productModel');
+const productSchema = require('../schema/product
 
 
 const managePlane = async (applicationCharge) => {
@@ -34,17 +34,17 @@ const managePlane = async (applicationCharge) => {
         type: 'monthly'
     }
 
-    const findPlan = await activePlan.findOne({ userId: decoded.id }).lean().exec();
+    const findPlan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
 
     if (findPlan) {
-        const updatePlan = await activePlan.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
+        const updatePlan = await activePlanSchema.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
 
-        let totalProducts = await productModel.find({ userId: decoded.id });
+        let totalProducts = await productSchema.find({ userId: decoded.id });
         if (findPlan.products > productCount) {
             let deleteProduct = totalProducts.slice(productCount, totalProducts.length);
             let updatableProducts = deleteProduct.map(product => product._id);
 
-            const updateProducts = await productModel.updateMany({ _id: { $in: updatableProducts } }, { $set: { deleted: true } }, { multi: true });
+            const updateProducts = await productSchema.updateMany({ _id: { $in: updatableProducts } }, { $set: { deleted: true } }, { multi: true });
         }
 
         let userPlanData = {
@@ -55,7 +55,7 @@ const managePlane = async (applicationCharge) => {
 
         return updatePlan;
     } else {
-        const plan = new activePlan(data);
+        const plan = new activePlanSchema(data);
         const planSave = await plan.save();
 
         let userPlanData = {

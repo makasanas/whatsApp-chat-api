@@ -6,8 +6,8 @@ Description : This file consist of middleware functions to use while requesting 
 
 const jwt = require('jsonwebtoken');
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, UserRoles, plans, RequestNotFromShopify, PlanLimit } = require('./../helpers/common');
-const activePlan = require('./../models/activePlan');
-const productModel = require('./../models/productModel');
+const activePlanSchema = require('./../schema/activePlan');
+const productSchema = require('./../schema/product');
 const crypto = require('crypto')
 const secretKey = '91836d2e840312d9267dca48dec93fe7'
 
@@ -92,8 +92,8 @@ module.exports.planCheck = async (req, res, next) => {
   /* Contruct response object */
   let rcResponse = new ApiResponse();
   
-  const currentPlan = await activePlan.findOne({ userId: req.decoded.id }).lean().exec();
-  const count = await productModel.count({ userId: req.decoded.id, deleted:false });
+  const currentPlan = await activePlanSchema.findOne({ userId: req.decoded.id }).lean().exec();
+  const count = await productSchema.count({ userId: req.decoded.id, deleted:false });
   var activePaln = plans.find(plan => plan.name == currentPlan.planName)
 
 
