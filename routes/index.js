@@ -87,7 +87,7 @@ router.delete('/products/:productId', checkToken.validateToken,  productCtrl.del
 
 router.post('/webhooks/orders/create', checkToken.validateWebhook,  orderCtrl.orders);
 
-router.post('/webhooks/app/delete', checkToken.validateWebhook,  shopifyCtrl.deleteApp);
+router.post('/webhooks/app/delete', checkToken.validateWebhook,   shopifyCtrl.deleteApp);
 
 /*****************************
  Recurring Plan

@@ -3,11 +3,20 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, n
 const mongoose = require('mongoose');
 const utils = require('./../helpers/utils');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
-const usersModel = require('./../schema/user');
+const userSchema = require('./../schema/user');
+
 const productSchema = require('../schema/product');
 var url = require('url');
 const jwt = require('jsonwebtoken');
 const activePlanSchema = require('../schema/activePlan');
+
+const userModel = require('./../model/user');
+const sessionModel = require('./../model/session');
+const productModel = require('./../model/product');
+const orderModel = require('./../model/order');
+const discountModel = require('./../model/discount');
+const analyticOrderModel = require('./../model/analyticOrder');
+const activePlanModel = require('./../model/activePlan');
 
 
 
@@ -127,7 +136,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 recurringPlanName: 'Free'
             };
     
-            const user = new usersModel(UserObj);
+            const user = new userSchema(UserObj);
             const userSave = await user.save();
     
             let currentPlan = {
@@ -184,7 +193,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
 
 createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
 
-    const findUser = await usersModel.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
+    const findUser = await userSchema.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
     try {
         if (!findUser) {
             let webhookArry = await createWebHook(req, res, shopData.accessToken, shopData.shopUrl, rcResponse);
@@ -195,7 +204,7 @@ createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
             rcResponse = response.rcResponse;
             
         }else{
-            const userSave = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
+            const userSave = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
             const currentPlan = await activePlanSchema.findOne({ userId: findUser._id }).lean().exec();
             const encodedData = {
                 id: findUser._id,
@@ -244,10 +253,10 @@ module.exports.setPassword = async (req, res) => {
 
     try {
         /* Check if email exists */
-        const findUser = await usersModel.findOne({ _id: req.decoded.id }).lean().exec();
+        const findUser = await userSchema.findOne({ _id: req.decoded.id }).lean().exec();
         if (findUser) {
             const passHash = await utils.generatePasswordHash(req.body.password);
-            const updateUser = await usersModel.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
+            const updateUser = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
 
             delete updateUser['password'];
             delete updateUser['accessToken'];
@@ -356,10 +365,31 @@ module.exports.deleteApp = async (req, res) => {
     let httpStatus = 200;
 
     try {
-        console.log(req.body);
-        const updateUser = await usersModel.updateMany({ storeId: req.body.id }, { $set: { deleted: true } }, { new: true }).lean().exec();
-        rcResponse.data = updateUser;
+        const user = await userModel.getUserByStoreId(req.body.id);
+        if(user){
+            let [deleteUser, deleteSession,deleteProduct, deleteOrder, deleteDiscount, deleteAnalyticOrder, deleteActivePlan ] = await Promise.all([
+                await userModel.deleteManyByShopUrl(user.shopUrl),
+                await sessionModel.deleteManyByShopUrl(user.shopUrl),
+                await productModel.deleteManyByShopUrl(user.shopUrl),
+                await orderModel.deleteManyByShopUrl(user.shopUrl),
+                await discountModel.deleteManyByShopUrl(user.shopUrl),
+                await analyticOrderModel.deleteManyByShopUrl(user.shopUrl),
+                await activePlanModel.deleteManyByShopUrl(user.shopUrl)
+            ]);
 
+            rcResponse.data = {
+                user:deleteUser,
+                session:deleteSession,
+                product:deleteProduct,
+                order:deleteOrder,
+                discount:deleteDiscount,
+                analyticOrder:deleteAnalyticOrder,
+                activePlan:deleteActivePlan,
+            };
+        }else{
+            httpStatus = 404
+			SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopNotExists', req, null), false);
+        }
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
         httpStatus = 500;
