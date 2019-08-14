@@ -2,7 +2,7 @@
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
 const activePlan = require('./../models/activePlan');
-const userModel = require('./../models/usersModel');
+const userModel = require('./../schema/user');
 const productModel = require('./../models/productModel');
 
 module.exports.create = async (req, res) => {

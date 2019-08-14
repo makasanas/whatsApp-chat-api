@@ -14,6 +14,7 @@ const ErrMessages = {
   InvalidAdminKey: 'Invalid Admin key',
   NoImage: 'Please select a valid image file',
   ShopExists: 'A Shop already exists please try to login into your shop',
+  ShopNotExists: 'Shop does not exists',
   userNotFound: 'Email does not exists',
   wrongHappened: 'Something wrong happened please try again',
   ProductExists:'Product alreday enable with discount',
@@ -48,8 +49,7 @@ const SetResponse = (respObj, code = 1, message = 'OK', success = true, data = {
  * @returns {string} a string prompt describing the error and it's place in api
  */
 const RequestErrorMsg = (errKey, requestObj = null, errorObj = null) => {
-  return `${(errorObj !== null) ? errorObj.message : ''}\
-  ${(errKey !== null) ? ErrMessages[errKey] : ''}`;
+  return `${(errorObj !== null) ? errorObj.message+' ': ''}${(errKey !== null) ? ErrMessages[errKey] : ''}`;
 };
 
 

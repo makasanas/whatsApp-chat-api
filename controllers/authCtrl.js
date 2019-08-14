@@ -7,7 +7,10 @@ Description : This file consist of functions related to user's authentication
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const jwt = require('jsonwebtoken');
-const userModel = require('./../models/usersModel');
+const userSchema = require('./../schema/user');
+const userModel = require('./../models/user');
+
+
 const utils = require('./../helpers/utils');
 const ObjectId = require('mongoose').Types.ObjectId;
 const activePlan = require('./../models/activePlan');
@@ -29,7 +32,7 @@ module.exports.login = async (req, res) => {
 
 	try {
 		/* Check if email exists */
-		const findUser = await userModel.findOne({ email: req.body.email }).lean().exec();
+		const findUser = await userSchema.findOne({ email: req.body.email }).lean().exec();
 		if (findUser) {
 			const currentPlan = await activePlan.findOne({ shopUrl: findUser.shopUrl }).lean().exec();
 
@@ -93,7 +96,7 @@ module.exports.getUserProfile = async (req, res) => {
 
 	try {
 		const { decoded } = req;
-		const userData = await userModel.findOne({ _id: decoded.id, deleted: false }, { password: 0, accessToken:0 }).lean().exec();
+		const userData = await userSchema.findOne({ _id: decoded.id, deleted: false }, { password: 0, accessToken:0 }).lean().exec();
 		const currentPlan = await activePlan.findOne({ shopUrl: userData.shopUrl }).lean().exec();
 		let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
 
@@ -119,7 +122,7 @@ module.exports.userUpdate = async (req, res) => {
 			phone: req.body.phone != undefined ? req.body.phone : undefined,
 		};
 		userObj = JSON.parse(JSON.stringify(userObj));
-		const updateUser = await userModel.findByIdAndUpdate({ _id: req.params.userId }, { $set: userObj }, { new: true, runValidators: true }).lean().exec();
+		const updateUser = await userSchema.findByIdAndUpdate({ _id: req.params.userId }, { $set: userObj }, { new: true, runValidators: true }).lean().exec();
 		delete updateUser.password;
 		rcResponse.data = updateUser;
 		rcResponse.message = 'User details has been updated successfully';
@@ -145,14 +148,14 @@ module.exports.userPasswordUpdate = async (req, res) => {
 	let rcResponse = new ApiResponse();
 	let httpStatus = 200;
 	try {
-		const userData = await userModel.findOne({ _id: req.params.userId }).lean().exec();
+		const userData = await userSchema.findOne({ _id: req.params.userId }).lean().exec();
 		if (userData) {
 			const passHash = await utils.generatePasswordHash(req.body.password);
 			let userObj = {
 				password: passHash,
 			};
 			// userObj = JSON.parse(JSON.stringify(userObj));
-			const updateUser = await userModel.findOneAndUpdate({ _id: req.params.userId }, { $set: userObj }, { new: true }).lean().exec();
+			const updateUser = await userSchema.findOneAndUpdate({ _id: req.params.userId }, { $set: userObj }, { new: true }).lean().exec();
 			delete updateUser.password;
 			rcResponse.data = updateUser;
 			rcResponse.message = 'User password has been updated successfully';
@@ -194,7 +197,7 @@ module.exports.forgetPassword = async (req, res) => {
 
 	try {
 		/* Check if email exists */
-		const findUser = await userModel.findOne({ email: req.body.email }).exec();
+		const findUser = await userSchema.findOne({ email: req.body.email }).exec();
 		if (findUser) {
 
 			var token = await uuidPromise(uuid).then(u => { return u}).catch(e =>{
@@ -257,7 +260,7 @@ module.exports.resetPassword = async (req, res) => {
 	let httpStatus = 200;
 
 	try {
-		userModel.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, async function(err, user) {
+		userSchema.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, async function(err, user) {
 			if (!user) {
 				SetResponse(rcResponse, 404, RequestErrorMsg('tokenInvalid', req, null), false);
 				httpStatus = 404;
@@ -284,3 +287,25 @@ module.exports.resetPassword = async (req, res) => {
 		httpStatus = 500;
 	}
 };
+
+
+
+module.exports.checkUserExist = async (req, res) => {
+	let rcResponse = new ApiResponse();
+	let httpStatus = 200;
+
+    try {
+		const user = await userModel.getUserByShopUrl(req.params.shopUrl);
+		if(!user){
+			httpStatus = 404
+			SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopNotExists', req, null), false);
+		}else{
+			SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopExists', req, null), true);
+		}		
+    } catch (error) {
+		httpStatus = 500;
+		SetResponse(rcResponse, httpStatus, RequestErrorMsg(null, req, err), false);
+	}
+	
+	return res.status(httpStatus).send(rcResponse);
+}

@@ -53,6 +53,9 @@ router.put('/user/updatepassword/:userId', checkToken.validateToken, checkToken.
 router.post('/user/forgetPassword', authCtrl.forgetPassword);
 
 router.post('/user/reset/:token', authCtrl.resetPassword);
+//
+router.get('/checkuserexist/:shopUrl', authCtrl.checkUserExist);
+
 
 
 /*****************************

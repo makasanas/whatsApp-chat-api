@@ -5,7 +5,7 @@ Description : This file consist of functions that can be used through the applic
 */
 
 const activePlan = require('./../models/activePlan');
-const userModel = require('./../models/usersModel');
+const userModel = require('./../schema/user');
 const productModel = require('./../models/productModel');
 
 

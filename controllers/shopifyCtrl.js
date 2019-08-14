@@ -3,7 +3,7 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, n
 const mongoose = require('mongoose');
 const utils = require('./../helpers/utils');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
-const usersModel = require('./../models/usersModel');
+const usersModel = require('./../schema/user');
 const productModel = require('./../models/productModel');
 var url = require('url');
 const jwt = require('jsonwebtoken');
