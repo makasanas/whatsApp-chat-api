@@ -108,43 +108,60 @@ module.exports.planCheck = async (req, res, next) => {
 };
 
 
+
 module.exports.validateWebhook = async (req,res,next) => {
   let rcResponse = new ApiResponse();
-  console.log(req.url);
-  console.log('🎉 We got an order!')
+      const hash = await crypto
+      .createHmac('sha256', secretKey)
+      .update(Buffer.from(req.rawbody))   
+      .digest('base64')
 
-  // We'll compare the hmac to our own hash
-  const hmac = req.get('X-Shopify-Hmac-Sha256')
-
-  // Use raw-body to get the body (buffer)
-  const body = await getRawBody(req);
-
-  // Create a hash using the body and our key
-  const hash = crypto
-    .createHmac('sha256', secretKey)
-    .update(body, 'utf8', 'hex')
-    .digest('base64')
-
-    if (hash == req.headers['x-shopify-hmac-sha256']) {
+  if (hash == req.headers['x-shopify-hmac-sha256']) {
       next()
   } else {
     SetResponse(rcResponse, 403, RequestErrorMsg('RequestNotFromShopify', req, null), false);
     httpStatus = 403;
     return res.status(httpStatus).send(rcResponse);
   }
-
-
-  // let rcResponse = new ApiResponse();
-  //     const hash = await crypto
-  //     .createHmac('sha256', secretKey)
-  //     .update(Buffer.from(req.rawbody))   
-  //     .digest('base64')
-
-  // if (hash == req.headers['x-shopify-hmac-sha256']) {
-  //     next()
-  // } else {
-  //   SetResponse(rcResponse, 403, RequestErrorMsg('RequestNotFromShopify', req, null), false);
-  //   httpStatus = 403;
-  //   return res.status(httpStatus).send(rcResponse);
-  // }
 }
+
+// module.exports.validateWebhook = async (req,res,next) => {
+//   let rcResponse = new ApiResponse();
+//   console.log(req.url);
+//   console.log('🎉 We got an order!')
+
+//   // We'll compare the hmac to our own hash
+//   const hmac = req.get('X-Shopify-Hmac-Sha256')
+
+//   // Use raw-body to get the body (buffer)
+//   const body = await getRawBody(req);
+
+//   // Create a hash using the body and our key
+//   const hash = crypto
+//     .createHmac('sha256', secretKey)
+//     .update(body, 'utf8', 'hex')
+//     .digest('base64')
+
+//     if (hash == req.headers['x-shopify-hmac-sha256']) {
+//       next()
+//   } else {
+//     SetResponse(rcResponse, 403, RequestErrorMsg('RequestNotFromShopify', req, null), false);
+//     httpStatus = 403;
+//     return res.status(httpStatus).send(rcResponse);
+//   }
+
+
+//   // let rcResponse = new ApiResponse();
+//   //     const hash = await crypto
+//   //     .createHmac('sha256', secretKey)
+//   //     .update(Buffer.from(req.rawbody))   
+//   //     .digest('base64')
+
+//   // if (hash == req.headers['x-shopify-hmac-sha256']) {
+//   //     next()
+//   // } else {
+//   //   SetResponse(rcResponse, 403, RequestErrorMsg('RequestNotFromShopify', req, null), false);
+//   //   httpStatus = 403;
+//   //   return res.status(httpStatus).send(rcResponse);
+//   // }
+// }

@@ -361,6 +361,7 @@ module.exports.insertProducts = async (req, res) => {
 };
 
 module.exports.deleteApp = async (req, res) => {
+    console.log(req.body);
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
 
@@ -400,7 +401,7 @@ module.exports.deleteApp = async (req, res) => {
 
  createWebHook = async (req, res, accessToken, shopUrl, rcResponse) => {
 
-    var hostname = "https://bargaining-bot-api.webrexstudio.com"
+    var hostname = "https://ee5c1291.ngrok.io"
 
     var requests = [
         {
