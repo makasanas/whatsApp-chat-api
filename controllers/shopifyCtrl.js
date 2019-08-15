@@ -74,7 +74,7 @@ function securityCheck(req) {
     return securityPass && regex;
 };
 
-generatorAcessToekn = async(req, res) => {
+generatorAcessToekn = async(req, res, httpStatus, rcResponse) => {
     let url;
     let accessToken;
     let appId = process.env.appId;
@@ -99,9 +99,11 @@ generatorAcessToekn = async(req, res) => {
                 if (error.statusCode) {
                     SetResponse(rcResponse, error.statusCode, error.error, false);
                     httpStatus = error.statusCode;
+                    return res.status(httpStatus).send(rcResponse);
                 } else {
                     SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
                     httpStatus = 500;
+                    return res.status(httpStatus).send(rcResponse);
                 }
             });
         }
@@ -109,9 +111,11 @@ generatorAcessToekn = async(req, res) => {
         if (err.code === 11000) {
             SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
             httpStatus = 400;
+            return res.status(httpStatus).send(rcResponse);
         } else {
             SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
             httpStatus = 500;
+            return res.status(httpStatus).send(rcResponse);
         }
     }
 
@@ -239,7 +243,7 @@ module.exports.auth = async (req, res, next) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
 
-    let shopData = await generatorAcessToekn(req, res);
+    let shopData = await generatorAcessToekn(req, res, httpStatus, rcResponse);
 
     let response = await createOrUpdateShop(req, res, shopData, rcResponse, httpStatus);
 
