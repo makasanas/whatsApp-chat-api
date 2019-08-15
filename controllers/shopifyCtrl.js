@@ -401,7 +401,7 @@ module.exports.deleteApp = async (req, res) => {
 
  createWebHook = async (req, res, accessToken, shopUrl, rcResponse) => {
 
-    var hostname = "https://webrex-test-store.myshopify.com"
+    var hostname = "https://bargaining-bot-api.webrexstudio.com"
 
     var requests = [
         {
