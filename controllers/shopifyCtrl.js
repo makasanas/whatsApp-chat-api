@@ -401,7 +401,7 @@ module.exports.deleteApp = async (req, res) => {
 
  createWebHook = async (req, res, accessToken, shopUrl, rcResponse) => {
 
-    var hostname = "https://ee5c1291.ngrok.io"
+    var hostname = "https://webrex-test-store.myshopify.com"
 
     var requests = [
         {
