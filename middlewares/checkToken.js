@@ -110,6 +110,9 @@ module.exports.planCheck = async (req, res, next) => {
 
 
 module.exports.validateWebhook = async (req,res,next) => {
+  console.log(req.url);
+  console.log(req.body);
+
   let rcResponse = new ApiResponse();
       const hash = await crypto
       .createHmac('sha256', secretKey)
