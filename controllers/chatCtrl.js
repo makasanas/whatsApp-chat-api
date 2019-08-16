@@ -1,6 +1,8 @@
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const sessionSchema = require('./../schema/session');
+const sessionModel = require('./../model/session');
+
 
 
 const ObjectId = require('mongoose').Types.ObjectId; 
@@ -124,22 +126,21 @@ module.exports.findAndUpdateSession = async (data) => {
   module.exports.getSession = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
-    if(!req.body) {
-        SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
-        httpStatus = 400;
-    }
-    try {
-		await sessionSchema.findOne({ _id: ObjectId(req.params._id), 'productId': req.params.productId}).select('-sessionData.count -sessionData.maxBargainingCount').exec(function (err, obj) {
-            const sessionData = obj;
-            rcResponse.data = sessionData;
-            return res.status(httpStatus).send(rcResponse);
 
-        })
+    try {
+        const session = await sessionModel.findSessionByIdAndProductId(req.params._id, req.params.productId);
+        if (!session) {
+          SetResponse(rcResponse, 404, RequestErrorMsg('sessionNotFound', req, null), false);
+        }
+
+        rcResponse.data = session;
     }catch(err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
         httpStatus = 500;
         return res.status(httpStatus).send(rcResponse);
     }
+    return res.status(httpStatus).send(rcResponse);
+
   };
 
 

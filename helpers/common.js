@@ -18,6 +18,8 @@ const ErrMessages = {
   userNotFound: 'Email does not exists',
   wrongHappened: 'Something wrong happened please try again',
   ProductExists:'Product alreday enable with discount',
+  productNotFound:'Product not found',
+  sessionNotFound:'Session not found',
   PasswordNotSet:'Your register with us but password is not set so follow installation process again',
   PlanLimit:'you exceed to your plan limit please upgrade plan to add more product',
   RequestNotFromShopify:'Request not from shopify',

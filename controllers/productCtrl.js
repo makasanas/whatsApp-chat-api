@@ -9,6 +9,8 @@ Description : This file consist of functions related to restaurants
 /* DEPENDENCIES */
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
 const productSchema = require('./../schema/product');
+const productModel = require('./../model/product');
+
 const orderSchema = require('./../schema/order');
 const discountSchema = require('./../schema/discount');
 const analyticOrderSchema = require('./../schema/analyticOrder');
@@ -167,6 +169,25 @@ module.exports.deleteProduct = async (req, res) => {
       httpStatus = 400;
       rcResponse.message = 'No Product found with this id';
     }
+  } catch (err) {
+    SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+    httpStatus = 500;
+  }
+  return res.status(httpStatus).send(rcResponse);
+};
+
+
+/* Delete a restaurant */
+module.exports.checkProduct = async (req, res) => {
+  /* Contruct response object */
+  let rcResponse = new ApiResponse();
+  let httpStatus = 200;
+
+  try {
+    const product = await productModel.findProductByShopUrlAndProductId(req.params.shopUrl, req.params.productId);
+    if (!product) {
+      SetResponse(rcResponse, 404, RequestErrorMsg('productNotFound', req, null), false);
+    } 
   } catch (err) {
     SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
     httpStatus = 500;

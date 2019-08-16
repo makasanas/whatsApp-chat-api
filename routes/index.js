@@ -80,6 +80,9 @@ router.put('/products/:productId', checkToken.validateToken, productCtrl.updateP
 /* Delete a product */
 router.delete('/products/:productId', checkToken.validateToken,  productCtrl.deleteProduct);
 
+router.get('/products/checkproduct/:shopUrl/:productId', productCtrl.checkProduct);
+
+
 
 /*****************************
  Webhook

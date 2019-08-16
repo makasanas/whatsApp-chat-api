@@ -7,4 +7,13 @@ module.exports.deleteManyByShopUrl = async (shopUrl) => {
     } catch (error) {
       throw error;
     }
+}
+
+
+module.exports.findProductByShopUrlAndProductId = async (shopUrl, productId) => {
+  try {
+    return await productSchema.findOne({ shopUrl: shopUrl, productId:productId });
+  } catch (error) {
+    throw error;
   }
+}
