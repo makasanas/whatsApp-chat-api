@@ -130,7 +130,8 @@ module.exports.findAndUpdateSession = async (data) => {
     try {
         const session = await sessionModel.findSessionByIdAndProductId(req.params._id, req.params.productId);
         if (!session) {
-          SetResponse(rcResponse, 404, RequestErrorMsg('sessionNotFound', req, null), false);
+            httpStatus = 404; 
+            SetResponse(rcResponse, 404, RequestErrorMsg('sessionNotFound', req, null), false);
         }
 
         rcResponse.data = session;
