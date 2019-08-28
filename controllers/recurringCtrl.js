@@ -42,11 +42,17 @@ module.exports.getPlan = async (req, res) => {
 }
 
 module.exports.activePlanSchema = async (req, res) => {
+
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     const { decoded, params } = req;
+
     try {
+
+        const credit = await this.creditCalculator(req, rcResponse, httpStatus, params.planId);
+
         let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + params.planId + '/activate.json';
+
         await shopifyReuest.post(url, decoded.accessToken).then(async function (response) {
             let productCount = 0;
             if (response.body.recurring_application_charge.name == "Free") {
@@ -58,6 +64,7 @@ module.exports.activePlanSchema = async (req, res) => {
             } else {
                 productCount = process.env.Platinium;
             }
+
             let data = {
                 shopUrl: decoded.shopUrl,
                 userId: decoded.id,
@@ -66,7 +73,7 @@ module.exports.activePlanSchema = async (req, res) => {
                 planPrice: response.body.recurring_application_charge.price,
                 status: response.body.recurring_application_charge.status,
                 started: response.body.recurring_application_charge.activated_on,
-                nextBillDate: response.body.recurring_application_charge.activated_on,
+                nextBillDate: response.body.recurring_application_charge.billing_on,
                 cancelled_on: response.body.recurring_application_charge.cancelled_on,
                 products: productCount,
                 type: 'monthly'
@@ -114,20 +121,77 @@ module.exports.activePlanSchema = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 }
 
-module.exports.deactivePlanSchema = async (req, res) => {
 
+module.exports.creditCalculator = async (req, rcResponse, httpStatus, newPlanId) => {
+
+    const { decoded, params } = req;
+    let newPlan = {};
+    let newPlanPrice; 
+    try {
+        
+        if(newPlanId){
+            let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + newPlanId + '.json';
+            await shopifyReuest.get(url, decoded.accessToken).then(async function (response) {
+                newPlan = response.body;
+               newPlanPrice = parseInt(response.body.recurring_application_charge.price);
+            }).catch(function (err) {
+                SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
+            });
+        }else{
+            newPlanPrice = 0;
+        }
+       
+        const currentPlan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
+
+        if (newPlanPrice < currentPlan.planPrice) {
+            url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + currentPlan.planId + '.json';
+            await shopifyReuest.get(url, decoded.accessToken).then(async function (response) {
+                oneDay = 86400 * 1000;
+                days = parseInt((new Date(response.body.recurring_application_charge.billing_on) - new Date()) / oneDay);
+                const credit = (currentPlan.planPrice - newPlanPrice) * (days / 30)
+                if (credit > 0) {
+                    url = 'https://' + decoded.shopUrl + '/admin/api/2019-07/application_credits.json';
+                    let data = {
+                        "application_credit": {
+                            "description": "application credit for downgrades",
+                            "amount": credit,
+                            "test": true
+                        }
+                    }
+                    await shopifyReuest.post(url, decoded.accessToken, data).then(function (response) {
+                    }).catch(function (err) {
+                        SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
+                    });
+                }
+            }).catch(function (err) {
+                SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
+            });
+        }
+    } catch (err) {
+        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+        httpStatus = 500;
+    }
+}
+
+module.exports.deactivePlanSchema = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
     const { decoded, params } = req;
     try {
-        const plan = await activePlanSchema.findOne({ _id: params.planId }).lean().exec();
+
+        const credit = await this.creditCalculator(req, rcResponse, httpStatus);
+
+        const plan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
+        
         let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + plan.planId + '.json';
         await shopifyReuest.delete(url, decoded.accessToken).then(async function (response) {
             rcResponse.data = response.body;
             data = {
-                status: "cancelled",
+                status: "active",
                 planName: "Free",
-                products:process.env.Free
+                planPrice: 0,
+                products: process.env.Free,
+                planId: undefined
             }
             const updatePlan = await activePlanSchema.findOneAndUpdate({ userId: decoded.id }, { $set: data }, { new: true }).lean().exec();
             var date = new Date(updatePlan.started);

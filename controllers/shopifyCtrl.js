@@ -365,10 +365,8 @@ module.exports.insertProducts = async (req, res) => {
 };
 
 module.exports.deleteApp = async (req, res) => {
-    console.log(req.body);
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
-
 
     try {
         const user = await userModel.getUserByStoreId(req.body.id);
