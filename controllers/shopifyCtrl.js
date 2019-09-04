@@ -3,22 +3,10 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, n
 const mongoose = require('mongoose');
 const utils = require('./../helpers/utils');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
-const userSchema = require('./../schema/user');
-
-const productSchema = require('../schema/product');
+const activePlanModel = require('./../model/activePlan');
 var url = require('url');
 const jwt = require('jsonwebtoken');
-const activePlanSchema = require('../schema/activePlan');
-
 const userModel = require('./../model/user');
-const sessionModel = require('./../model/session');
-const productModel = require('./../model/product');
-const orderModel = require('./../model/order');
-const discountModel = require('./../model/discount');
-const analyticOrderModel = require('./../model/analyticOrder');
-const activePlanModel = require('./../model/activePlan');
-
-
 
 module.exports.accessToken = async (req, res) => {
     /* Contruct response object */
@@ -139,23 +127,10 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 accessToken: shopData.accessToken,
                 recurringPlanName: 'Free'
             };
-    
-            const user = new userSchema(UserObj);
-            const userSave = await user.save();
-    
-            let currentPlan = {
-                shopUrl: response.body.shop.domain,
-                userId: userSave._id,
-                planName: "Free",
-                planPrice: 0,
-                status: "active",
-                type: "Lifetime",
-                started: Date.now(),
-                products: process.env.Free
-            }
-    
-            const plan = new activePlanSchema(currentPlan);
-            const planSave = await plan.save();
+            
+            const userSave = userModel.saveUser(UserObj);
+            // const user = new userSchema(UserObj);
+            // const userSave = await user.save();
     
             const encodedData = {
                 id: userSave._id,
@@ -163,17 +138,14 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 shopUrl: userSave.shopUrl,
                 email: userSave.email,
                 role: userSave.role,
-                plan: currentPlan.planName,
-                type: currentPlan.type,
-                started: currentPlan.started
             };
             // generate accessToken using JWT
             const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
     
             let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
-            let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
+            // let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
     
-            rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
+            rcResponse.data = { ...resObj, token: jwtToken};
     
         }).catch(function (error) {
             if (error.statusCode) {
@@ -197,19 +169,21 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
 
 createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
 
-    const findUser = await userSchema.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
+    const findUser = userModel.getUserByShopUrl(shopData.shopUrl);
+    // const findUser = await userSchema.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
     try {
         if (!findUser) {
-            let webhookArry = await createWebHook(req, res, shopData.accessToken, shopData.shopUrl, rcResponse);
-
 
             let response = await createShop(req, res, shopData, rcResponse, httpStatus);
             httpStatus = response.httpStatus;
             rcResponse = response.rcResponse;
             
         }else{
-            const userSave = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
-            const currentPlan = await activePlanSchema.findOne({ userId: findUser._id }).lean().exec();
+            const userSave = userModel.updateUserById(findUser._id, { accessToken: shopData.accessToken, deleted: false });
+            // const userSave = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
+            const currentPlan = await activePlanModel.findActivePlanByUserId(findUser._id);
+            currentPlan
+
             const encodedData = {
                 id: findUser._id,
                 accessToken: findUser.accessToken,
@@ -257,10 +231,12 @@ module.exports.setPassword = async (req, res) => {
 
     try {
         /* Check if email exists */
-        const findUser = await userSchema.findOne({ _id: req.decoded.id }).lean().exec();
+        const findUser = userModel.getUserById(req.decoded.id);
+        // const findUser = await userSchema.findOne({ _id: req.decoded.id }).lean().exec();
         if (findUser) {
             const passHash = await utils.generatePasswordHash(req.body.password);
-            const updateUser = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
+            const updateUser = userModel.updateUser(findUser._id, { password: passHash, passwordSet: true });
+            // const updateUser = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
 
             delete updateUser['password'];
             delete updateUser['accessToken'];
@@ -280,89 +256,6 @@ module.exports.setPassword = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 };
 
-module.exports.getProducts = async (req, res) => {
-    /* Contruct response object */
-    let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-
-    try {
-        let promiseArray = [];
-        var countQuery = '?';
-        countQuery += req.query.title ? 'title=' + req.query.title : '';
-
-        var query = '?';
-        query += req.query.title ? 'title=' + req.query.title : '';
-        query += req.query.limit ? '&limit=' + req.query.limit : '';
-        query += req.query.page ? '&page=' + req.query.page : '';
-
-        let productUrl = 'https://' + req.decoded.shopUrl + '/admin/products.json' + query;
-        let countUrl = 'https://' + req.decoded.shopUrl + '/admin/products/count.json' + countQuery;
-
-        let options = {
-            method: 'GET',
-            uri: productUrl,
-            json: true,
-            headers: {
-                'X-Shopify-Access-Token': req.decoded.accessToken,
-                'content-type': 'application/json'
-            }
-        };
-
-        let options1 = {
-            method: 'GET',
-            uri: countUrl,
-            json: true,
-            headers: {
-                'X-Shopify-Access-Token': req.decoded.accessToken,
-                'content-type': 'application/json'
-            }
-        };
-
-        promiseArray.push(request(options))
-        promiseArray.push(request(options1))
-
-        await Promise.all(promiseArray).then(async responses => {
-            let result = await responses[0].products.map(product => product.id);
-            await productSchema.find({ productId: { $in: result }, deleted: false }, async function (err, products) {
-                await products.forEach(async (product) => {
-                    var index = await result.indexOf(product.productId)
-                    responses[0].products[index]['added'] = true;
-                });
-                rcResponse.data = { ...responses[0], ...responses[1] }
-                return res.status(httpStatus).send(rcResponse);
-            });
-        })
-    } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
-        return res.status(httpStatus).send(rcResponse);
-
-    }
-
-    // return res.status(httpStatus).send(rcResponse);
-};
-
-module.exports.insertProducts = async (req, res) => {
-    /* Contruct response object */
-    let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-
-    /* Check body params */
-    if (!req.body.shopUrl || !req.body.userId || !req.body.title || !req.body.price) {
-        SetResponse(rcResponse, 400, RequestErrorMsg('InvalidParams', req, null), false);
-        httpStatus = 400;
-        return res.status(httpStatus).send(rcResponse);
-    }
-    try {
-        const product = new productSchema(req.body);
-        const productSave = await product.save();
-        rcResponse.data = productSave;
-    } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
-    }
-    return res.status(httpStatus).send(rcResponse);
-};
 
 module.exports.deleteApp = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -400,76 +293,3 @@ module.exports.deleteApp = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 };
 
-
- createWebHook = async (req, res, accessToken, shopUrl, rcResponse) => {
-
-    var hostname = "https://bargaining-bot-api.webrexstudio.com"
-
-    var requests = [
-        {
-            method: 'POST',
-            uri: 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json',
-            body: {
-                "webhook": {
-                    "topic": "app/uninstalled",
-                    "address": hostname+"/webhooks/app/delete",
-                    "format": "json"
-                }
-            },
-            json: true,
-            headers: {
-                'X-Shopify-Access-Token': accessToken
-            }
-        },
-        {
-            method: 'POST',
-            uri: 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json',
-            body: {
-                "webhook": {
-                    "topic": "orders/create",
-                    "address": hostname+"/webhooks/orders/create",
-                    "format": "json"
-                }
-            },
-            json: true,
-            headers: {
-                'X-Shopify-Access-Token': accessToken
-            }
-        },
-        {
-            method: 'POST',
-            uri: 'https://' + shopUrl + '/admin/api/2019-07/script_tags.json',
-            body: {
-                "script_tag": {
-                    "event": "onload",
-                    "src": 'https://bargaining-bot.webrexstudio.com/js/bargaining-bot.js',
-                    "display_scope": "online_store"
-                }
-            },
-            json: true,
-            headers: {
-                'X-Shopify-Access-Token': accessToken
-            }
-        },
-    ]
-
-    let promiseArray = [];
-
-    requests.forEach(singleRequest =>{
-        promiseArray.push(request(singleRequest))
-    });
-
-    await Promise.all(promiseArray).then(async responses => {
-        return responses;
-    }).catch(function(error) {
-        if (error.statusCode) {
-            SetResponse(rcResponse, error.statusCode, error.error, false);
-            httpStatus = error.statusCode;
-        } else {
-            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
-            httpStatus = 500;
-        }
-    });
-
-    return true;
-}

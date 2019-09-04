@@ -6,8 +6,6 @@ Description : This file consist of middleware functions to use while requesting 
 
 const jwt = require('jsonwebtoken');
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, UserRoles, plans, RequestNotFromShopify, PlanLimit } = require('./../helpers/common');
-const activePlanSchema = require('./../schema/activePlan');
-const productSchema = require('./../schema/product');
 const crypto = require('crypto')
 const secretKey = '91836d2e840312d9267dca48dec93fe7'
 const getRawBody = require('raw-body')

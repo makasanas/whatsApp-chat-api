@@ -8,30 +8,17 @@ Description : This file consist of list of routes for the APIs
 const express = require('express');
 const router = express.Router();
 const authCtrl = require('./../controllers/authCtrl');
-const productCtrl = require('./../controllers/productCtrl');
 const dbConnection = require('./../config/dbConnection');
 const checkToken = require('./../middlewares/checkToken');
 const fileHandler = require('./../helpers/fileHandler');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
 const recurringCtrl = require('./../controllers/recurringCtrl');
-const orderCtrl = require('./../controllers/orderCtrl');
-const chatCtrl = require('./../controllers/chatCtrl');
 
 /*****************************
  Shopify
  *****************************/
 router.get('/shopify/auth', shopifyCtrl.auth);
 router.post('/shopify/setPassword', checkToken.validateToken, shopifyCtrl.setPassword);
-router.get('/shopify/products', checkToken.validateToken, shopifyCtrl.getProducts);
-router.post('/shopify/products', checkToken.validateToken, shopifyCtrl.insertProducts);
-
-
-/*****************************
- Chat User Session 
- *****************************/
-router.post('/chat/session', chatCtrl.createSession);
-router.get('/chat/session/:_id/:productId', chatCtrl.getSession);
-router.put('/chat/session/:_id', chatCtrl.updateSession);
 
 /*****************************
  USERS
@@ -57,41 +44,6 @@ router.post('/user/reset/:token', authCtrl.resetPassword);
 router.get('/checkuserexist/:shopUrl', authCtrl.checkUserExist);
 
 
-
-/*****************************
- Products
- *****************************/
-
-/* Create a new product */
-router.post('/products', checkToken.validateToken, checkToken.planCheck,  productCtrl.createNewProduct);
-
-/* Get list of products */
-router.get('/products', checkToken.validateToken,  productCtrl.getListOfProductsOwned);
-
-// get product count 
-router.get('/products/count', checkToken.validateToken,  productCtrl.getCount);
-
-/* Get product detail by id */
-router.get('/products/:productId', checkToken.validateToken, productCtrl.getProductDetails);
-
-/* Update product details by id */
-router.put('/products/:productId', checkToken.validateToken, productCtrl.updateProductDetails);
-
-/* Delete a product */
-router.delete('/products/:productId', checkToken.validateToken,  productCtrl.deleteProduct);
-
-router.get('/products/checkproduct/:shopUrl/:productId', productCtrl.checkProduct);
-
-
-
-/*****************************
- Webhook
- *****************************/
-router.post('/webhooks/orders/create', checkToken.validateWebhook,   orderCtrl.orders);
-
-router.post('/webhooks/app/delete', checkToken.validateWebhook,   shopifyCtrl.deleteApp);
-
-
 /*****************************
  Recurring Plan
  *****************************/
@@ -103,13 +55,6 @@ router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan)
 router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlanSchema);
 
 router.delete('/recurring/plan/deactive/', checkToken.validateToken,  recurringCtrl.deactivePlanSchema);
-
-
-/*****************************
- Analytic Order
- *****************************/
-
-router.get('/analyticOrders', checkToken.validateToken,  orderCtrl.getAnalyticOrders);
 
 
 module.exports = router;

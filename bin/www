@@ -7,8 +7,6 @@
 var app = require('../app');
 var debug = require('debug')('rapchat-admin-api:server');
 var http = require('http');
-var chat = require('../chat/chat');
-
 
 /**
  * Get port from environment and store in Express.
