@@ -28,7 +28,7 @@ module.exports.login = async (req, res) => {
 
 	try {
 		/* Check if email exists */
-		const findUser = userModel.getUserByShopUrl(req.body.shopUrl);
+		const findUser = await userModel.getUserByShopUrl(req.body.shopUrl);
 		// const findUser = await userSchema.findOne({ shopUrl: req.body.shopUrl }).lean().exec();
 		if (findUser) {
 			const encodedData = {
@@ -86,7 +86,7 @@ module.exports.getUserProfile = async (req, res) => {
 
 	try {
 		const { decoded } = req;
-		const userData = userModel.getUserById(decoded.id);
+		const userData = await userModel.getUserById(decoded.id);
 		// const userData = await userSchema.findOne({ _id: decoded.id, deleted: false }, { password: 0, accessToken:0 }).lean().exec();
 
 		rcResponse.data = { ...userData };
@@ -110,7 +110,7 @@ module.exports.userUpdate = async (req, res) => {
 			phone: req.body.phone != undefined ? req.body.phone : undefined,
 		};
 		userObj = JSON.parse(JSON.stringify(userObj));
-		const updateUser = userModel.updateUser(req.params.userId, userObj);
+		const updateUser = await userModel.updateUser(req.params.userId, userObj);
 		// const updateUser = await userSchema.findByIdAndUpdate({ _id: req.params.userId }, { $set: userObj }, { new: true, runValidators: true }).lean().exec();
 		delete updateUser.password;
 		rcResponse.data = updateUser;
@@ -137,7 +137,7 @@ module.exports.userPasswordUpdate = async (req, res) => {
 	let rcResponse = new ApiResponse();
 	let httpStatus = 200;
 	try {
-		const userData = userModel.getUserById(req.params.userId);
+		const userData = await userModel.getUserById(req.params.userId);
 		// const userData = await userSchema.findOne({ _id: req.params.userId }).lean().exec();
 		if (userData) {
 			const passHash = await utils.generatePasswordHash(req.body.password);
@@ -145,7 +145,7 @@ module.exports.userPasswordUpdate = async (req, res) => {
 				password: passHash,
 			};
 			// userObj = JSON.parse(JSON.stringify(userObj));
-			const updateUser = userModel.updateUser(req.params.userId, userObj);
+			const updateUser = await userModel.updateUser(req.params.userId, userObj);
 			// const updateUser = await userSchema.findOneAndUpdate({ _id: req.params.userId }, { $set: userObj }, { new: true }).lean().exec();
 			delete updateUser.password;
 			rcResponse.data = updateUser;
@@ -188,7 +188,7 @@ module.exports.forgetPassword = async (req, res) => {
 
 	try {
 		/* Check if email exists */
-		const findUser = userModel.getUserByEmail(req.body.email);
+		const findUser = await userModel.getUserByEmail(req.body.email);
 		// const findUser = await userSchema.findOne({ email: req.body.email }).exec();
 		if (findUser) {
 
@@ -252,7 +252,7 @@ module.exports.resetPassword = async (req, res) => {
 	let httpStatus = 200;
 
 	try {
-		const user = userModel.getUserByTokenAndDate(req.params.token, Date.now());
+		const user = await userModel.getUserByTokenAndDate(req.params.token, Date.now());
 		// userSchema.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, async function(err, user) {
 		if (!user) {
 			SetResponse(rcResponse, 404, RequestErrorMsg('tokenInvalid', req, null), false);

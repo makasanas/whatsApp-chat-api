@@ -128,7 +128,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 recurringPlanName: 'Free'
             };
             
-            const userSave = userModel.saveUser(UserObj);
+            const userSave = await userModel.saveUser(UserObj);
             // const user = new userSchema(UserObj);
             // const userSave = await user.save();
     
@@ -169,7 +169,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
 
 createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
 
-    const findUser = userModel.getUserByShopUrl(shopData.shopUrl);
+    const findUser = await userModel.getUserByShopUrl(shopData.shopUrl);
     // const findUser = await userSchema.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
     try {
         if (!findUser) {
@@ -179,7 +179,7 @@ createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
             rcResponse = response.rcResponse;
             
         }else{
-            const userSave = userModel.updateUserById(findUser._id, { accessToken: shopData.accessToken, deleted: false });
+            const userSave = await userModel.updateUserById(findUser._id, { accessToken: shopData.accessToken, deleted: false });
             // const userSave = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
             const currentPlan = await activePlanModel.findActivePlanByUserId(findUser._id);
             currentPlan
@@ -231,11 +231,11 @@ module.exports.setPassword = async (req, res) => {
 
     try {
         /* Check if email exists */
-        const findUser = userModel.getUserById(req.decoded.id);
+        const findUser = await userModel.getUserById(req.decoded.id);
         // const findUser = await userSchema.findOne({ _id: req.decoded.id }).lean().exec();
         if (findUser) {
             const passHash = await utils.generatePasswordHash(req.body.password);
-            const updateUser = userModel.updateUser(findUser._id, { password: passHash, passwordSet: true });
+            const updateUser = await userModel.updateUser(findUser._id, { password: passHash, passwordSet: true });
             // const updateUser = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
 
             delete updateUser['password'];

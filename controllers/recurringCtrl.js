@@ -31,7 +31,7 @@ module.exports.getPlan = async (req, res) => {
     let httpStatus = 200;
     const { decoded } = req;
     try {
-        const findPlan = activePlanModel.findActivePlanByUserId(decoded.id);
+        const findPlan = await activePlanModel.findActivePlanByUserId(decoded.id);
         // const findPlan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
         rcResponse.data = findPlan
     } catch (err) {
@@ -79,12 +79,12 @@ module.exports.activePlanSchema = async (req, res) => {
                 type: 'monthly'
             }
 
-            const findPlan = activePlanModel.findActivePlanByUserId(decoded.id);
+            const findPlan = await activePlanModel.findActivePlanByUserId(decoded.id);
 
             // const findPlan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
 
             if (findPlan) {
-                const updatePlan = activePlanModel.updatePlan(findPlan._id, data);
+                const updatePlan = await activePlanModel.updatePlan(findPlan._id, data);
 
                 // const updatePlan = await activePlanSchema.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
 
@@ -100,7 +100,7 @@ module.exports.activePlanSchema = async (req, res) => {
                     recurringPlanName: response.body.recurring_application_charge.name,
                     recurringPlanId: updatePlan._id
                 }
-                const updateUserPlan = userModel.updateUser(decoded.id, userPlanData);
+                const updateUserPlan = await userModel.updateUser(decoded.id, userPlanData);
                 // const updateUserPlan = await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: userPlanData }, { new: true }).lean().exec();
 
                 rcResponse.data = updatePlan
@@ -112,7 +112,7 @@ module.exports.activePlanSchema = async (req, res) => {
                     recurringPlanName: response.body.recurring_application_charge.name,
                     recurringPlanId: planSave._id
                 }
-                const updateUserPlan = userModel.updateUser(decoded.id, userPlanData);
+                const updateUserPlan = await userModel.updateUser(decoded.id, userPlanData);
 
                 // const updateUserPlan = await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: userPlanData }, { new: true }).lean().exec();
 
@@ -148,7 +148,7 @@ module.exports.creditCalculator = async (req, rcResponse, httpStatus, newPlanId)
             newPlanPrice = 0;
         }
 
-        const currentPlan = activePlanModel.findActivePlanByUserId(decoded.id);
+        const currentPlan = await activePlanModel.findActivePlanByUserId(decoded.id);
         // const currentPlan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
 
         if (newPlanPrice < currentPlan.planPrice) {
@@ -189,7 +189,7 @@ module.exports.deactivePlanSchema = async (req, res) => {
 
         const credit = await this.creditCalculator(req, rcResponse, httpStatus);
 
-        const plan = activePlanModel.findActivePlanByUserId(decoded.id);
+        const plan = await activePlanModel.findActivePlanByUserId(decoded.id);
 
         // const plan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
         
@@ -203,13 +203,13 @@ module.exports.deactivePlanSchema = async (req, res) => {
                 products: process.env.Free,
                 planId: undefined
             }
-            const updatePlan = activePlanModel.updatePlan(decoded.id, data);
+            const updatePlan = await activePlanModel.updatePlan(decoded.id, data);
 
             // const updatePlan = await activePlanSchema.findOneAndUpdate({ userId: decoded.id }, { $set: data }, { new: true }).lean().exec();
             var date = new Date(updatePlan.started);
             let expiryDate = date.setDate(date.getDate() + 30);
 
-            const updateUserPlan = userModel.updateUser(decoded.id, { recurringPlanName: 'Free', recurringPlanExpiryDate: expiryDate });
+            const updateUserPlan = await userModel.updateUser(decoded.id, { recurringPlanName: 'Free', recurringPlanExpiryDate: expiryDate });
 
             // const updateUserPlan = await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: { recurringPlanName: 'Free', recurringPlanExpiryDate: expiryDate } }, { new: true }).lean().exec();
 
