@@ -11,7 +11,7 @@ module.exports.deleteManyByShopUrl = async (shopUrl) => {
 
   module.exports.findActivePlanByUserId = async (userId) => {
     try {
-      return await activePlanSchema.deleteMany({ shopUrl: shopUrl });
+      return await activePlanSchema.findOne({ userId: userId });
     } catch (error) {
       throw error;
     }
@@ -24,3 +24,14 @@ module.exports.deleteManyByShopUrl = async (shopUrl) => {
       throw error;
     }
   }
+
+  module.exports.savePlan = async (planObj) => {
+    try {
+      const plan = await new activePlanSchema(planObj);
+      const planSave = await plan.save();
+      return  planSave;
+    } catch (error) {
+      throw error;
+    }
+  }
+  

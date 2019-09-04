@@ -2,7 +2,7 @@ const userSchema = require('./../schema/user');
 
 module.exports.getUserByShopUrl = async (shopUrl) => {
   try {
-    return await userSchema.findOne({ shopUrl: shopUrl, deleted: false });
+    return await userSchema.findOne({ shopUrl: shopUrl });
   } catch (error) {
     throw error;
   }
@@ -28,7 +28,9 @@ module.exports.deleteManyByShopUrl = async (shopUrl) => {
 
 module.exports.saveUser = async (UserObj) => {
   try {
-    return await userSchema.save(UserObj);
+    const user = await new userSchema(UserObj);
+    const userSave = await user.save();
+    return  userSave;
   } catch (error) {
     throw error;
   }

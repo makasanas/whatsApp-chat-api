@@ -83,6 +83,7 @@ generatorAcessToekn = async(req, res, httpStatus, rcResponse) => {
             await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
                 url = 'https://' + shopUrl + '/admin/shop.json';
                 accessToken = response.access_token;
+                console.log(response);
             }).catch((error) => {
                 if (error.statusCode) {
                     SetResponse(rcResponse, error.statusCode, error.error, false);
@@ -94,6 +95,8 @@ generatorAcessToekn = async(req, res, httpStatus, rcResponse) => {
                     return res.status(httpStatus).send(rcResponse);
                 }
             });
+        }else{
+            console.log("erorror data");
         }
     }catch (err) {
         if (err.code === 11000) {
@@ -129,9 +132,20 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
             };
             
             const userSave = await userModel.saveUser(UserObj);
-            // const user = new userSchema(UserObj);
-            // const userSave = await user.save();
+
+            let currentPlan = {
+                shopUrl: response.body.shop.domain,
+                userId: userSave._id,
+                planName: "Free",
+                planPrice: 0,
+                status: "active",
+                type: "Lifetime",
+                started: Date.now(),
+                products: process.env.Free
+            }
     
+            const planSave = activePlanModel.savePlan(currentPlan)
+
             const encodedData = {
                 id: userSave._id,
                 accessToken: userSave.accessToken,
@@ -170,19 +184,19 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
 createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
 
     const findUser = await userModel.getUserByShopUrl(shopData.shopUrl);
+    console.log(findUser);
     // const findUser = await userSchema.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
     try {
         if (!findUser) {
-
             let response = await createShop(req, res, shopData, rcResponse, httpStatus);
             httpStatus = response.httpStatus;
             rcResponse = response.rcResponse;
             
         }else{
-            const userSave = await userModel.updateUserById(findUser._id, { accessToken: shopData.accessToken, deleted: false });
+            const userSave = await userModel.updateUser(findUser._id, { accessToken: shopData.accessToken, deleted: false });
+            console.log(userSave);
             // const userSave = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
             const currentPlan = await activePlanModel.findActivePlanByUserId(findUser._id);
-            currentPlan
 
             const encodedData = {
                 id: findUser._id,
@@ -218,8 +232,11 @@ module.exports.auth = async (req, res, next) => {
     let httpStatus = 200;
 
     let shopData = await generatorAcessToekn(req, res, httpStatus, rcResponse);
+    console.log(shopData);
 
     let response = await createOrUpdateShop(req, res, shopData, rcResponse, httpStatus);
+    console.log(response);
+
 
     return res.status(response.httpStatus).send(response.rcResponse);
 };

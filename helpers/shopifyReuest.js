@@ -9,7 +9,7 @@ const request = require('request-promise');
 module.exports.post = async (url, token, body ) => {
     let options = {
         method: 'POST',
-        uri: url,
+        url: url,
         json: true,
         resolveWithFullResponse: true,
         headers: {
@@ -25,7 +25,7 @@ module.exports.post = async (url, token, body ) => {
 module.exports.get = async (url, token) => {
     let options = {
         method: 'GET',
-        uri: url,
+        url: url,
         json: true,
         resolveWithFullResponse: true,//added this to view status code
         headers: {
@@ -39,7 +39,7 @@ module.exports.get = async (url, token) => {
 module.exports.delete = async (url, token) => {
     let options = {
         method: 'DELETE',
-        uri: url,
+        url: url,
         json: true,
         resolveWithFullResponse: true,//added this to view status code
         headers: {
