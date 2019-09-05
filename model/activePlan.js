@@ -19,7 +19,7 @@ module.exports.deleteManyByShopUrl = async (shopUrl) => {
 
   module.exports.updatePlan = async (planId, data) => {
     try {
-      return await activePlanSchema.findOneAndUpdate({ _id: planId }, { $set: data }, { new: true }).lean().exec();
+      return await activePlanSchema.findOneAndUpdate({ userId: planId }, { $set: data }, { new: true }).lean().exec();
     } catch (error) {
       throw error;
     }

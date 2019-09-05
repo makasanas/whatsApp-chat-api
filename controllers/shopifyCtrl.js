@@ -141,7 +141,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 status: "active",
                 type: "Lifetime",
                 started: Date.now(),
-                products: process.env.Free
+                products: process.env.Free,
             }
     
             const planSave = activePlanModel.savePlan(currentPlan)

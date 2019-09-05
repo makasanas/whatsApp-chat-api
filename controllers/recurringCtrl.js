@@ -84,7 +84,7 @@ module.exports.activePlanSchema = async (req, res) => {
             // const findPlan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
 
             if (findPlan) {
-                const updatePlan = await activePlanModel.updatePlan(findPlan._id, data);
+                const updatePlan = await activePlanModel.updatePlan(findPlan.userId, data);
 
                 // const updatePlan = await activePlanSchema.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
 
@@ -190,7 +190,7 @@ module.exports.deactivePlanSchema = async (req, res) => {
         const credit = await this.creditCalculator(req, rcResponse, httpStatus);
 
         const plan = await activePlanModel.findActivePlanByUserId(decoded.id);
-
+        
         // const plan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
         
         let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + plan.planId + '.json';
