@@ -7,11 +7,12 @@
     "node": "8.9.0"
   },
   "scripts": {
-    "start": "MONGO_URL=mongodb://127.0.0.1:27017/ShopifyCommonAppDB nodemon ./bin/www",
-    "start-dev": "NODE_ENV=dev PORT=4000 MONGO_URL=mongodb://127.0.0.1:27017/ShopifyCommonAppDBDev nodemon ./bin/www",
-    "start-prod": "NODE_ENV=prod PORT=4001 MONGO_URL=mongodb://127.0.0.1:27017/ShopifyCommonAppDBProd nodemon ./bin/www"
+    "start": "MONGO_URL=mongodb://127.0.0.1:27017/SEOMetaDescriptionDB nodemon ./bin/www",
+    "start-dev": "NODE_ENV=dev PORT=4000 MONGO_URL=mongodb://127.0.0.1:27017/SEOMetaDescriptionDBDev nodemon ./bin/www",
+    "start-prod": "NODE_ENV=prod PORT=4001 MONGO_URL=mongodb://127.0.0.1:27017/SEOMetaDescriptionDBProd nodemon ./bin/www"
   },
   "dependencies": {
+    "algorithmia": "^0.3.10",
     "bcryptjs": "^2.4.3",
     "body-parser": "~1.13.2",
     "compression": "^1.7.4",

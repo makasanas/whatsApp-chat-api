@@ -10,9 +10,10 @@ const router = express.Router();
 const authCtrl = require('./../controllers/authCtrl');
 const dbConnection = require('./../config/dbConnection');
 const checkToken = require('./../middlewares/checkToken');
-const fileHandler = require('./../helpers/fileHandler');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
 const recurringCtrl = require('./../controllers/recurringCtrl');
+const productCtrl = require('./../controllers/productCtrl');
+
 
 /*****************************
  Shopify
@@ -55,6 +56,15 @@ router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan)
 router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlanSchema);
 
 router.delete('/recurring/plan/deactive/', checkToken.validateToken,  recurringCtrl.deactivePlanSchema);
+
+/*****************************
+  Product Get
+ *****************************/
+
+router.get('/products', checkToken.validateToken,  productCtrl.get);
+
+router.post('/product/description', checkToken.validateToken,  productCtrl.getDescription);
+
 
 
 module.exports = router;
