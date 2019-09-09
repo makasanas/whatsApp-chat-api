@@ -2,59 +2,97 @@ const request = require('request-promise');
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes, generateRandom } = require('./../helpers/common');
 var Algorithmia = require("algorithmia");
 const productModel = require('./../model/product');
+const shopifyReuest = require('./../helpers/shopifyReuest.js');
+const { handleError } = require('./../helpers/utils');
+
 
 module.exports.get = async (req, res) => {
-    /* Contruct response object */
     let rcResponse = new ApiResponse();
-    let httpStatus = 200;
+    let { decoded, query } = req;
+    let countQuery = '?';
+    let productQuery = '?';
 
     try {
-        let promiseArray = [];
-        var countQuery = '?';
-        countQuery += req.query.title ? 'title=' + req.query.title : '';
 
-        var query = '?';
-        query += req.query.title ? 'title=' + req.query.title : '';
-        query += req.query.limit ? '&limit=' + req.query.limit : '';
-        query += req.query.page ? '&page=' + req.query.page : '';
+        productQuery += query.title ? 'title=' +query.title : '';
+        productQuery += query.collection_id ? '&collection_id=' + query.collection_id : '';
+        // productQuery += query.vendor ? '&vendor=' + query.vendor : '';
+        // productQuery += query.product_type ? '&product_type=' + query.product_type : '';
+        productQuery += query.created_at_min ? '&created_at_min=' + query.created_at_min : '';
+        productQuery += query.created_at_max ? '&created_at_max=' + query.created_at_max : '';
+        productQuery += query.published_status ? '&published_status=' + query.published_status : '';
 
-        let productUrl = 'https://' + req.decoded.shopUrl + '/admin/products.json';
-        let countUrl = 'https://' + req.decoded.shopUrl + '/admin/products/count.json' + countQuery;
+        countQuery = productQuery;
+        productQuery += query.limit ? '&limit=' + query.limit : '';
+        productQuery += query.since_id ? '&since_id=' + query.since_id : '';
+        productQuery += query.page ? '&page=' + query.page : '';
 
-        let product = {
-            method: 'GET',
-            uri: productUrl,
-            json: true,
-            headers: {
-                'X-Shopify-Access-Token': req.decoded.accessToken,
-                'content-type': 'application/json'
-            }
-        };
 
-        let count = {   
-            method: 'GET',
-            uri: countUrl,
-            json: true,
-            headers: {
-                'X-Shopify-Access-Token': req.decoded.accessToken,
-                'content-type': 'application/json'
-            }
-        };
 
-        promiseArray.push(request(product))
-        promiseArray.push(request(count))
+        let promiseArray = [
+            shopifyCalls('https://' + decoded.shopUrl + '/admin/api/2019-04/products.json'+productQuery, decoded.accessToken),
+            shopifyCalls('https://' + decoded.shopUrl + '/admin/api/2019-04/products/count.json'+countQuery, decoded.accessToken)
+        ]
 
         await Promise.all(promiseArray).then(async responses => {
-            rcResponse.data = { ...responses[0], ...responses[1] }
-            return res.status(httpStatus).send(rcResponse);
-        })
-    } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
-        return res.status(httpStatus).send(rcResponse);
+            console.log(responses[0].headers['x-shopify-shop-api-call-limit']);
+            console.log(responses[0].headers['http_x_shopify_shop_api_call_limit']);
+            console.log(responses[0].headers['Retry-After']);
 
+            rcResponse.data = { ...responses[0].body, ...responses[1].body }
+        }).catch(function(err) {
+            handleError(err,req, rcResponse);
+        });
+    } catch (err) {
+        handleError(err,req, rcResponse);
     }
+    return res.status(rcResponse.code).send(rcResponse);
 };
+
+shopifyCalls = async (url, accessToken) =>{
+    try {
+        return new Promise(function(resolve, reject) {
+            shopifyReuest.get(url, accessToken).then(function (response) {
+                resolve(response)
+            }).catch(function (err) {
+                reject(err);
+            });
+          })
+    }catch (err) {
+        throw err;
+    }
+}
+
+
+
+module.exports.getCollection = async (req, res) => {
+    let rcResponse = new ApiResponse();
+    let { decoded } = req;
+    try {
+        let promiseArray = [
+            shopifyCalls('https://' + decoded.shopUrl + '/admin/api/2019-07/custom_collections.json', decoded.accessToken),
+            shopifyCalls('https://' + decoded.shopUrl + '/admin/api/2019-07/smart_collections.json', decoded.accessToken),
+        ]
+
+        await Promise.all(promiseArray).then(async responses => {
+            console.log(responses[0].headers['x-shopify-shop-api-call-limit']);
+            console.log(responses[0].headers['http_x_shopify_shop_api_call_limit']);
+            console.log(responses[0].headers['Retry-After']);
+
+            let collections = responses[0].body.custom_collections.concat(responses[1].body.smart_collections); 
+
+            rcResponse.data = {
+                collections:collections
+            }
+        }).catch(function(err) {
+            handleError(err,req, rcResponse);
+        });
+    } catch (err) {
+        handleError(err, req, rcResponse);
+    }
+    return res.status(rcResponse.code).send(rcResponse);
+};
+
 
 betterDescription = async (input) => {
     var result;
@@ -81,6 +119,9 @@ betterDescription = async (input) => {
         length : result.length + 1
     } 
 }
+
+
+
 
 
 module.exports.getDescription = async (req, res) => {
@@ -115,7 +156,7 @@ module.exports.getDescription = async (req, res) => {
             url: product.handle
         }
         rcResponse.data = await productModel.creat(productObj);
-        
+
 	} catch (error) {
 		httpStatus = 500;
 		SetResponse(rcResponse, httpStatus, RequestErrorMsg(null, req, error), false);

@@ -51,7 +51,7 @@ const SetResponse = (respObj, code = 1, message = 'OK', success = true, data = {
  * @returns {string} a string prompt describing the error and it's place in api
  */
 const RequestErrorMsg = (errKey, requestObj = null, errorObj = null) => {
-  return `${(errorObj !== null) ? errorObj.message+' ': ''}${(errKey !== null) ? ErrMessages[errKey] : ''}`;
+  return `${(errorObj !== null) ? errorObj.message: ''}${(errKey !== null) ? ErrMessages[errKey] : ''}`;
 };
 
 
@@ -94,7 +94,7 @@ plans = [
 function ApiResponse() {
   this.success = true;
   this.message = "OK";
-  this.code = 0;
+  this.code = 200;
   this.data = {};
 };
 

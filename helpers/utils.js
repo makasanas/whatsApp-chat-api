@@ -5,6 +5,8 @@ Description : This file consist of utility functions
 */
 const hmacValidator = require('hmac-validator');
 const bcrypt = require('bcryptjs');
+const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes, generateRandom } = require('./common');
+
 
 /* Generate hash for password */
 module.exports.generatePasswordHash = async (password) => {
@@ -37,6 +39,23 @@ module.exports.comparePassword = async (originalPass, passToMatch) => {
     });
   });
 };
+
+module.exports.handleError = async (err, req, rcResponse) => {
+  try{
+      if(err instanceof ReferenceError){
+          SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+      }else if(err.options && err.options.headers && err.options.headers["X-Shopify-Access-Token"]){
+          SetResponse(rcResponse, err.statusCode, err.message, false);
+      }else if (err.name === 'MongoError'){
+          SetResponse(rcResponse, 500, "error from monodb", false);
+      }else{
+          SetResponse(rcResponse, 500, RequestErrorMsg(null, null, err), false);
+      }
+  }catch(err){
+      SetResponse(rcResponse, 500, RequestErrorMsg(null, null, err), false);
+  }
+}
+
 
 const errors = {
   "url":"https://royal.pingdom.com/the-5-most-common-http-errors-according-to-google/",

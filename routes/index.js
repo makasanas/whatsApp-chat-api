@@ -63,6 +63,8 @@ router.delete('/recurring/plan/deactive/', checkToken.validateToken,  recurringC
 
 router.get('/products', checkToken.validateToken,  productCtrl.get);
 
+router.get('/collections', checkToken.validateToken,  productCtrl.getCollection);
+
 router.post('/product/description', checkToken.validateToken,  productCtrl.getDescription);
 
 
