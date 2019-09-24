@@ -44,9 +44,17 @@ module.exports.updateUser = async (userId, data) => {
   }
 }
 
+module.exports.updateCredit = async (userId, credit) => {
+  try {
+    return await userSchema.findOneAndUpdate({ _id: userId }, {  $inc: { 'credit': credit } }, { new: true }).lean().exec();
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports.getUserById = async (userId) => {
   try {
-    return await userSchema.findOne({ _id: userId, deleted: false }).lean().exec();
+    return await userSchema.findOne({ _id: userId }).lean().exec();
   } catch (error) {
     throw error;
   }
@@ -54,19 +62,16 @@ module.exports.getUserById = async (userId) => {
 
 module.exports.getUserByEmail = async (email) => {
   try {
-    return await userSchema.findOne({ email: email, deleted: false }).lean().exec();
+    return await userSchema.findOne({ email: email }).lean().exec();
   } catch (error) {
     throw error;
   }
 }
 
-module.exports.getUserByTokenAndDate = async (token,date) => {
+module.exports.getUserByTokenAndDate = async (token) => {
   try {
-    return await userSchema.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }).lean().exec();
+    return await userSchema.findOne({ resetPasswordToken: token, resetPasswordExpires: { $gt: Date.now() } }).lean().exec();
   } catch (error) {
     throw error;
   }
 }
-
-
-

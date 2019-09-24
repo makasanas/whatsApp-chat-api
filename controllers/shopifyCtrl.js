@@ -194,8 +194,6 @@ createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
             
         }else{
             const userSave = await userModel.updateUser(findUser._id, { accessToken: shopData.accessToken, deleted: false });
-            console.log(userSave);
-            // const userSave = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { accessToken: shopData.accessToken, deleted: false } }, { new: true }).lean().exec();
             const currentPlan = await activePlanModel.findActivePlanByUserId(findUser._id);
 
             const encodedData = {

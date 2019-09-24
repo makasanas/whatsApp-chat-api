@@ -9,7 +9,6 @@ const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./..
 const jwt = require('jsonwebtoken');
 const userModel = require('./../model/user');
 const utils = require('./../helpers/utils');
-const ObjectId = require('mongoose').Types.ObjectId;
 var nodemailer = require("nodemailer");
 var crypto = require('crypto');
 
@@ -188,8 +187,7 @@ module.exports.forgetPassword = async (req, res) => {
 
 	try {
 		/* Check if email exists */
-		const findUser = await userModel.getUserByEmail(req.body.email);
-		// const findUser = await userSchema.findOne({ email: req.body.email }).exec();
+		 const findUser = await userModel.getUserByEmail(req.body.email);
 		if (findUser) {
 
 			var token = await uuidPromise(uuid).then(u => { return u }).catch(e => {
@@ -198,10 +196,12 @@ module.exports.forgetPassword = async (req, res) => {
 				return res.status(httpStatus).send(rcResponse);
 			});
 
+		
 			findUser.resetPasswordToken = token;
 			findUser.resetPasswordExpires = Date.now() + (24 * 3600000); // 24 hour
 
-			await findUser.save();
+			await userModel.updateUser(findUser._id, findUser);
+			// await findUser.save();
 
 			var smtpTransport = nodemailer.createTransport({
 				host: "smtp.zoho.com",
@@ -212,6 +212,8 @@ module.exports.forgetPassword = async (req, res) => {
 					pass: "Sanjay.143"
 				}
 			});
+
+
 			let mailBody = 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
 				'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
 				req.body.appdomain + '/app/set-new-password/?token=' + token + '&email=' + findUser.email + ' \n\n' +
@@ -219,12 +221,14 @@ module.exports.forgetPassword = async (req, res) => {
 
 			var mailOptions = {
 				to: findUser.email,
-				subject: 'Reset Password | Bargain Bot',
+				subject: 'Reset Password | SEO by Ai',
 				text: mailBody,
-				from: 'Bargaining Bot <hello@webrexstudio.com>'
+				from: 'SEO by Ai <hello@webrexstudio.com>'
 			}
+		
 			smtpTransport.sendMail(mailOptions, function (error, response) {
 				if (error) {
+
 					SetResponse(rcResponse, 404, RequestErrorMsg('wrongHappened', req, null), false);
 					httpStatus = 404;
 					return res.status(httpStatus).send(rcResponse);
@@ -252,7 +256,7 @@ module.exports.resetPassword = async (req, res) => {
 	let httpStatus = 200;
 
 	try {
-		const user = await userModel.getUserByTokenAndDate(req.params.token, Date.now());
+		const user = await userModel.getUserByTokenAndDate(req.params.token);
 		// userSchema.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, async function(err, user) {
 		if (!user) {
 			SetResponse(rcResponse, 404, RequestErrorMsg('tokenInvalid', req, null), false);
@@ -264,21 +268,14 @@ module.exports.resetPassword = async (req, res) => {
 			user.resetPasswordExpires = undefined;
 			user.resetPasswordToken = undefined;
 			user.passwordSet = true;
-
-			await user.save(function (err) {
-				if (err) {
-					SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-					httpStatus = 500;
-				}
-				return res.status(httpStatus).send(rcResponse);
-			})
+			await userModel.updateUser(user._id, user);
 		}
-
-		// });
 	} catch (err) {
+		console.log(err);
 		SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
 		httpStatus = 500;
 	}
+	return res.status(httpStatus).send(rcResponse);
 };
 
 
@@ -300,5 +297,26 @@ module.exports.checkUserExist = async (req, res) => {
 		SetResponse(rcResponse, httpStatus, RequestErrorMsg(null, req, err), false);
 	}
 
+	return res.status(httpStatus).send(rcResponse);
+}
+
+module.exports.checkToken = async (req, res) => {
+	let rcResponse = new ApiResponse();
+	let httpStatus = 200;
+	const { decoded } = req; 
+
+    try {
+		const user = await userModel.getUserById(decoded.id);
+		if(!user){
+			httpStatus = 404
+			SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopNotExists', req, null), false);
+		}else{
+			SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopExists', req, null), true);
+		}		
+    } catch (error) {
+		httpStatus = 500;
+		SetResponse(rcResponse, httpStatus, RequestErrorMsg(null, req, err), false);
+	}
+	
 	return res.status(httpStatus).send(rcResponse);
 }

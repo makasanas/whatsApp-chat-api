@@ -6,6 +6,7 @@ Description : This file consist of utility functions
 const hmacValidator = require('hmac-validator');
 const bcrypt = require('bcryptjs');
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes, generateRandom } = require('./common');
+var nodemailer = require("nodemailer");
 
 
 /* Generate hash for password */
@@ -56,15 +57,35 @@ module.exports.handleError = async (err, req, rcResponse) => {
   }
 }
 
+module.exports.sendMail = async (email, mailBody, subject) => {
+  try {
+    var smtpTransport = nodemailer.createTransport({
+      host: "smtp.zoho.com",
+      port: 465,
+      secure: true, //ssl
+      auth: {
+        user: "hello@webrexstudio.com",
+        pass: "Sanjay.143"
+      }
+    });
+    var mailOptions = {
+      to: email,
+      subject: subject,
+      text: mailBody,
+      from: 'SEO by Ai <hello@webrexstudio.com>'
+    }
 
-const errors = {
-  "url":"https://royal.pingdom.com/the-5-most-common-http-errors-according-to-google/",
-  "400":"bad Request mostly paremet not match so show error accodily to user this peramet is missing",
-  "401":"unatuhordized logout",
-  "403":"not authotized to access api or page so show error relate to front",
-  "404":"page not found so send acoridnly to 404 page",
-  "500":"database something went wrong please try "
+    await smtpTransport.sendMail(mailOptions, function (error, response) {
+      if (err) {  
+        throw err;
+      } 
+    });
+  } catch (err) {
+    throw err;
+  }
+  return true;
 }
+
 
 module.exports.verify = function (query) {
   var validate = hmacValidator({
@@ -86,21 +107,3 @@ module.exports.verify = function (query) {
   // 3. Verify signature
   return validate(process.env.appSecret, null, query);
 };
-
-// module.exports.singingCookes = function (res, cookeName, cookeValue) {
-//   let options = {
-//     maxAge: 1000 * 60 * 15, // would expire after 15 minutes
-//     httpOnly: true, // The cookie only accessible by the web server
-//     signed: true // Indicates if the cookie should be signed
-//   }
-//    res.cookie('access_token', response.access_token, options)
-// }
-
-// module.exports.normalCookes = function (query) {
-//   let options = {
-//     maxAge: 1000 * 60 * 15, // would expire after 15 minutes
-//     httpOnly: false, // The cookie only accessible by the web server
-//     signed: false // Indicates if the cookie should be signed
-//   }
-//   return res.cookie('access_token', response.access_token, options)
-// }

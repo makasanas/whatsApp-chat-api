@@ -13,6 +13,8 @@ const checkToken = require('./../middlewares/checkToken');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
 const recurringCtrl = require('./../controllers/recurringCtrl');
 const productCtrl = require('./../controllers/productCtrl');
+const contactCtrl = require('./../controllers/contactCtrl');
+
 
 
 /*****************************
@@ -44,6 +46,8 @@ router.post('/user/reset/:token', authCtrl.resetPassword);
 //
 router.get('/checkuserexist/:shopUrl', authCtrl.checkUserExist);
 
+router.get('/user/checktoken', checkToken.validateToken, authCtrl.checkToken);
+
 
 /*****************************
  Recurring Plan
@@ -66,6 +70,9 @@ router.get('/products', checkToken.validateToken,  productCtrl.get);
 router.get('/collections', checkToken.validateToken,  productCtrl.getCollection);
 
 router.post('/product/description', checkToken.validateToken,  productCtrl.getDescription);
+
+router.post('/contact', checkToken.validateToken,  contactCtrl.creat);
+
 
 
 
