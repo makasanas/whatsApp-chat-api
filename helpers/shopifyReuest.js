@@ -50,3 +50,19 @@ module.exports.delete = async (url, token) => {
     return request.delete(options);
 }
 
+module.exports.put = async (url, token, body ) => {
+    let options = {
+        method: 'PUT',
+        url: url,
+        json: true,
+        resolveWithFullResponse: true,
+        headers: {
+            'X-Shopify-Access-Token': token,
+            'content-type': 'application/json'
+        },
+        body: body
+    };
+
+    return await request.put(options);
+}
+
