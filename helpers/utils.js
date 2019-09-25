@@ -8,7 +8,6 @@ const bcrypt = require('bcryptjs');
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes, generateRandom } = require('./common');
 var nodemailer = require("nodemailer");
 
-
 /* Generate hash for password */
 module.exports.generatePasswordHash = async (password) => {
   return new Promise((resolve, reject) => {
@@ -72,7 +71,7 @@ module.exports.sendMail = async (email, mailBody, subject) => {
       to: email,
       subject: subject,
       text: mailBody,
-      from: 'SEO by Ai <hello@webrexstudio.com>'
+      from: process.env.appName + ' <hello@webrexstudio.com>'
     }
 
     await smtpTransport.sendMail(mailOptions, function (error, response) {

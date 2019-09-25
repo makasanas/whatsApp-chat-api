@@ -239,39 +239,6 @@ module.exports.auth = async (req, res, next) => {
     return res.status(response.httpStatus).send(response.rcResponse);
 };
 
-module.exports.setPassword = async (req, res) => {
-    /* Contruct response object */
-    let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-
-    try {
-        /* Check if email exists */
-        const findUser = await userModel.getUserById(req.decoded.id);
-        // const findUser = await userSchema.findOne({ _id: req.decoded.id }).lean().exec();
-        if (findUser) {
-            const passHash = await utils.generatePasswordHash(req.body.password);
-            const updateUser = await userModel.updateUser(findUser._id, { password: passHash, passwordSet: true });
-            // const updateUser = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
-
-            delete updateUser['password'];
-            delete updateUser['accessToken'];
-
-            rcResponse.data = updateUser;
-        } else {
-            SetResponse(rcResponse, 403, RequestErrorMsg('userNotFound', req, null), false);
-            httpStatus = 403;
-            return res.status(httpStatus).send(rcResponse);
-        }
-    } catch (err) {
-
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
-
-    }
-    return res.status(httpStatus).send(rcResponse);
-};
-
-
 module.exports.deleteApp = async (req, res) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;

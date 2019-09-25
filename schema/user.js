@@ -12,8 +12,6 @@ const userSchema = new Schema({
   hasDiscounts: { type: Boolean },
   storeId: { type: Number, unique: true, required: true },
   email: { type: String, required: true },
-  password: { type: String },
-  passwordSet: { type: Boolean, default: false },
   phone: { type: String },
   recurringPlanName: { type: String },
   recurringPlanId: { type: String },
@@ -22,8 +20,6 @@ const userSchema = new Schema({
   role: { type: Number, default: 2 },
   created: { type: Date, default: Date.now() },
   updated: { type: Date, default: Date.now() },
-  resetPasswordToken: { type : String},
-  resetPasswordExpires: { type: Date }
 });
 
 module.exports = mongoose.model('Users', userSchema);
