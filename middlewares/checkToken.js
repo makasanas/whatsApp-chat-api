@@ -41,6 +41,33 @@ exports.validateToken = function (req, res, next) {
   }
 };
 
+exports.validateAcessToken = function (req, res, next) {
+
+  /* Contruct response object */
+  let rcResponse = new ApiResponse();
+
+  // check header or url parameters or post parameters for token
+  const token = req.body.token || req.query.token || req.headers['x-access-token'] || req.headers['authorization'];
+
+  // decode token
+  if (token) {
+    // verifies secret
+    jwt.verify(token, process.env['ADMIN_KEY'], function (err, decoded) {
+      if (err) {
+        SetResponse(rcResponse, 403, RequestErrorMsg('InvalidToken', req, null), false);
+        let httpStatus = 403;
+        return res.status(httpStatus).send(rcResponse);
+      } else {
+        // if everything is good, save to request for use in other routes
+        req.decoded = decoded;
+        next();
+      }
+    });
+  } else {
+    next();
+  }
+};
+
 // check if the requesting user is Admin user
 module.exports.isAdminUser = async (req, res, next) => {
   /* Contruct response object */

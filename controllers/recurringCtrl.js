@@ -49,11 +49,13 @@ module.exports.activePlanSchema = async (req, res) => {
 
     try {
 
-        const credit = await this.creditCalculator(req, rcResponse, httpStatus, params.planId);
+        // const credit = await this.creditCalculator(req, rcResponse, httpStatus, params.planId);
 
         let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + params.planId + '/activate.json';
 
         await shopifyReuest.post(url, decoded.accessToken).then(async function (response) {
+            console.log(response.body);
+
             let productCount = 0;
             if (response.body.recurring_application_charge.name == "Free") {
                 productCount = process.env.Free;
@@ -65,6 +67,7 @@ module.exports.activePlanSchema = async (req, res) => {
                 productCount = process.env.Platinium;
             }
 
+
             let data = {
                 shopUrl: decoded.shopUrl,
                 userId: decoded.id,
@@ -72,11 +75,19 @@ module.exports.activePlanSchema = async (req, res) => {
                 planId: response.body.recurring_application_charge.id,
                 planPrice: response.body.recurring_application_charge.price,
                 status: response.body.recurring_application_charge.status,
-                started: response.body.recurring_application_charge.activated_on,
-                nextBillDate: response.body.recurring_application_charge.billing_on,
-                cancelled_on: response.body.recurring_application_charge.cancelled_on,
+                activated_on: response.body.recurring_application_charge.activated_on,
+                currentMonthStartDate: response.body.recurring_application_charge.activated_on,
+                nextMonthStartDate: new Date(new Date(response.body.recurring_application_charge.activated_on).getTime() + (30 * 24 * 60 * 60 * 1000)),
                 products: productCount,
                 type: 'monthly'
+            }
+            
+            data['$push'] = {
+                chargeInfo: {
+                    startDate: response.body.recurring_application_charge.activated_on,
+                    planName: response.body.recurring_application_charge.name,
+                    planPrice: response.body.recurring_application_charge.price
+                }
             }
 
             const findPlan = await activePlanModel.findActivePlanByUserId(decoded.id);
@@ -86,19 +97,10 @@ module.exports.activePlanSchema = async (req, res) => {
             if (findPlan) {
                 const updatePlan = await activePlanModel.updatePlan(findPlan.userId, data);
 
-                // const updatePlan = await activePlanSchema.findOneAndUpdate({ _id: findPlan._id }, { $set: data }, { new: true }).lean().exec();
-
-                // let totalProducts = await productSchema.find({ userId: decoded.id });
-                // if (findPlan.products > productCount) {
-                //     let deleteProduct = totalProducts.slice(productCount, totalProducts.length);
-                //     let updatableProducts = deleteProduct.map(product => product._id);
-
-                //     const updateProducts = await productSchema.updateMany({ _id: { $in: updatableProducts } }, { $set: { deleted: true } }, { multi: true });
-                // }
-
                 let userPlanData = {
                     recurringPlanName: response.body.recurring_application_charge.name,
-                    recurringPlanId: updatePlan._id
+                    recurringPlanId: updatePlan._id,
+                    credit: productCount
                 }
                 const updateUserPlan = await userModel.updateUser(decoded.id, userPlanData);
                 // const updateUserPlan = await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: userPlanData }, { new: true }).lean().exec();
@@ -133,18 +135,18 @@ module.exports.creditCalculator = async (req, rcResponse, httpStatus, newPlanId)
 
     const { decoded, params } = req;
     let newPlan = {};
-    let newPlanPrice; 
+    let newPlanPrice;
     try {
-        
-        if(newPlanId){
+
+        if (newPlanId) {
             let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + newPlanId + '.json';
             await shopifyReuest.get(url, decoded.accessToken).then(async function (response) {
                 newPlan = response.body;
-               newPlanPrice = parseInt(response.body.recurring_application_charge.price);
+                newPlanPrice = parseInt(response.body.recurring_application_charge.price);
             }).catch(function (err) {
                 SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
             });
-        }else{
+        } else {
             newPlanPrice = 0;
         }
 
@@ -187,12 +189,12 @@ module.exports.deactivePlanSchema = async (req, res) => {
     const { decoded, params } = req;
     try {
 
-        const credit = await this.creditCalculator(req, rcResponse, httpStatus);
+        // const credit = await this.creditCalculator(req, rcResponse, httpStatus);
 
         const plan = await activePlanModel.findActivePlanByUserId(decoded.id);
-        
+
         // const plan = await activePlanSchema.findOne({ userId: decoded.id }).lean().exec();
-        
+
         let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/recurring_application_charges/' + plan.planId + '.json';
         await shopifyReuest.delete(url, decoded.accessToken).then(async function (response) {
             rcResponse.data = response.body;

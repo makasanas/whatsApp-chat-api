@@ -7,9 +7,9 @@
     "node": "8.9.0"
   },
   "scripts": {
-    "start": "MONGO_URL=mongodb://127.0.0.1:27017/formBuilderDB nodemon ./bin/www",
-    "start-dev": "NODE_ENV=dev PORT=4000 MONGO_URL=mongodb://127.0.0.1:27017/formBuilderDBDev nodemon ./bin/www",
-    "start-prod": "NODE_ENV=prod PORT=4001 MONGO_URL=mongodb://127.0.0.1:27017/formBuilderDBProd nodemon ./bin/www"
+    "start": "MONGO_URL=mongodb://127.0.0.1:27017/googleShoppingFeedDB nodemon ./bin/www",
+    "start-dev": "NODE_ENV=dev PORT=4000 MONGO_URL=mongodb://127.0.0.1:27017/googleShoppingFeedDBDev nodemon ./bin/www",
+    "start-prod": "NODE_ENV=prod PORT=4001 MONGO_URL=mongodb://127.0.0.1:27017/googleShoppingFeedDBProd nodemon ./bin/www"
   },
   "dependencies": {
     "algorithmia": "^0.3.10",
@@ -29,6 +29,7 @@
     "mongoose": "^5.4.13",
     "morgan": "^1.9.1",
     "multer": "^1.4.2",
+    "node-cron": "^2.0.3",
     "nodemailer": "latest",
     "raw-body": "^2.4.1",
     "request": "^2.88.0",

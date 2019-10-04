@@ -1,3 +1,14 @@
+// const request = require('request-promise');
+// const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes, generateRandom } = require('./../helpers/common');
+// const mongoose = require('mongoose');
+// const utils = require('./../helpers/utils');
+// const shopifyReuest = require('./../helpers/shopifyReuest.js');
+// var url = require('url');
+// const jwt = require('jsonwebtoken');
+// const productModel = require('./../model/product');
+// const userModel = require('./../model/user');
+// const queueModel = require('./../model/queue');
+
 const request = require('request-promise');
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes, generateRandom } = require('./../helpers/common');
 const mongoose = require('mongoose');
@@ -6,7 +17,8 @@ const shopifyReuest = require('./../helpers/shopifyReuest.js');
 const activePlanModel = require('./../model/activePlan');
 var url = require('url');
 const jwt = require('jsonwebtoken');
-const userModel = require('./../model/user');
+const userModel = require('./../model/user')
+
 
 module.exports.accessToken = async (req, res) => {
     /* Contruct response object */
@@ -62,7 +74,7 @@ function securityCheck(req) {
     return securityPass && regex;
 };
 
-generatorAcessToekn = async(req, res, httpStatus, rcResponse) => {
+generatorAcessToekn = async (req, res, httpStatus, rcResponse) => {
     let url;
     let accessToken;
     let appId = process.env.appId;
@@ -79,12 +91,12 @@ generatorAcessToekn = async(req, res, httpStatus, rcResponse) => {
                 client_secret: appSecret,
                 code,
             };
-            
+
             await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
                 url = 'https://' + shopUrl + '/admin/shop.json';
                 accessToken = response.access_token;
-                console.log(response);
             }).catch((error) => {
+                console.log(error);
                 if (error.statusCode) {
                     SetResponse(rcResponse, error.statusCode, error.error, false);
                     httpStatus = error.statusCode;
@@ -95,10 +107,12 @@ generatorAcessToekn = async(req, res, httpStatus, rcResponse) => {
                     return res.status(httpStatus).send(rcResponse);
                 }
             });
-        }else{
-            console.log("erorror data");
+        } else {
+            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+            httpStatus = 500;
+            return res.status(httpStatus).send(rcResponse);
         }
-    }catch (err) {
+    } catch (err) {
         if (err.code === 11000) {
             SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
             httpStatus = 400;
@@ -109,41 +123,55 @@ generatorAcessToekn = async(req, res, httpStatus, rcResponse) => {
             return res.status(httpStatus).send(rcResponse);
         }
     }
-
     return {
         url: url,
-        accessToken:accessToken,
+        accessToken: accessToken,
         shopUrl: shopUrl
     }
 }
 
 createShop = async (req, res, shopData, rcResponse, httpStatus) => {
-    try{
+    try {
         await shopifyReuest.get(shopData.url, shopData.accessToken).then(async (response) => {
+            console.log(response.body.shop);
             let UserObj = {
                 storeName: response.body.shop.name,
-                shopUrl: response.body.shop.domain,
+                shopUrl: response.body.shop.myshopify_domain,
+                domain: response.body.shop.domain,
                 hasDiscounts: response.body.shop.has_discounts,
                 storeId: response.body.shop.id,
                 email: response.body.shop.email,
+                currency: response.body.shop.currency,
+                country_name: response.body.shop.country_name,
+                country_code: response.body.shop.country,
+                plan_display_name: response.body.shop.plan_display_name,
+                plan_name: response.body.shop.plan_name,
                 phone: response.body.shop.phone,
                 accessToken: shopData.accessToken,
                 recurringPlanName: 'Free'
             };
-            
+
             const userSave = await userModel.saveUser(UserObj);
 
+            var utc = new Date().toJSON().slice(0, 10);
+
             let currentPlan = {
-                shopUrl: response.body.shop.domain,
+                shopUrl: response.body.shop.myshopify_domain,
                 userId: userSave._id,
                 planName: "Free",
                 planPrice: 0,
+                products: 5,
                 status: "active",
                 type: "Lifetime",
-                started: Date.now(),
-                products: process.env.Free,
+                currentMonthStartDate: new Date(utc),
+                nextMonthStartDate: new Date(new Date(utc).getTime() + (30 * 24 * 60 * 60 * 1000)),
+                chargeInfo: {
+                    startDate: new Date(utc),
+                    planName: "Free",
+                    planPrice: 0,
+                }
             }
-    
+
             const planSave = activePlanModel.savePlan(currentPlan)
 
             const encodedData = {
@@ -155,12 +183,12 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
             };
             // generate accessToken using JWT
             const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-    
+
             let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
             // let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
-    
-            rcResponse.data = { ...resObj, token: jwtToken};
-    
+
+            rcResponse.data = { ...resObj, token: jwtToken };
+
         }).catch(function (error) {
             if (error.statusCode) {
                 SetResponse(rcResponse, error.statusCode, error.error, false);
@@ -170,7 +198,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 httpStatus = 500;
             }
         })
-    }catch (err) {
+    } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
         httpStatus = 500;
     }
@@ -191,27 +219,34 @@ createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
             let response = await createShop(req, res, shopData, rcResponse, httpStatus);
             httpStatus = response.httpStatus;
             rcResponse = response.rcResponse;
+
+        } else {
+            let userSave =  findUser;
+
+            if(shopData.accessToken){
+                accessToken = shopData.accessToken
+                userSave = await userModel.updateUser(findUser._id, { accessToken: shopData.accessToken });
+            }
+
             
-        }else{
-            const userSave = await userModel.updateUser(findUser._id, { accessToken: shopData.accessToken, deleted: false });
             const currentPlan = await activePlanModel.findActivePlanByUserId(findUser._id);
 
             const encodedData = {
-                id: findUser._id,
-                accessToken: findUser.accessToken,
-                shopUrl: findUser.shopUrl,
-                email: findUser.email,
-                role: findUser.role,
+                id: userSave._id,
+                accessToken: userSave.accessToken,
+                shopUrl: userSave.shopUrl,
+                email: userSave.email,
+                role: userSave.role,
                 plan: currentPlan.planName,
                 type: currentPlan.type,
                 started: currentPlan.started
             };
-    
+
             const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-    
+
             let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
             let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
-    
+
             rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
         }
     } catch (err) {
@@ -221,23 +256,69 @@ createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
 
     return {
         httpStatus: httpStatus,
-        rcResponse:rcResponse
+        rcResponse: rcResponse
     };
 }
 
 module.exports.auth = async (req, res, next) => {
     let rcResponse = new ApiResponse();
     let httpStatus = 200;
+    let response = {};
+    let shopData = {};
+    try {
+        if (req.decoded && req.decoded.shopUrl) {
+            shopData = {
+                shopUrl: req.decoded.shopUrl
+            }
+        } else {
+            shopData = await generatorAcessToekn(req, res, httpStatus, rcResponse);
+        }
+        console.log("shopData" , shopData);
 
-    let shopData = await generatorAcessToekn(req, res, httpStatus, rcResponse);
-    console.log(shopData);
+        response = await createOrUpdateShop(req, res, shopData, rcResponse, httpStatus);
+        return res.status(response.httpStatus).send(response.rcResponse);
 
-    let response = await createOrUpdateShop(req, res, shopData, rcResponse, httpStatus);
-    console.log(response);
-
-
-    return res.status(response.httpStatus).send(response.rcResponse);
+    } catch (err) {
+        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+        httpStatus = 500;
+        return res.status(httpStatus).send(rcResponse);
+    }
 };
+
+module.exports.setPassword = async (req, res) => {
+    /* Contruct response object */
+    let rcResponse = new ApiResponse();
+    let httpStatus = 200;
+
+    try {
+        /* Check if email exists */
+        console.log(req.decoded);
+        const findUser = await userModel.getUserById(req.decoded.id);
+        // const findUser = await userSchema.findOne({ _id: req.decoded.id }).lean().exec();
+        console.log(findUser);
+        if (findUser) {
+            const passHash = await utils.generatePasswordHash(req.body.password);
+            const updateUser = await userModel.updateUser(findUser._id, { password: passHash, passwordSet: true });
+            // const updateUser = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
+
+            delete updateUser['password'];
+            delete updateUser['accessToken'];
+
+            rcResponse.data = updateUser;
+        } else {
+            SetResponse(rcResponse, 403, RequestErrorMsg('userNotFound', req, null), false);
+            httpStatus = 403;
+            return res.status(httpStatus).send(rcResponse);
+        }
+    } catch (err) {
+
+        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
+        httpStatus = 500;
+
+    }
+    return res.status(httpStatus).send(rcResponse);
+};
+
 
 module.exports.deleteApp = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -245,28 +326,20 @@ module.exports.deleteApp = async (req, res) => {
 
     try {
         const user = await userModel.getUserByStoreId(req.body.id);
-        if(user){
-            let [deleteUser, deleteSession,deleteProduct, deleteOrder, deleteDiscount, deleteAnalyticOrder, deleteActivePlan ] = await Promise.all([
+        if (user) {
+            let [deleteUser, deleteProduct, deleteQueue] = await Promise.all([
                 await userModel.deleteManyByShopUrl(user.shopUrl),
-                await sessionModel.deleteManyByShopUrl(user.shopUrl),
                 await productModel.deleteManyByShopUrl(user.shopUrl),
-                await orderModel.deleteManyByShopUrl(user.shopUrl),
-                await discountModel.deleteManyByShopUrl(user.shopUrl),
-                await analyticOrderModel.deleteManyByShopUrl(user.shopUrl),
-                await activePlanModel.deleteManyByShopUrl(user.shopUrl)
+                await queueModel.deleteManyByShopUrl(user.shopUrl),
             ]);
 
             rcResponse.data = {
-                user:deleteUser,
-                session:deleteSession,
-                product:deleteProduct,
-                order:deleteOrder,
-                discount:deleteDiscount,
-                analyticOrder:deleteAnalyticOrder,
-                activePlan:deleteActivePlan,
+                user: deleteUser,
+                product: deleteProduct,
+                queue: deleteQueue
             };
-        }else{
-			SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopNotExists', req, null), false);
+        } else {
+            SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopNotExists', req, null), false);
         }
     } catch (err) {
         SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
@@ -275,3 +348,46 @@ module.exports.deleteApp = async (req, res) => {
     return res.status(httpStatus).send(rcResponse);
 };
 
+
+createWebHook = async (req, res, accessToken, shopUrl, rcResponse) => {
+
+    var hostname = "https://seobyai-api.webrexstudio.com"
+
+    var requests = [
+        {
+            method: 'POST',
+            uri: 'https://' + shopUrl + '/admin/api/2019-07/webhooks.json',
+            body: {
+                "webhook": {
+                    "topic": "app/uninstalled",
+                    "address": hostname + "/webhooks/app/delete",
+                    "format": "json"
+                }
+            },
+            json: true,
+            headers: {
+                'X-Shopify-Access-Token': accessToken
+            }
+        }
+    ]
+
+    let promiseArray = [];
+
+    requests.forEach(singleRequest => {
+        promiseArray.push(request(singleRequest))
+    });
+
+    await Promise.all(promiseArray).then(async responses => {
+        return responses;
+    }).catch(function (error) {
+        if (error.statusCode) {
+            SetResponse(rcResponse, error.statusCode, error.error, false);
+            httpStatus = error.statusCode;
+        } else {
+            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
+            httpStatus = 500;
+        }
+    });
+
+    return true;
+}
