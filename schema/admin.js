@@ -7,7 +7,7 @@ const adminUserSchema = new Schema({
     password: { type: String, required: true },
     phone: { type: String, required: true },
     role: { type: Number, default: 1 },
-    createdAt: { type: Date, default: Date.now() },
+    createdAt: { type: Date, default: Date.now },
     resetPasswordToken: { type : String},
     resetPasswordExpires: { type: Date }
 });

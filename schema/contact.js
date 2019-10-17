@@ -17,8 +17,8 @@ const contactSchema = new Schema({
     messageFrom: { type: String},
     messageType: { type: String},
     message: { type: String},
-    created: { type: Date, default: Date.now() },
-    updated: { type: Date, default: Date.now() },
+    created: { type: Date, default: Date.now },
+    updated: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('Contacts', contactSchema);

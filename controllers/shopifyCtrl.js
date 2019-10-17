@@ -142,6 +142,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 storeId: response.body.shop.id,
                 email: response.body.shop.email,
                 currency: response.body.shop.currency,
+                language: response.body.shop.primary_locale,
                 country_name: response.body.shop.country_name,
                 country_code: response.body.shop.country,
                 plan_display_name: response.body.shop.plan_display_name,

@@ -34,6 +34,10 @@ router.get('/user/profile', checkToken.validateToken, authCtrl.getUserProfile);
 
 router.get('/user/checktoken', checkToken.validateToken, authCtrl.checkToken);
 
+router.get('/user/generateauthtoken', checkToken.validateToken, authCtrl.generateAuthToken);
+
+router.get('/user/refreshtoken', checkToken.validateToken, authCtrl.refreshToken);
+
 
 /*****************************
  Recurring Plan
@@ -54,7 +58,16 @@ router.get('/products', checkToken.validateToken,  productCtrl.get);
 
 router.get('/collections', checkToken.validateToken,  productCtrl.getCollection);
 
-router.post('/product/description', checkToken.validateToken,  productCtrl.getDescription);
+router.post('/product', checkToken.validateToken,  productCtrl.create);
+
+router.post('/productstatuses', checkToken.validateToken,  productCtrl.productStatuses);
+
+router.post('/accountstatuses', checkToken.validateToken,  productCtrl.accountStatuses);
+
+router.get('/productstatuses/:productId', checkToken.validateToken,  productCtrl.singleProductStatuses);
+
+
+
 
 
 /*****************************

@@ -22,10 +22,15 @@ const userSchema = new Schema({
   currency :  { type: String },
   country_name: { type: String },
   country_code: { type: String },
+  language: { type: String },
   plan_display_name : { type: String },
   plan_name : { type: String },
-  created: { type: Date, default: Date.now() },
-  updated: { type: Date, default: Date.now() },
+  access_token: { type: String },
+  refresh_token: { type: String },
+  merchantId: { type: String },
+  expires_in: { type: Date, default: Date.now },
+  created: { type: Date, default: Date.now },
+  updated: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('Users', userSchema);
