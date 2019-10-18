@@ -114,15 +114,15 @@ module.exports.create = async (req, res) => {
 
         var productData = await handlePromiseRequest(options);
         let products = [];
-        
+
         productData.entries.forEach((product, index) => {
-            let info = {...product.product, ...body.entries[index].product }
+            let info = { ...product.product, ...body.entries[index].product }
             let data = {
                 shopUrl: decoded.shopUrl,
-                productId:body.entries[index].product.offerId,
+                productId: body.entries[index].product.offerId,
                 userId: decoded.id,
                 info: info,
-                status:'submitted',
+                status: 'submitted',
                 updated: Date.now()
             }
             products.push(data);
@@ -139,6 +139,33 @@ module.exports.create = async (req, res) => {
     return res.status(rcResponse.code).send(rcResponse);
 }
 
+module.exports.getProductCount = async (req, res) => {
+    let rcResponse = new ApiResponse();
+    let { decoded } = req;
+    console.log(decoded);
+    try {
+        let url = 'https://' + decoded.shopUrl + '/admin/api/2019-04/products/count.json';
+
+        await shopifyReuest.get(url, decoded.accessToken).then(async function (response) {
+            
+            let user = {
+                productCount:response.body.count
+            }
+
+            await userModel.updateUser(decoded.id, user);
+            rcResponse.data = response.body;
+            return res.status(rcResponse.code).send(rcResponse);
+        }).catch(function (err) {
+            console.log(err);
+            SetResponse(rcResponse, err.statusCode, RequestErrorMsg(null, req, err.error), false);
+            return res.status(rcResponse.code).send(rcResponse);
+        });
+
+    } catch (err) {
+        handleError(err, req, rcResponse);
+        return res.status(rcResponse.code).send(rcResponse);
+    }
+}
 
 module.exports.productStatuses = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -200,10 +227,10 @@ module.exports.singleProductStatuses = async (req, res) => {
     let { body, decoded, params } = req;
     try {
         let user = await accessToken(decoded.id)
-        
+
         let options = {
             method: 'GET',
-            url: 'https://www.googleapis.com/content/v2.1/'+user.merchantId+'/productstatuses/'+params.productId+'?destinations=SurfacesAcrossGoogle',
+            url: 'https://www.googleapis.com/content/v2.1/' + user.merchantId + '/productstatuses/' + params.productId + '?destinations=SurfacesAcrossGoogle',
             json: true,
             headers: {
                 'content-type': 'application/json',

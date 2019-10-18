@@ -79,7 +79,9 @@ module.exports.activePlanSchema = async (req, res) => {
                 currentMonthStartDate: response.body.recurring_application_charge.activated_on,
                 nextMonthStartDate: new Date(new Date(response.body.recurring_application_charge.activated_on).getTime() + (30 * 24 * 60 * 60 * 1000)),
                 products: productCount,
-                type: 'monthly'
+                type: 'monthly',
+                recurringPlanType: 'paid'
+
             }
             
             data['$push'] = {
@@ -100,7 +102,7 @@ module.exports.activePlanSchema = async (req, res) => {
                 let userPlanData = {
                     recurringPlanName: response.body.recurring_application_charge.name,
                     recurringPlanId: updatePlan._id,
-                    credit: productCount
+                    recurringPlanType: 'paid'
                 }
                 const updateUserPlan = await userModel.updateUser(decoded.id, userPlanData);
                 // const updateUserPlan = await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: userPlanData }, { new: true }).lean().exec();

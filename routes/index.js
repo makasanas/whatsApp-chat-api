@@ -66,6 +66,9 @@ router.post('/accountstatuses', checkToken.validateToken,  productCtrl.accountSt
 
 router.get('/productstatuses/:productId', checkToken.validateToken,  productCtrl.singleProductStatuses);
 
+router.get('/getproductcount', checkToken.validateToken,  productCtrl.getProductCount);
+
+
 
 
 

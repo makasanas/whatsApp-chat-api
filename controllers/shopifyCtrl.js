@@ -149,7 +149,8 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 plan_name: response.body.shop.plan_name,
                 phone: response.body.shop.phone,
                 accessToken: shopData.accessToken,
-                recurringPlanName: 'Free'
+                recurringPlanName: 'Free',
+                recurringPlanType: 'Free'
             };
 
             const userSave = await userModel.saveUser(UserObj);
@@ -182,6 +183,7 @@ createShop = async (req, res, shopData, rcResponse, httpStatus) => {
                 email: userSave.email,
                 role: userSave.role,
             };
+
             // generate accessToken using JWT
             const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
 
@@ -217,6 +219,7 @@ createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
     // const findUser = await userSchema.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
     try {
         if (!findUser) {
+            // let webhookArry = await createWebHook(req, res, shopData.accessToken, shopData.shopUrl, rcResponse);
             let response = await createShop(req, res, shopData, rcResponse, httpStatus);
             httpStatus = response.httpStatus;
             rcResponse = response.rcResponse;
@@ -351,9 +354,7 @@ module.exports.deleteApp = async (req, res) => {
 
 
 createWebHook = async (req, res, accessToken, shopUrl, rcResponse) => {
-
     var hostname = "https://seobyai-api.webrexstudio.com"
-
     var requests = [
         {
             method: 'POST',
