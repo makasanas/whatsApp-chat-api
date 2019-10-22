@@ -7,8 +7,6 @@ Description : This file consist of middleware functions to use while requesting 
 const jwt = require('jsonwebtoken');
 const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, UserRoles, plans, RequestNotFromShopify, PlanLimit } = require('./../helpers/common');
 const crypto = require('crypto')
-const secretKey = '91836d2e840312d9267dca48dec93fe7'
-const getRawBody = require('raw-body')
 
 // validates access token for user
 exports.validateToken = function (req, res, next) {
@@ -140,7 +138,7 @@ module.exports.validateWebhook = async (req,res,next) => {
 
   let rcResponse = new ApiResponse();
       const hash = await crypto
-      .createHmac('sha256', secretKey)
+      .createHmac('sha256', process.env.appSecret)
       .update(Buffer.from(req.rawbody))   
       .digest('base64')
 
@@ -152,44 +150,3 @@ module.exports.validateWebhook = async (req,res,next) => {
     return res.status(httpStatus).send(rcResponse);
   }
 }
-
-// module.exports.validateWebhook = async (req,res,next) => {
-//   let rcResponse = new ApiResponse();
-//   console.log(req.url);
-//   console.log('🎉 We got an order!')
-
-//   // We'll compare the hmac to our own hash
-//   const hmac = req.get('X-Shopify-Hmac-Sha256')
-
-//   // Use raw-body to get the body (buffer)
-//   const body = await getRawBody(req);
-
-//   // Create a hash using the body and our key
-//   const hash = crypto
-//     .createHmac('sha256', secretKey)
-//     .update(body, 'utf8', 'hex')
-//     .digest('base64')
-
-//     if (hash == req.headers['x-shopify-hmac-sha256']) {
-//       next()
-//   } else {
-//     SetResponse(rcResponse, 403, RequestErrorMsg('RequestNotFromShopify', req, null), false);
-//     httpStatus = 403;
-//     return res.status(httpStatus).send(rcResponse);
-//   }
-
-
-//   // let rcResponse = new ApiResponse();
-//   //     const hash = await crypto
-//   //     .createHmac('sha256', secretKey)
-//   //     .update(Buffer.from(req.rawbody))   
-//   //     .digest('base64')
-
-//   // if (hash == req.headers['x-shopify-hmac-sha256']) {
-//   //     next()
-//   // } else {
-//   //   SetResponse(rcResponse, 403, RequestErrorMsg('RequestNotFromShopify', req, null), false);
-//   //   httpStatus = 403;
-//   //   return res.status(httpStatus).send(rcResponse);
-//   // }
-// }

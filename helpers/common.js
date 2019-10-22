@@ -34,7 +34,7 @@ const ErrMessages = {
  * @param {Boolean} success
  * @param {Object} data
  */
-const SetResponse = (respObj, code = 1, message = 'OK', success = true, data = {}) => {
+const SetResponse = (respObj, code = 200, message = 'OK', success = true, data = {}) => {
   respObj.code = code;
   respObj.success = success;
   respObj.message = message;

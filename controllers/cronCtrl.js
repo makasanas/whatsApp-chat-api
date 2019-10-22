@@ -1,7 +1,7 @@
 var cron = require('node-cron');
 const activePlanModel = require('../model/activePlan');
-const userModel = require('../model/user')
-const { handleError, AlgorithmiaCalls, sendMail } = require('../helpers/utils');
+const userModel = require('./../model/user')
+const { handleError, sendMail } = require('./../helpers/utils');
 
 cron.schedule('00 01 * * *', async () => {
     try {
@@ -43,4 +43,3 @@ cron.schedule('00 01 * * *', async () => {
     scheduled: true,
     // timezone: "Asia/Kolkata"
 });
-

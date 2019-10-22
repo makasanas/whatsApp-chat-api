@@ -11,7 +11,7 @@ module.exports.getUserByShopUrl = async (shopUrl) => {
 
 module.exports.getUserByStoreId = async (storeId) => {
   try {
-    return await userSchema.findOne({ storeId: storeId });
+    return await userSchema.findOne({ storeId: storeId }).lean().exec();
   } catch (error) {
     throw error;
   }

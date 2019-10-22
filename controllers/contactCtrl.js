@@ -1,4 +1,4 @@
-const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
+const { ApiResponse } = require('./../helpers/common');
 const { sendMail, handleError } = require('./../helpers/utils');
 
 const contactModel = require('./../model/contact');

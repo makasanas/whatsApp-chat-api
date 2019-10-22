@@ -11,7 +11,7 @@ module.exports.deleteManyByShopUrl = async (shopUrl) => {
 
   module.exports.findActivePlanByUserId = async (userId) => {
     try {
-      return await activePlanSchema.findOne({ userId: userId });
+      return await activePlanSchema.findOne({ userId: userId }).lean().exec();;
     } catch (error) {
       throw error;
     }
@@ -35,3 +35,11 @@ module.exports.deleteManyByShopUrl = async (shopUrl) => {
     }
   }
   
+
+  module.exports.find = async (findQuery) => {
+    try {
+      return await activePlanSchema.find(findQuery).lean().exec();
+    } catch (error) {
+      throw error;
+    }
+  }

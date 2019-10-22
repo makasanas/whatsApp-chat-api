@@ -13,36 +13,26 @@ module.exports.creat = async (productObj) => {
   }
 }
 
-datafunctiom = (product) =>{
-  return new Promise(async(resolve) => {
-    const singleProduct = productSchema.findOneAndUpdate({ productId: product.productId }, {$set : product } , { new: true, upsert:true }).lean().exec();
-    resolve(singleProduct);
-  });
+module.exports.find = async (query) => {
+  try {
+    const products  = await productSchema.find(query).lean().exec();;
+    return products;
+  } catch (error) {
+    throw error;
+  }
 }
 
-module.exports.insertMany = async (productObj) => {
+module.exports.deleteManyByShopUrl = async (shopUrl) => {
   try {
-    let data = [];
-    let startDate = new Date().getTime();
-    let allPromise = [];
-   
-    for (const product of productObj) {
-      allPromise.push(datafunctiom(product));
-      // const singleProduct = productSchema.findOneAndUpdate({ productId: product.productId }, {$set : product } , { new: true, upsert:true }).lean().exec();
-      // console.log(singleProduct);
-      // data.push(singleProduct);
-    }
+    return await productSchema.deleteMany({ shopUrl: shopUrl });
+  } catch (error) {
+    throw error;
+  }
+}
 
-    return Promise.all(allPromise).then((result)=>{
-      console.log("result");
-      console.log(result);
-      console.log(new Date().getTime() - startDate);
-      return result;
-
-    }).catch(err=>{
-      console.log(err);
-    })
-
+module.exports.deleteManyByProductId = async (products) => {
+  try {
+    return await productSchema.deleteMany({ productId:{'$in': products}});
   } catch (error) {
     throw error;
   }

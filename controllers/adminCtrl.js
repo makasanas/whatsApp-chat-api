@@ -1,15 +1,14 @@
 
 
-const { SetResponse, RequestErrorMsg , ApiResponse } = require('./../helpers/common');
-const adminModel = require('./../model/admin');
+const {  ApiResponse } = require('./../helpers/common');
 const userModel = require('./../model/user');
-const { handleError, AlgorithmiaCalls } = require('./../helpers/utils');
+const { handleError } = require('./../helpers/utils');
 
 
 module.exports.getUsers = async (req, res) => {
 	/* Contruct response object */
 	let rcResponse = new ApiResponse();
-    let { decoded, query } = req;
+    let {  query } = req;
     console.log(query);
 	try {
         let limit = query.limit ? parseInt(query.limit) : 10;

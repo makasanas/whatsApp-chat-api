@@ -1,11 +1,5 @@
-/*
-FileName : authCtrl.js
-Date : 2nd Aug 2018
-Description : This file consist of functions related to user's authentication
-*/
-
 /* DEPENDENCIES */
-const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
+const { SetResponse, RequestErrorMsg, ApiResponse } = require('./../helpers/common');
 const jwt = require('jsonwebtoken');
 const utils = require('./../helpers/utils');
 var nodemailer = require("nodemailer");
@@ -25,7 +19,6 @@ module.exports.login = async (req, res) => {
 	// 		adminKey:"OxxGyAfT8UXG4NJbvTqOftCyeGBxH5GvoinSKkvPxSwT5KYrB27OHuNyyWRKljgnvQGLPwD01jRXYPPJoK52YSJ2N4SZD37SY1Gc"
 	// 	}
 	// });
-
 
 	/* Contruct response object */
 	let rcResponse = new ApiResponse();
@@ -353,9 +346,12 @@ module.exports.generateAccessToken = async (req, res) => {
 
 	try {
 		const { query } = req;
+		console.log(req.decoded);
 
 		const encodedData = {
-			shopUrl: query.shopUrl
+			shopUrl: query.shopUrl,
+			adminId:  req.decoded.userId,
+			role: req.decoded.role
 		};
 		const token = jwt.sign(encodedData, process.env['ADMIN_KEY']);
 
