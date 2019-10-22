@@ -353,6 +353,7 @@ module.exports.generateAccessToken = async (req, res) => {
 			adminId:  req.decoded.userId,
 			role: req.decoded.role
 		};
+		console.log(encodedData);
 		const token = jwt.sign(encodedData, process.env['ADMIN_KEY']);
 
 		rcResponse.data = {'token': token}; 

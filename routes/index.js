@@ -23,7 +23,7 @@ const contactCtrl = require('./../controllers/contactCtrl');
 /*****************************
  Shopify
  *****************************/
-router.get('/shopify/auth', shopifyCtrl.auth);
+router.get('/shopify/auth', checkToken.validateAcessToken, shopifyCtrl.auth);
 
 /*****************************
  USERS

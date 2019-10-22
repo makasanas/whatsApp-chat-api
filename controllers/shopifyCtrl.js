@@ -271,8 +271,8 @@ module.exports.auth = async (req, res, next) => {
     let shopData = {};
     let { decoded } = req;
 
-
     try {
+        console.log("decoded", decoded);
         if (decoded && decoded.shopUrl) {
             if (decoded.role === 1) {
                 shopData = {

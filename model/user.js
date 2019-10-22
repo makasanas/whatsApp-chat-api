@@ -75,3 +75,19 @@ module.exports.getUserByTokenAndDate = async (token) => {
     throw error;
   }
 }
+
+module.exports.getUsers = async (skip, limit, sort) => {
+  try {
+    return await userSchema.find({}, {accessToken:0 }).sort(sort).skip(skip).limit(limit).lean().exec();
+  } catch (error) {
+    throw error;
+  }
+}
+
+module.exports.getUsersCount = async () => {
+  try {
+    return await userSchema.count().lean().exec();
+  } catch (error) {
+    throw error;
+  }
+}
