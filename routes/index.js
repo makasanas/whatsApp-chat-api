@@ -92,5 +92,11 @@ router.get('/admin/access_token', checkToken.validateToken,  checkToken.isAdminU
 
 router.get('/admin/user', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getUsers);
 
+/*****************************
+ Setting Sync Product
+ *****************************/
+
+router.get('/syncProducts', checkToken.validateToken, productCtrl.syncProducts);
+
 
 module.exports = router;

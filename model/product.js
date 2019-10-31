@@ -1,4 +1,5 @@
 const productSchema = require('./../schema/product');
+const syncProductSchema = require('./../schema/syncProducts');
 
 
 module.exports.creat = async (productObj) => {
@@ -15,7 +16,7 @@ module.exports.creat = async (productObj) => {
 
 module.exports.find = async (query) => {
   try {
-    const products  = await productSchema.find(query).lean().exec();;
+    const products  = await productSchema.find(query).lean().exec();
     return products;
   } catch (error) {
     throw error;
@@ -37,3 +38,21 @@ module.exports.deleteManyByProductId = async (products) => {
     throw error;
   }
 }
+
+// module.exports.syncProducts = async (productArray) => {
+//   try {
+//     return await syncProductSchema.insertMany(productArray);
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+
+module.exports.syncProducts = async (productObj) => {
+  try {
+    return await syncProductSchema.findOneAndUpdate({ productId: productObj.productId }, {$set : productObj } , { new: true, upsert:true }).lean().exec();
+  } catch (error) {
+    throw error;
+  }
+}
+
+
