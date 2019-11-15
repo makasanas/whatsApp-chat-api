@@ -1,8 +1,5 @@
-const request = require('request-promise');
-const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, signedCookies, normalCookes, generateRandom } = require('./../helpers/common');
-const mongoose = require('mongoose');
-const utils = require('./../helpers/utils');
-const shopifyReuest = require('./../helpers/shopifyReuest.js');
+const { SetResponse, RequestErrorMsg, SetError, ApiResponse } = require('./../helpers/common');
+const { handleError, verify, handleshopifyRequest } = require('./../helpers/utils');
 const activePlanModel = require('./../model/activePlan');
 var url = require('url');
 const jwt = require('jsonwebtoken');
@@ -10,64 +7,40 @@ const userModel = require('./../model/user')
 const productModel = require('./../model/product');
 const deletedUserModel = require('./../model/deletedUser');
 
-
-module.exports.accessToken = async (req, res) => {
-    /* Contruct response object */
-    let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-    req.body['client_secret'] = process.env.appSecret;
-
-    try {
-        let accessTokenRequestUrl = 'https://' + req.body.shop + '/admin/oauth/access_token';
-        await request.post(accessTokenRequestUrl, { json: req.body })
-            .then((response) => {
-                delete req.body['client_secret'];
-                delete req.body['code'];
-                delete req.body['client_id'];
-                rcResponse.data = { ...response, ...req.body }
-            })
-            .catch((error) => {
-                httpStatus = error.statusCode;
-                rcResponse.data = error.error.error_description
-            });
-    } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
-    }
-    return res.status(httpStatus).send(rcResponse);
-};
-
-
 function securityCheck(req) {
     let securityPass = false;
-    let shopUrl = req.query.shop;
-
     const regex = /^[a-z\d_.-]+[.]myshopify[.]com$/;
 
-    if (shopUrl.match(regex)) {
-        securityPass = true;
-    } else {
-        //exit
-        securityPass = false;
-    }
+    try {
+        let shopUrl = req.query.shop;
 
-    // 1. Parse the string URL to object
-    let urlObj = url.parse(req.url);
-    // 2. Get the 'query string' portion
-    let query = urlObj.search.slice(1);
-    if (utils.verify(query)) {
-        //get token
-        securityPass = true;
-    } else {
-        //exit
-        securityPass = false;
+        if (shopUrl.match(regex)) {
+            securityPass = true;
+        } else {
+            //exit
+            securityPass = false;
+        }
+
+        // 1. Parse the string URL to object
+        let urlObj = url.parse(req.url);
+        // 2. Get the 'query string' portion
+        let query = urlObj.search.slice(1);
+        if (verify(query)) {
+            //get token
+            securityPass = true;
+        } else {
+            //exit
+            securityPass = false;
+        }
+    } catch (err) {
+        throw err;
     }
     return securityPass && regex;
 };
 
-generatorAcessToekn = async (req, res, httpStatus, rcResponse) => {
-    let url;
+generatorAcessToekn = async (req) => {
     let accessToken;
+    let scope;
     let appId = process.env.appId;
     let appSecret = process.env.appSecret;
     let shopUrl = req.query.shop;
@@ -75,7 +48,6 @@ generatorAcessToekn = async (req, res, httpStatus, rcResponse) => {
 
     try {
         if (securityCheck(req)) {
-            //Exchange temporary code for a permanent access token
             let accessTokenRequestUrl = 'https://' + shopUrl + '/admin/oauth/access_token';
             let accessTokenPayload = {
                 client_id: appId,
@@ -83,262 +55,179 @@ generatorAcessToekn = async (req, res, httpStatus, rcResponse) => {
                 code,
             };
 
-            await request.post(accessTokenRequestUrl, { json: accessTokenPayload }).then(async (response) => {
-                url = 'https://' + shopUrl + process.env.apiVersion + 'shop.json';
-                accessToken = response.access_token;
-            }).catch((error) => {
-                console.log(error);
-                if (error.statusCode) {
-                    SetResponse(rcResponse, error.statusCode, error.error, false);
-                    httpStatus = error.statusCode;
-                    return res.status(httpStatus).send(rcResponse);
-                } else {
-                    SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
-                    httpStatus = 500;
-                    return res.status(httpStatus).send(rcResponse);
-                }
-            });
+            const response = await handleshopifyRequest('post', accessTokenRequestUrl, '', accessTokenPayload);
+            accessToken = response.body.access_token;
+            scope = response.body.scope;
         } else {
-            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-            httpStatus = 500;
-            return res.status(httpStatus).send(rcResponse);
+            throw SetError({}, 403, 'RequestNotFromShopify');
         }
     } catch (err) {
-        if (err.code === 11000) {
-            SetResponse(rcResponse, 400, RequestErrorMsg('ShopExists', req, null), false);
-            httpStatus = 400;
-            return res.status(httpStatus).send(rcResponse);
-        } else {
-            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-            httpStatus = 500;
-            return res.status(httpStatus).send(rcResponse);
-        }
+        throw err;
     }
+
     return {
-        url: url,
         accessToken: accessToken,
-        shopUrl: shopUrl
+        shopUrl: shopUrl,
+        scope: scope
     }
 }
 
-createShop = async (req, res, shopData, rcResponse, httpStatus) => {
+createShop = async (shop, productCount, shopData) => {
+    let response = {};
     try {
-        await shopifyReuest.get(shopData.url, shopData.accessToken).then(async (response) => {
-            console.log(response.body.shop);
-            let UserObj = {
-                storeName: response.body.shop.name,
-                shopUrl: response.body.shop.myshopify_domain,
-                domain: response.body.shop.domain,
-                hasDiscounts: response.body.shop.has_discounts,
-                storeId: response.body.shop.id,
-                email: response.body.shop.email,
-                currency: response.body.shop.currency,
-                language: response.body.shop.primary_locale,
-                country_name: response.body.shop.country_name,
-                plan_display_name: response.body.shop.plan_display_name,
-                plan_name: response.body.shop.plan_name,
-                phone: response.body.shop.phone,
-                accessToken: shopData.accessToken,
-                recurringPlanName: 'Free',
-                recurringPlanType: 'Free'
-            };
+        let user = {
+            storeName: shop.name,
+            shopUrl: shop.myshopify_domain,
+            domain: shop.domain,
+            hasDiscounts: shop.has_discounts,
+            storeId: shop.id,
+            email: shop.email,
+            currency: shop.currency,
+            language: shop.primary_locale,
+            country_code: shop.country_code,
+            country_name: shop.country_name,
+            plan_display_name: shop.plan_display_name,
+            plan_name: shop.plan_name,
+            phone: shop.phone,
+            customer_email: shop.customer_email,
+            accessToken: shopData.accessToken,
+            scope: shopData.scope,
+            productCount: productCount,
+            recurringPlanName: 'Free',
+            recurringPlanType: 'Free',
+        };
 
-            const userSave = await userModel.saveUser(UserObj);
+        user = await userModel.create(user);
 
-            var utc = new Date().toJSON().slice(0, 10);
+        var utc = new Date().toJSON().slice(0, 10);
 
-            let currentPlan = {
-                shopUrl: response.body.shop.myshopify_domain,
-                userId: userSave._id,
+        let plan = {
+            shopUrl: shop.myshopify_domain,
+            userId: user._id,
+            planName: "Free",
+            planPrice: 0,
+            status: "active",
+            type: "monthly",
+            currentMonthStartDate: new Date(utc),
+            nextMonthStartDate: new Date(new Date(utc).getTime() + (30 * 24 * 60 * 60 * 1000)),
+            chargeInfo: {
+                startDate: new Date(utc),
                 planName: "Free",
                 planPrice: 0,
-                products: 5,
-                status: "active",
-                type: "Lifetime",
-                currentMonthStartDate: new Date(utc),
-                nextMonthStartDate: new Date(new Date(utc).getTime() + (30 * 24 * 60 * 60 * 1000)),
-                chargeInfo: {
-                    startDate: new Date(utc),
-                    planName: "Free",
-                    planPrice: 0,
-                }
             }
+        }
 
-            currentPlan['$push'] = {
+        plan = await activePlanModel.create(plan);
 
-            }
+        response = {
+            plan: plan,
+            user: user
+        }
 
-            const planSave = activePlanModel.savePlan(currentPlan)
-
-            const encodedData = {
-                id: userSave._id,
-                accessToken: userSave.accessToken,
-                shopUrl: userSave.shopUrl,
-                email: userSave.email,
-                role: userSave.role,
-            };
-            // generate accessToken using JWT
-            const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-
-            let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
-            let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
-
-            rcResponse.data = { ...resObj, token: jwtToken };
-
-        }).catch(function (error) {
-            if (error.statusCode) {
-                SetResponse(rcResponse, error.statusCode, error.error, false);
-                httpStatus = error.statusCode;
-            } else {
-                SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
-                httpStatus = 500;
-            }
-        })
     } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
+        throw err;
     }
-
-    return {
-        httpStatus: httpStatus,
-        rcResponse: rcResponse
-    };
+    return response;
 }
 
-createOrUpdateShop = async (req, res, shopData, rcResponse, httpStatus) => {
-
-    const findUser = await userModel.getUserByShopUrl(shopData.shopUrl);
-    // const findUser = await userSchema.findOne({ shopUrl: shopData.shopUrl, deleted:false }).lean().exec();
+createOrUpdateShop = async (shopData) => {
+    var response = {};
     try {
-        if (!findUser) {
 
-            let webhookArry = await createWebHook(req, res, shopData.accessToken, shopData.shopUrl, rcResponse);
+        let user = await userModel.findOne({ shopUrl: shopData.shopUrl });
+        let shop = {};
+        let productCount = {};
+        let plan = {};
 
-            let response = await createShop(req, res, shopData, rcResponse, httpStatus);
+        if (!user) {
+            let promise = [];
 
-            httpStatus = response.httpStatus;
-            rcResponse = response.rcResponse;
+            promise.push(handleshopifyRequest('get', 'https://' + shopData.shopUrl + process.env.apiVersion + 'shop.json', shopData.accessToken));
 
+            if (process.env.productCount === 'true') {
+                promise.push(handleshopifyRequest('get', 'https://' + shopData.shopUrl + process.env.apiVersion + 'products/count.json', shopData.accessToken));
+            }
+
+            if (process.env.webhook === 'true') {
+                promise.push(createWebHook(shopData));
+            }
+
+            await Promise.all(promise).then(async (res) => {
+                shop = res[0].body.shop;
+                if (process.env.productCount !== 'false') {
+                    productCount = res[1].body.count;
+                }
+
+                let data = await createShop(shop, productCount, shopData);
+                user = data.user;
+                plan = data.plan;
+            }).catch(function (err) {
+                throw err;
+            });
         } else {
-            let userSave = findUser;
-            console.log(userSave);
+            plan = await activePlanModel.findOne({ userId: user._id });
+        }
 
-            if (shopData.accessToken) {
-                accessToken = shopData.accessToken
-                userSave = await userModel.updateUser(findUser._id, { accessToken: shopData.accessToken });
+        const encodedData = {
+            id: user._id,
+            shopUrl: user.shopUrl,
+            role: user.role,
+            accessToken: user.accessToken
+        };
+
+        // generate accessToken using JWT
+        const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
+
+        let userObj = { shopUrl: user.shopUrl, storeName: user.storeName, email: user.email, phone: user.phone, recurringPlanType: user.recurringPlanType };
+        let planObj = { planName: plan.planName, status: plan.status }
+
+        response = { ...userObj, ...planObj, token: jwtToken };
+    } catch (err) {
+        throw err;
+    }
+    return response;
+}
+
+checkAdmin = async (decoded) => {
+    let data = {}
+    try {
+        if (decoded.role === 1) {
+            data = {
+                shopUrl: decoded.shopUrl,
+                adminId: decoded.adminId,
+                role: decoded.role,
             }
-
-            const currentPlan = await activePlanModel.findActivePlanByUserId(findUser._id);
-
-            const encodedData = {
-                id: userSave._id,
-                accessToken: userSave.accessToken,
-                shopUrl: userSave.shopUrl,
-                email: userSave.email,
-                role: shopData.role ? shopData.role : userSave.role,
-                plan: currentPlan.planName,
-                type: currentPlan.type,
-                started: currentPlan.started
-            };
-
-            if (shopData.adminId) {
-                encodedData['adminId'] = shopData.adminId;
-            }
-
-            console.log(encodedData);
-            const jwtToken = jwt.sign(encodedData, process.env['SECRET']);
-
-            let resObj = { _id: userSave._id, shopUrl: userSave.shopUrl, storeName: userSave.storeName, email: userSave.email, phone: userSave.phone, storeId: userSave.storeId, passwordSet: userSave.passwordSet };
-            let planObj = { planName: currentPlan.planName, status: currentPlan.status, type: currentPlan.type, started: currentPlan.started }
-            rcResponse.data = { ...resObj, token: jwtToken, plan: planObj };
-
+        } else {
+            throw SetError({}, 403, 'RequestNotFromShopify');
         }
     } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
+        throw err;
     }
-
-    return {
-        httpStatus: httpStatus,
-        rcResponse: rcResponse
-    };
+    return data;
 }
 
 module.exports.auth = async (req, res, next) => {
     let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-    let response = {};
     let shopData = {};
     let { decoded } = req;
-
     try {
-        console.log("decoded", decoded);
         if (decoded && decoded.shopUrl) {
-            if (decoded.role === 1) {
-                shopData = {
-                    shopUrl: decoded.shopUrl,
-                    adminId: decoded.adminId,
-                    role: decoded.role,
-                }
-            } else {
-                SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-                httpStatus = 500;
-                return res.status(httpStatus).send(rcResponse);
-            }
+            //check user is admin or not
+            shopData = await checkAdmin(decoded);
         } else {
-            shopData = await generatorAcessToekn(req, res, httpStatus, rcResponse);
+            //gengenerate shop data for new user
+            shopData = await generatorAcessToekn(req);
         }
-        console.log("shopData", shopData);
 
-        response = await createOrUpdateShop(req, res, shopData, rcResponse, httpStatus);
-        return res.status(response.httpStatus).send(response.rcResponse);
-
+        rcResponse.data = await createOrUpdateShop(shopData);
     } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
-        return res.status(httpStatus).send(rcResponse);
+        handleError(err, rcResponse);
     }
+    return res.status(rcResponse.code).send(rcResponse);
 };
-
-module.exports.setPassword = async (req, res) => {
-    /* Contruct response object */
-    let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-
-    try {
-        /* Check if email exists */
-        console.log(req.decoded);
-        const findUser = await userModel.getUserById(req.decoded.id);
-        // const findUser = await userSchema.findOne({ _id: req.decoded.id }).lean().exec();
-        console.log(findUser);
-        if (findUser) {
-            const passHash = await utils.generatePasswordHash(req.body.password);
-            const updateUser = await userModel.updateUser(findUser._id, { password: passHash, passwordSet: true });
-            // const updateUser = await userSchema.findOneAndUpdate({ _id: findUser._id }, { $set: { password: passHash, passwordSet: true } }, { new: true }).lean().exec();
-
-            delete updateUser['password'];
-            delete updateUser['accessToken'];
-
-            rcResponse.data = updateUser;
-        } else {
-            SetResponse(rcResponse, 403, RequestErrorMsg('userNotFound', req, null), false);
-            httpStatus = 403;
-            return res.status(httpStatus).send(rcResponse);
-        }
-    } catch (err) {
-
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
-
-    }
-    return res.status(httpStatus).send(rcResponse);
-};
-
 
 module.exports.deleteApp = async (req, res) => {
     let rcResponse = new ApiResponse();
-    let httpStatus = 200;
-    console.log(req.body);
     try {
         let user = await userModel.getUserByStoreId(req.body.id);
         if (user) {
@@ -357,61 +246,48 @@ module.exports.deleteApp = async (req, res) => {
 
             rcResponse.data = {
                 user: deleteUser,
-                activePlan:deleteActivePlan,
+                activePlan: deleteActivePlan,
                 product: deleteProduct,
                 queue: deleteQueue
             };
-        } else {
-            httpStatus = 404;
-            SetResponse(rcResponse, httpStatus, RequestErrorMsg('ShopNotExists', req, null), false);
-        }
+        } 
     } catch (err) {
-        SetResponse(rcResponse, 500, RequestErrorMsg(null, req, err), false);
-        httpStatus = 500;
+        handleError(err, rcResponse);
     }
-    return res.status(httpStatus).send(rcResponse);
+    return res.status(rcResponse.code).send(rcResponse);
 };
 
 
-createWebHook = async (req, res, accessToken, shopUrl, rcResponse) => {
-
-    var hostname = "https://seobyai-api.webrexstudio.com"
-
-    var requests = [
-        {
-            method: 'POST',
-            uri: 'https://' + shopUrl + process.env.apiVersion +'webhooks.json',
-            body: {
+createWebHook = async (shopData) => {
+    try {
+        var hostname = process.env.apiUrl;
+        let webhooks = [
+            {
                 "webhook": {
                     "topic": "app/uninstalled",
                     "address": hostname + "/webhooks/app/delete",
                     "format": "json"
                 }
-            },
-            json: true,
-            headers: {
-                'X-Shopify-Access-Token': accessToken
             }
-        }
-    ]
+        ]
 
-    let promiseArray = [];
+        let promise = [];
+        webhooks.forEach((webhook) => {
+            promise.push(handleshopifyRequest('post', 'https://' + shopData.shopUrl + process.env.apiVersion + 'webhooks.json', shopData.accessToken, webhook));
+        });
 
-    requests.forEach(singleRequest => {
-        promiseArray.push(request(singleRequest))
-    });
-
-    await Promise.all(promiseArray).then(async responses => {
-        return responses;
-    }).catch(function (error) {
-        if (error.statusCode) {
-            SetResponse(rcResponse, error.statusCode, error.error, false);
-            httpStatus = error.statusCode;
-        } else {
-            SetResponse(rcResponse, 500, RequestErrorMsg(null, req, error), false);
-            httpStatus = 500;
-        }
-    });
+        await Promise.all(promise).then((res) => {
+            return true;
+        }).catch(function (err) {
+            if (err.statusCode == 422 && err.message == '422 - {"errors":{"address":["for this topic has already been taken"]}}') {
+                return true
+            } else {
+                throw err;
+            }
+        });
+    } catch (err) {
+        throw err;
+    }
 
     return true;
 }

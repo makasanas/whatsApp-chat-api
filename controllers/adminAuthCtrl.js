@@ -42,8 +42,6 @@ module.exports.login = async (req, res) => {
 		const findUser = await adminModel.getUserByEmail(req.body.email);
 		if (findUser) {
 			/* Compare password */
-			console.log(req.body.password);
-			console.log(findUser);
 
 			const comparePassword = await utils.comparePassword(req.body.password, findUser.password);
 
@@ -88,7 +86,6 @@ module.exports.login = async (req, res) => {
 /* Register user */
 module.exports.register = async (req) => {
 
-	console.log("register called");
 
 	/* Contruct response object */
 	let rcResponse = new ApiResponse();
@@ -100,9 +97,7 @@ module.exports.register = async (req) => {
 	}
 
 	/* Check admin Key, if it's Admin user */
-	console.log(req.body.type);
 	if (req.body.type === 1 && req.body.adminKey !== process.env['ADMIN_KEY']) {
-		console.log("admin key");
 		return false;
 	}
 
@@ -117,7 +112,6 @@ module.exports.register = async (req) => {
 		};
 
 		const createUser = await adminModel.create(userObj);
-		console.log(createUser);
 		const encodedData = {
 			userId: createUser._id,
 			role: createUser.role
@@ -346,14 +340,12 @@ module.exports.generateAccessToken = async (req, res) => {
 
 	try {
 		const { query } = req;
-		console.log(req.decoded);
 
 		const encodedData = {
 			shopUrl: query.shopUrl,
 			adminId:  req.decoded.userId,
 			role: req.decoded.role
 		};
-		console.log(encodedData);
 		const token = jwt.sign(encodedData, process.env['ADMIN_KEY']);
 
 		rcResponse.data = {'token': token}; 

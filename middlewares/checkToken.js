@@ -5,64 +5,65 @@ Description : This file consist of middleware functions to use while requesting 
 */
 
 const jwt = require('jsonwebtoken');
-const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse, UserRoles, plans, RequestNotFromShopify, PlanLimit } = require('./../helpers/common');
+const { ApiResponse, UserRoles, plans, SetError } = require('./../helpers/common');
 const crypto = require('crypto')
+const { handleError } = require('./../helpers/utils');
 
 // validates access token for user
 exports.validateToken = function (req, res, next) {
+  try {
+    /* Contruct response object */
+    let rcResponse = new ApiResponse();
 
-  /* Contruct response object */
-  let rcResponse = new ApiResponse();
+    // check header or url parameters or post parameters for token
+    const token = req.body.token || req.query.token || req.headers['x-access-token'] || req.headers['authorization'];
 
-  // check header or url parameters or post parameters for token
-  const token = req.body.token || req.query.token || req.headers['x-access-token'] || req.headers['authorization'];
-
-  // decode token
-  if (token) {
-    // verifies secret
-    jwt.verify(token, process.env['SECRET'], function (err, decoded) {
-      if (err) {
-        SetResponse(rcResponse, 403, RequestErrorMsg('InvalidToken', req, null), false);
-        let httpStatus = 403;
-        return res.status(httpStatus).send(rcResponse);
-      } else {
-        // if everything is good, save to request for use in other routes
-        req.decoded = decoded;
-        next();
-      }
-    });
-  } else {
-    // if there is no token
-    SetResponse(rcResponse, 401, RequestErrorMsg('InvalidToken', req, null), false);
-    let httpStatus = 401;
-    return res.status(httpStatus).send(rcResponse);
+    if (token) {
+      // verifies secret
+      jwt.verify(token, process.env['SECRET'], function (err, decoded) {
+        if (err) {
+          handleError(SetError(403, 'InvalidToken'), rcResponse);
+          return res.status(rcResponse.code).send(rcResponse);
+        } else {
+          req.decoded = decoded;
+          next();
+        }
+      });
+    } else {
+      handleError(SetError(403, 'InvalidToken'), rcResponse);
+      return res.status(rcResponse.code).send(rcResponse);
+    }
+  } catch (err) {
+    handleError(err, rcResponse);
+    return res.status(rcResponse.code).send(rcResponse);
   }
 };
 
 exports.validateAcessToken = function (req, res, next) {
-
   /* Contruct response object */
   let rcResponse = new ApiResponse();
-
   // check header or url parameters or post parameters for token
   const token = req.body.token || req.query.token || req.headers['x-access-token'] || req.headers['authorization'];
 
-  // decode token
-  if (token) {
-    // verifies secret
-    jwt.verify(token, process.env['ADMIN_KEY'], function (err, decoded) {
-      if (err) {
-        SetResponse(rcResponse, 403, RequestErrorMsg('InvalidToken', req, null), false);
-        let httpStatus = 403;
-        return res.status(httpStatus).send(rcResponse);
-      } else {
-        // if everything is good, save to request for use in other routes
-        req.decoded = decoded;
-        next();
-      }
-    });
-  } else {
-    next();
+  try {
+    if (token) {
+      // verifies secret
+      jwt.verify(token, process.env['ADMIN_KEY'], function (err, decoded) {
+        if (err) {
+          handleError(SetError({}, 403, 'InvalidToken'), rcResponse);
+          return res.status(rcResponse.code).send(rcResponse);
+        } else {
+          // if everything is good, save to request for use in other routes
+          req.decoded = decoded;
+          next();
+        }
+      });
+    } else {
+      next();
+    }
+  } catch (err) {
+    handleError(err, rcResponse);
+    return res.status(rcResponse.code).send(rcResponse);
   }
 };
 
@@ -70,14 +71,17 @@ exports.validateAcessToken = function (req, res, next) {
 module.exports.isAdminUser = async (req, res, next) => {
   /* Contruct response object */
   let rcResponse = new ApiResponse();
-
-  const roles = new UserRoles();
-  if (req.decoded.role !== roles.admin) {
-    SetResponse(rcResponse, 403, RequestErrorMsg('NotAuthorized', req, null), false);
-    httpStatus = 403;
-    return res.status(httpStatus).send(rcResponse);
-  } else {
-    next();
+  try {
+    const roles = new UserRoles();
+    if (req.decoded.role !== roles.admin) {
+      handleError(SetError({}, 403, 'InvalidToken'), rcResponse);
+      return res.status(rcResponse.code).send(rcResponse);
+    } else {
+      next();
+    }
+  } catch (err) {
+    handleError(err, rcResponse);
+    return res.status(rcResponse.code).send(rcResponse);
   }
 };
 
@@ -85,14 +89,17 @@ module.exports.isAdminUser = async (req, res, next) => {
 module.exports.isOwner = async (req, res, next) => {
   /* Contruct response object */
   let rcResponse = new ApiResponse();
-
-  const roles = new UserRoles();
-  if (req.decoded.role !== roles.owner) {
-    SetResponse(rcResponse, 403, RequestErrorMsg('NotAuthorized', req, null), false);
-    httpStatus = 403;
-    return res.status(httpStatus).send(rcResponse);
-  } else {
-    next();
+  try {
+    const roles = new UserRoles();
+    if (req.decoded.role !== roles.owner) {
+      handleError(SetError({}, 403, 'InvalidToken'), rcResponse);
+      return res.status(rcResponse.code).send(rcResponse);
+    } else {
+      next();
+    }
+  } catch (err) {
+    handleError(err, rcResponse);
+    return res.status(rcResponse.code).send(rcResponse);
   }
 };
 
@@ -100,14 +107,17 @@ module.exports.isOwner = async (req, res, next) => {
 module.exports.isOwnerOrAdmin = async (req, res, next) => {
   /* Contruct response object */
   let rcResponse = new ApiResponse();
-
-  const roles = new UserRoles();
-  if (req.decoded.role === roles.user) {
-    SetResponse(rcResponse, 403, RequestErrorMsg('NotAuthorized', req, null), false);
-    httpStatus = 403;
-    return res.status(httpStatus).send(rcResponse);
-  } else {
-    next();
+  try {
+    const roles = new UserRoles();
+    if (req.decoded.role === roles.user) {
+      handleError(SetError({}, 403, 'InvalidToken'), rcResponse);
+      return res.status(rcResponse.code).send(rcResponse);
+    } else {
+      next();
+    }
+  } catch (err) {
+    handleError(err, rcResponse);
+    return res.status(rcResponse.code).send(rcResponse);
   }
 };
 
@@ -115,38 +125,38 @@ module.exports.isOwnerOrAdmin = async (req, res, next) => {
 module.exports.planCheck = async (req, res, next) => {
   /* Contruct response object */
   let rcResponse = new ApiResponse();
-  
-  const currentPlan = await activePlanSchema.findOne({ userId: req.decoded.id }).lean().exec();
-  const count = await productSchema.count({ userId: req.decoded.id, deleted:false });
-  var activePaln = plans.find(plan => plan.name == currentPlan.planName)
+  try {
+    const currentPlan = await activePlanSchema.findOne({ userId: req.decoded.id }).lean().exec();
+    const count = await productSchema.count({ userId: req.decoded.id, deleted: false });
+    var activePaln = plans.find(plan => plan.name == currentPlan.planName)
 
-
-  if (activePaln.product <= count) {
-    SetResponse(rcResponse, 403, RequestErrorMsg('PlanLimit', req, null), false);
-    httpStatus = 403;
-    return res.status(httpStatus).send(rcResponse);
-  } else {
-    next();
+    if (activePaln.product <= count) {
+      handleError(SetError({}, 403, 'InvalidToken'), rcResponse);
+      return res.status(rcResponse.code).send(rcResponse);
+    } else {
+      next();
+    }
+  } catch (err) {
+    handleError(err, rcResponse);
+    return res.status(rcResponse.code).send(rcResponse);
   }
 };
 
 
 
-module.exports.validateWebhook = async (req,res,next) => {
-  console.log(req.url);
-  console.log(req.body);
-
+module.exports.validateWebhook = async (req, res, next) => {
   let rcResponse = new ApiResponse();
-      const hash = await crypto
-      .createHmac('sha256', process.env.appSecret)
-      .update(Buffer.from(req.rawbody))   
-      .digest('base64')
-
-  if (hash == req.headers['x-shopify-hmac-sha256']) {
+  try {
+    const hash = await crypto.createHmac('sha256', process.env.appSecret).update(Buffer.from(req.rawbody)).digest('base64')
+    if (hash == req.headers['x-shopify-hmac-sha256']) {
       next()
-  } else {
-    SetResponse(rcResponse, 403, RequestErrorMsg('RequestNotFromShopify', req, null), false);
-    httpStatus = 403;
-    return res.status(httpStatus).send(rcResponse);
+    } else {
+      handleError(SetError({}, 403, 'RequestNotFromShopify'), rcResponse);
+      return res.status(rcResponse.code).send(rcResponse);
+    }
+  } catch (err) {
+    handleError(err, rcResponse);
+    return res.status(rcResponse.code).send(rcResponse);
   }
+
 }

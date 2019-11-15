@@ -8,7 +8,6 @@ cron.schedule('00 01 * * *', async () => {
         var today = new Date();
         let findQuery = { 'nextMonthStartDate': { $lte: today } }
         let plans = await activePlanModel.find(findQuery);
-        // console.log(plan);
         var utc = new Date().toJSON().slice(0, 10);
 
         plans.forEach(async (plan) => {

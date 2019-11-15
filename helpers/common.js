@@ -6,24 +6,10 @@ Description : This file consist of functions that can be used through the applic
 
 const ErrMessages = {
   ISE: 'Internal server error',
-  InvalidParams: 'Invalid body parameters',
-  NotAuthorized: 'You are not authorized to perform this operation',
-  EmailExists: 'This email is already registered in the system, please try different email.',
-  InvalidPassword: 'Shop Url or password is incorrect',
-  InvalidToken: 'Access token is invalid',
-  InvalidAdminKey: 'Invalid Admin key',
-  NoImage: 'Please select a valid image file',
-  ShopExists: 'A Shop already exists please try to login into your shop',
-  ShopNotExists: 'Shop does not exists',
-  userNotFound: 'Email does not exists',
-  wrongHappened: 'Something wrong happened please try again',
-  ProductExists:'Product alreday enable with discount',
-  productNotFound:'Product not found',
-  sessionNotFound:'Session not found',
-  PasswordNotSet:'Your register with us but password is not set so follow installation process again',
-  PlanLimit:'you exceed to your plan limit please upgrade plan to add more product',
-  RequestNotFromShopify:'Request not from shopify',
-  tokenInvalid:'Password reset token is invalid or has expired.'
+  InvalidToken: 'Token is not valid',
+  RequestNotFromShopify: 'Request not from shopify',
+  ShopNotExists: 'Shop not found',
+  InvalidParams: 'Invalid Params'
 };
 
 /**
@@ -42,16 +28,12 @@ const SetResponse = (respObj, code = 200, message = 'OK', success = true, data =
   return respObj;
 };
 
-/**
- * RequestErrorMsg
- * constructs a meaningful Error Message
- * @param {string} errKey
- * @param {object} requestObj
- * @param {object} errorObj
- * @returns {string} a string prompt describing the error and it's place in api
- */
-const RequestErrorMsg = (errKey, requestObj = null, errorObj = null) => {
-  return `${(errorObj !== null) ? errorObj.message: ''}${(errKey !== null) ? ErrMessages[errKey] : ''}`;
+
+const SetError = (errObj, code = 500, message = 'ISE', type = 'custom') => {
+  errObj.code = code;
+  errObj.message = message;
+  errObj.type = type;
+  return errObj;
 };
 
 
@@ -66,24 +48,23 @@ function UserRoles() {
 };
 
 
-plans = [
-  {
-    name:'Free',
-    product: 5
+const Plans = {
+  Basic: {
+    minProduct: 0,
+    maxProduct: 500
   },
-  {
-    name:'Silver',
-    product: 50
+  Silver: {
+    minProduct: 500,
+    maxProduct: 1000
   },
-  {
-    name:'Gold',
-    product: 100
+  Silver: {
+    minProduct: 1000,
+    maxProduct: 5000
   },
-  {
-    name:'Platinum',
-    product: 250
+  Platinum: {
+    minProduct: 5000
   }
-]
+}
 
 
 /**
@@ -98,36 +79,11 @@ function ApiResponse() {
   this.data = {};
 };
 
-const signedCookies = {
-  maxAge: 1000 * 60 * 10, // would expire after 15 minutes
-  httpOnly: true, // The cookie only accessible by the web server
-  signed: true // Indicates if the cookie should be signed
-}
-
-const normalCookes = {
-  maxAge: 1000 * 60 * 10, // would expire after 15 minutes
-  httpOnly: false, // The cookie only accessible by the web server
-  signed: false // Indicates if the cookie should be signed
-}
-
-function generateRandom(length) {
-  var text = "";
-  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+=";
-
-  for (var i = 0; i < length; i++)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-  return text;
-}
-
 module.exports = {
   SetResponse,
   ErrMessages,
-  RequestErrorMsg,
   UserRoles,
   ApiResponse,
-  signedCookies,
-  normalCookes,
-  generateRandom,
-  plans
+  SetError,
+  Plans
 };

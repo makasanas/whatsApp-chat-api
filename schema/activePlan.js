@@ -26,11 +26,10 @@ const planSchema = new Schema({
         planName: { type: String },
         planPrice: { type: Number }
     }],
+    planMeta: { type: Object },
     products: { type: Number },
-    cancelled_on: { type: Date, default: Date.now },
     created: { type: Date, default: Date.now },
-    updated: { type: Date, default: Date.now },
-    deleted: { type: Boolean, default: false },
+    updated: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('plans', planSchema);

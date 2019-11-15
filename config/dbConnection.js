@@ -10,7 +10,7 @@ mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
 
 // database connection
-mongoose.connect(process.env['MONGO_URL'], { useNewUrlParser: true, poolSize: 10, auto_reconnect: true });
+mongoose.connect(process.env['MONGO_URL'], { useNewUrlParser: true, useUnifiedTopology: true, poolSize: 10, auto_reconnect: true });
 
 // When successfully connected
 mongoose.connection.on('connected', function () {

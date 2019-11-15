@@ -9,7 +9,6 @@ module.exports.getUsers = async (req, res) => {
 	/* Contruct response object */
 	let rcResponse = new ApiResponse();
     let {  query } = req;
-    console.log(query);
 	try {
         let limit = query.limit ? parseInt(query.limit) : 10;
         let skip = query.page ?  ((parseInt(query.page) - 1) * (limit)) : 0;

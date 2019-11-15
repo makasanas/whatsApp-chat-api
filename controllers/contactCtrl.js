@@ -13,10 +13,8 @@ module.exports.creat = async (req, res) => {
         rcResponse.data = JSON.parse(JSON.stringify(rcResponse.data));
         let  mailBody = "";
         Object.keys(rcResponse.data).forEach(function(key) {
-            console.log(key, rcResponse.data[key])
             mailBody += key+': '+ rcResponse.data[key]+'\n '
         });
-        console.log(mailBody);
        await sendMail('makasanas@yahoo.in', mailBody ,  "message from on app");
 	} catch (err) {
         handleError(err, req, rcResponse);

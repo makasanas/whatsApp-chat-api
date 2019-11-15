@@ -42,7 +42,7 @@ router.post('/recurring/plan/', checkToken.validateToken,  recurringCtrl.create)
 
 router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan);
 
-router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlanSchema);
+router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlan);
 
 
 /*****************************

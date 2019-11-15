@@ -1,8 +1,11 @@
 const { ApiResponse } = require('./../helpers/common');
 const shopifyReuest = require('./../helpers/shopifyReuest.js');
-const { handleError } = require('./../helpers/utils');
 const userModel = require('./../model/user')
-const productModal = require('./../model/product')
+const { handleError, handleshopifyRequest, getPaginationLink } = require('./../helpers/utils');
+const productModel = require('./../model/product')
+const productTypeModel = require('./../model/productType');
+const productSyncDetailModel = require('./../model/productSyncDetail');
+
 
 module.exports.get = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -59,7 +62,6 @@ module.exports.get = async (req, res) => {
 shopifyCalls = async (url, accessToken) => {
     try {
         return new Promise(function (resolve, reject) {
-            console.log(url);
             shopifyReuest.get(url, accessToken).then(function (response) {
                 resolve(response)
             }).catch(function (err) {
@@ -82,9 +84,6 @@ module.exports.getCollection = async (req, res) => {
         ]
 
         await Promise.all(promiseArray).then(async responses => {
-            console.log(responses[0].headers['x-shopify-shop-api-call-limit']);
-            console.log(responses[0].headers['http_x_shopify_shop_api_call_limit']);
-            console.log(responses[0].headers['Retry-After']);
 
             let collections = responses[0].body.custom_collections.concat(responses[1].body.smart_collections);
 
@@ -103,10 +102,8 @@ module.exports.getCollection = async (req, res) => {
 module.exports.getProductCount = async (req, res) => {
     let rcResponse = new ApiResponse();
     let { decoded } = req;
-    console.log(decoded);
     try {
         let url = 'https://' + decoded.shopUrl + process.env.apiVersion + 'products/count.json';
-        console.log(url);
         await shopifyReuest.get(url, decoded.accessToken).then(async function (response) {
             let user = {
                 productCount: response.body.count
@@ -124,61 +121,120 @@ module.exports.getProductCount = async (req, res) => {
     }
 }
 
+// module.exports.syncProducts = async (req, res) => {
+//     let rcResponse = new ApiResponse();
+
+//     try {
+//         let products = await getAllProducts(req, '', rcResponse,res);
+//     } catch (err) {
+//         handleError(err, req, rcResponse);
+//     }
+// }
+// getAllProducts = async (req, next, rcResponse,res) => {
+//     try {
+//         let countQuery = '?';
+//         let productQuery = '?';
+//         let promiseArray = [];
+//         let { decoded, query } = req;
+//         if (next == '') {
+//             productQuery += query.title ? 'title=' + query.title : '';
+//             productQuery += query.collection_id ? '&collection_id=' + query.collection_id : '';
+//             productQuery += query.created_at_min ? '&created_at_min=' + query.created_at_min : '';
+//             productQuery += query.created_at_max ? '&created_at_max=' + query.created_at_max : '';
+//             productQuery += query.published_status ? '&published_status=' + query.published_status : '';
+//             productQuery += query.fields ? '&fields=' + query.fields : '';
+
+//             countQuery = productQuery;
+//             productQuery += query.limit ? '&limit=' + query.limit : '';
+//             productQuery += query.since_id ? '&since_id=' + query.since_id : '';
+//             promiseArray = [
+//                 shopifyCalls('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json' + productQuery, decoded.accessToken),
+//             ]
+//         } else {
+//             promiseArray = [
+//                 shopifyCalls(next, decoded.accessToken)
+//             ]
+//         }
+//         await Promise.all(promiseArray).then(async responses => {
+//             if (responses[0].headers['link']) {
+//                 links = responses[0].headers['link'].split(',');
+//                 var obj = {};
+//                 links.forEach((link) => {
+//                     link = link.split(';');
+//                     obj[link[1].trim().substr(5).slice(0, -1)] = link[0].trim().substr(1).slice(0, -1);
+//                 })
+//             }
+//             if (obj.next) {
+//                 let productArray = [];
+//                 productArray = responses[0].body.products;
+//                 productArray.forEach(product => {
+//                     let insertObj = {
+//                         shopUrl: decoded.shopUrl,
+//                         productId: product.id,
+//                         userId: decoded.id,
+//                         title: product.title,
+//                         description: product.body_html,
+//                         vendor: product.vendor,
+//                         product_type: product.product_type,
+//                         handle: product.handle,
+//                         published_at: product.published_at,
+//                         template_suffix: product.template_suffix,
+//                         tags: product.tags,
+//                         published_scope: product.published_scope,
+//                         admin_graphql_api_id: product.admin_graphql_api_id,
+//                         variants: product.variants,
+//                         options: product.options,
+//                         images: product.images,
+//                         image: product.image,
+//                     }
+//                     productModal.syncProducts(insertObj);
+//                 })
+//                 getAllProducts(req, obj.next, rcResponse,res)
+//             } else {
+//                 return res.status(rcResponse.code).send(rcResponse);
+//             }
+//         }).catch(function (err) {
+//             handleError(err, req, rcResponse);
+//         });
+//     } catch (err) {
+//         throw err;
+//     }
+// }
+
+
+
 module.exports.syncProducts = async (req, res) => {
     let rcResponse = new ApiResponse();
-
+    let { decoded } = req;
     try {
-        let products = await getAllProducts(req, '', rcResponse,res);
-        console.log(products, "gggggggggghghghghghgh")
+        let product_type = [];
+        let totalProduct = 0;
 
+        await getAllProducts('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json?limit=250', decoded, product_type, totalProduct);
+
+        rcResponse.data = true;
     } catch (err) {
         handleError(err, req, rcResponse);
     }
+    return res.status(rcResponse.code).send(rcResponse);
 }
-getAllProducts = async (req, next, rcResponse,res) => {
-    try {
-        let countQuery = '?';
-        let productQuery = '?';
-        let promiseArray = [];
-        let { decoded, query } = req;
-        if (next == '') {
-            productQuery += query.title ? 'title=' + query.title : '';
-            productQuery += query.collection_id ? '&collection_id=' + query.collection_id : '';
-            productQuery += query.created_at_min ? '&created_at_min=' + query.created_at_min : '';
-            productQuery += query.created_at_max ? '&created_at_max=' + query.created_at_max : '';
-            productQuery += query.published_status ? '&published_status=' + query.published_status : '';
-            productQuery += query.fields ? '&fields=' + query.fields : '';
 
-            countQuery = productQuery;
-            productQuery += query.limit ? '&limit=' + query.limit : '';
-            productQuery += query.since_id ? '&since_id=' + query.since_id : '';
-            promiseArray = [
-                shopifyCalls('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json' + productQuery, decoded.accessToken),
-            ]
-        } else {
-            promiseArray = [
-                shopifyCalls(next, decoded.accessToken)
-            ]
-        }
-        await Promise.all(promiseArray).then(async responses => {
-            if (responses[0].headers['link']) {
-                links = responses[0].headers['link'].split(',');
-                var obj = {};
-                links.forEach((link) => {
-                    link = link.split(';');
-                    obj[link[1].trim().substr(5).slice(0, -1)] = link[0].trim().substr(1).slice(0, -1);
-                })
-            }
-            if (obj.next) {
-                let productArray = [];
-                productArray = responses[0].body.products;
-                productArray.forEach(product => {
-                    let insertObj = {
-                        shopUrl: decoded.shopUrl,
-                        productId: product.id,
-                        userId: decoded.id,
+getAllProducts = async (next, decoded, product_type, totalProduct) => {
+    try {
+        if (next) {
+            var productData = await handleshopifyRequest('get', next, decoded.accessToken);
+            let pagination = await getPaginationLink(productData);
+
+            let promise = [];
+            productData.body.products.forEach((product) => {
+                let data = {
+                    userId: decoded.id,
+                    shopUrl: decoded.shopUrl,
+                    productId: product.id,
+                    shopifyData: {
+                        id: product.id,
                         title: product.title,
-                        description: product.body_html,
+                        body_html: product.body_html,
                         vendor: product.vendor,
                         product_type: product.product_type,
                         handle: product.handle,
@@ -192,15 +248,47 @@ getAllProducts = async (req, next, rcResponse,res) => {
                         images: product.images,
                         image: product.image,
                     }
-                    productModal.syncProducts(insertObj);
-                })
-                getAllProducts(req, obj.next, rcResponse,res)
-            } else {
-                return res.status(rcResponse.code).send(rcResponse);
+                }
+                if (product.product_type !== '') {
+                    let str = product.product_type;
+                    str = str.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
+                    product_type.indexOf(str) === -1 ? product_type.push(str) : '';
+                }
+                promise.push(productModel.findOneAndUpdate(data));
+            });
+
+            await Promise.all(promise).then(async () => {
+                totalProduct += productData.body.products.length;
+                await getAllProducts(pagination.next, decoded, product_type, totalProduct);
+            }).catch((err) => {
+                throw err;
+            });
+
+        } else {
+            // handel product type data 
+            product_type.sort(function (a, b) {
+                if (a < b) { return -1; }
+                if (a > b) { return 1; }
+                return 0;
+            })
+    
+            let data = {
+                product_type: product_type,
+                userId: decoded.id,
+                shopUrl: decoded.shopUrl
             }
-        }).catch(function (err) {
-            handleError(err, req, rcResponse);
-        });
+            await productTypeModel.findOneAndUpdate({ userId: decoded.id }, data);
+
+            // product count data in table 
+            let syncDetail = {
+                userId: decoded.id,
+                shopUrl: decoded.shopUrl,
+                totalProduct: totalProduct
+            }
+
+            await productSyncDetailModel.create(syncDetail);
+            return true;
+        }
     } catch (err) {
         throw err;
     }
