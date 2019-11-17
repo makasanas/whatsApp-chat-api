@@ -156,7 +156,7 @@ createOrUpdateShop = async (shopData) => {
 
             await Promise.all(promise).then(async (res) => {
                 shop = res[0].body.shop;
-                if (process.env.productCount !== 'false') {
+                if (process.env.productCount === 'true') {
                     productCount = res[1].body.count;
                 }
 
