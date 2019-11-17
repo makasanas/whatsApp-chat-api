@@ -1,9 +1,3 @@
-/*
-FileName : authCtrl.js
-Date : 2nd Aug 2018
-Description : This file consist of functions related to user's authentication
-*/
-
 /* DEPENDENCIES */
 const { ApiResponse, SetError } = require('./../helpers/common');
 const { handleError } = require('./../helpers/utils');

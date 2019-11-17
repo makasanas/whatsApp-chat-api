@@ -8,14 +8,6 @@ module.exports.findOneAndUpdate = async (query, data) => {
     }
 }
 
-module.exports.deleteManyByShopUrl = async (shopUrl) => {
-    try {
-        return await productTypeSchema.deleteMany({ shopUrl: shopUrl });
-    } catch (error) {
-        throw error;
-    }
-}
-
 module.exports.findOne = async (query) => {
     try {
         return await productTypeSchema.findOne(query);
@@ -23,3 +15,11 @@ module.exports.findOne = async (query) => {
         throw error;
     }
 }
+
+module.exports.deleteMany = async (query) => {
+    try {
+        return await productTypeSchema.deleteMany(query);
+    } catch (error) {
+        throw error;
+    }
+  }

@@ -8,9 +8,19 @@ module.exports.create = async (syncDetail) => {
     }
 }
 
-module.exports.find = async (query,sort) => {
+module.exports.find = async (query, sort) => {
     try {
         return await productSyncDetailSchema.find(query).sort(sort);
+    } catch (error) {
+        throw error;
+    }
+}
+
+
+
+module.exports.deleteMany = async (query) => {
+    try {
+        return await productSyncDetailSchema.deleteMany(query);
     } catch (error) {
         throw error;
     }

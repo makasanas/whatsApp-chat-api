@@ -19,7 +19,6 @@ const productCtrl = require('./../controllers/productCtrl');
 const contactCtrl = require('./../controllers/contactCtrl');
 
 
-
 /*****************************
  Shopify
  *****************************/
@@ -48,11 +47,10 @@ router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurri
 /*****************************
   Product Get
  *****************************/
-router.get('/products', checkToken.validateToken,  productCtrl.get);
+router.post('/product', checkToken.validateToken,  productCtrl.getProductFilter);
 
-router.get('/collections', checkToken.validateToken,  productCtrl.getCollection);
+router.get('/syncProducts', checkToken.validateToken, productCtrl.syncProducts);
 
-router.get('/getproductcount', checkToken.validateToken,  productCtrl.getProductCount);
 
 /*****************************
   Contact
@@ -69,7 +67,6 @@ router.post('/contact', checkToken.validateToken,  contactCtrl.creat);
 router.post('/webhooks/app/delete',  shopifyCtrl.deleteApp);
 
 
-
 /*****************************
  ADMIN
  *****************************/
@@ -78,9 +75,9 @@ router.post('/admin/login',  adminAuthCtrl.login);
 
 router.get('/admin/profile', checkToken.validateToken,  checkToken.isAdminUser, adminAuthCtrl.getUserProfile);
 
-router.post('/admin/forgetPassword', adminAuthCtrl.forgetPassword);
+// router.post('/admin/forgetPassword', adminAuthCtrl.forgetPassword);
 
-router.post('/admin/reset/:token', adminAuthCtrl.resetPassword);
+// router.post('/admin/reset/:token', adminAuthCtrl.resetPassword);
 
 router.get('/admin/access_token', checkToken.validateToken,  checkToken.isAdminUser, adminAuthCtrl.generateAccessToken);
 
@@ -91,12 +88,5 @@ router.get('/admin/access_token', checkToken.validateToken,  checkToken.isAdminU
  *****************************/
 
 router.get('/admin/user', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getUsers);
-
-/*****************************
- Setting Sync Product
- *****************************/
-
-router.get('/syncProducts', checkToken.validateToken, productCtrl.syncProducts);
-
 
 module.exports = router;

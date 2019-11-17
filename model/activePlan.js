@@ -1,7 +1,5 @@
 const activePlanSchema = require('./../schema/activePlan');
 
-
-
 module.exports.create = async (data) => {
   try {
     return await new activePlanSchema(data).save();
@@ -26,36 +24,18 @@ module.exports.findOne = async (query) => {
   }
 }
 
-// module.exports.deleteManyByShopUrl = async (shopUrl) => {
-//     try {
-//       return await activePlanSchema.deleteMany({ shopUrl: shopUrl });
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+module.exports.find = async (query) => {
+  try {
+    return await activePlanSchema.find(query).lean().exec();
+  } catch (err) {
+    throw err;
+  }
+}
 
-//   module.exports.findActivePlanByUserId = async (userId) => {
-//     try {
-//       return await activePlanSchema.findOne({ userId: userId }).lean().exec();;
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
-
-//   module.exports.updatePlan = async (planId, data) => {
-//     try {
-//       return await activePlanSchema.findOneAndUpdate({ userId: planId }, data, { new: true }).lean().exec();
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
-
-
-
-//   module.exports.find = async (findQuery) => {
-//     try {
-//       return await activePlanSchema.find(findQuery).lean().exec();
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+module.exports.deleteMany = async (query) => {
+  try {
+      return await activePlanSchema.deleteMany(query);
+  } catch (error) {
+      throw error;
+  }
+}

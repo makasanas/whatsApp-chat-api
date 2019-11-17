@@ -1,12 +1,10 @@
 const deletedUserSchema = require('./../schema/deletedUser');
 
 
-module.exports.findOneAndUpdate = async (userObj) => {
-    try {
-      var query = { shopUrl:  userObj.shopUrl }, 
-      options = { upsert: true, new: true, setDefaultsOnInsert: true };
-      return await deletedUserSchema.findOneAndUpdate(query, userObj, options).lean().exec();
-    } catch (err) {
-      throw err;
-    }
+module.exports.findOneAndUpdate = async (query, data, fields) => {
+  try {
+    return await deletedUserSchema.findOneAndUpdate(query, data, { fields, setDefaultsOnInsert: true, new: true, upsert: true }).lean().exec();
+  } catch (error) {
+    throw error;
   }
+}

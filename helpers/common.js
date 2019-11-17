@@ -9,7 +9,13 @@ const ErrMessages = {
   InvalidToken: 'Token is not valid',
   RequestNotFromShopify: 'Request not from shopify',
   ShopNotExists: 'Shop not found',
-  InvalidParams: 'Invalid Params'
+  InvalidParams: 'Invalid Params',
+  InvalidAdminKey:'Invalid admin key',
+  UserNotFound:'User not found',
+  InvalidPassword:'Invalid Password',
+  EmailExists:'Email already exists',
+  NotAdmin:'You are not admin',
+  NoImage:'Image not found'
 };
 
 /**

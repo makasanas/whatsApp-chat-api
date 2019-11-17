@@ -8,7 +8,7 @@ module.exports.get = async (req, res) => {
     try {
         rcResponse.data = await productSyncDetailModel.find({ userId: decoded.id }, { created: -1 });
     } catch (err) {
-        handleError(err, req, rcResponse);
+        handleError(err, rcResponse);
     }
     return res.status(rcResponse.code).send(rcResponse);
 }

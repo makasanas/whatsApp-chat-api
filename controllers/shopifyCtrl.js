@@ -1,11 +1,13 @@
-const { SetResponse, RequestErrorMsg, SetError, ApiResponse } = require('./../helpers/common');
+const { SetError, ApiResponse } = require('./../helpers/common');
 const { handleError, verify, handleshopifyRequest } = require('./../helpers/utils');
-const activePlanModel = require('./../model/activePlan');
 var url = require('url');
 const jwt = require('jsonwebtoken');
 const userModel = require('./../model/user')
 const productModel = require('./../model/product');
 const deletedUserModel = require('./../model/deletedUser');
+const activePlanModel = require('./../model/activePlan');
+const productSyncDetailModel = require('./../model/productSyncDetail');
+const productTypeModel = require('./../model/productType');
 
 function securityCheck(req) {
     let securityPass = false;
@@ -228,29 +230,32 @@ module.exports.auth = async (req, res, next) => {
 
 module.exports.deleteApp = async (req, res) => {
     let rcResponse = new ApiResponse();
+    let { body } = req;
     try {
-        let user = await userModel.getUserByStoreId(req.body.id);
+        // console.log(sanjay);
+        let user = await userModel.findOne({ storeId: body.id });
+        console.log(user);
         if (user) {
             user.userId = user._id;
             user.updated = Date.now();
             delete user._id;
 
-            let userSave = await deletedUserModel.findOneAndUpdate(user);
+            await deletedUserModel.findOneAndUpdate({ shopUrl: user.shopUrl }, { $set: user });
 
-            let [deleteUser, deleteActivePlan, deleteProduct, deleteQueue] = await Promise.all([
-                await userModel.deleteManyByShopUrl(user.shopUrl),
-                await activePlanModel.deleteManyByShopUrl(user.shopUrl),
-                await productModel.deleteManyByShopUrl(user.shopUrl),
-                await queueModel.deleteManyByShopUrl(user.shopUrl),
-            ]);
+            let promise = [
+                userModel.deleteMany({ shopUrl: user.shopUrl }),
+                activePlanModel.deleteMany({ shopUrl: user.shopUrl }),
+                productModel.deleteMany({ shopUrl: user.shopUrl }),
+                productSyncDetailModel.deleteMany({ shopUrl: user.shopUrl }),
+                productTypeModel.deleteMany({ shopUrl: user.shopUrl })
+            ]
 
-            rcResponse.data = {
-                user: deleteUser,
-                activePlan: deleteActivePlan,
-                product: deleteProduct,
-                queue: deleteQueue
-            };
-        } 
+            await Promise.all(promise).then(async () => {
+                rcResponse.data = true;
+            }).catch((err) => {
+                throw err;
+            });
+        }
     } catch (err) {
         handleError(err, rcResponse);
     }

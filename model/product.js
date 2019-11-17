@@ -1,58 +1,75 @@
 const productSchema = require('./../schema/product');
-const syncProductSchema = require('./../schema/syncProducts');
-
-
-module.exports.creat = async (productObj) => {
-  try {
-    const singleProduct = productSchema.findOneAndUpdate({ productId: product.productId }, {$set : product } , { new: true, upsert:true }).lean().exec();
-    resolve(singleProduct);
-    // const product = await new productSchema(productObj);
-    // const productSave = await product.save();
-    return productSave;
-  } catch (error) {
-    throw error;
-  }
-}
-
-module.exports.find = async (query) => {
-  try {
-    const products  = await productSchema.find(query).lean().exec();
-    return products;
-  } catch (error) {
-    throw error;
-  }
-}
-
-module.exports.deleteManyByShopUrl = async (shopUrl) => {
-  try {
-    return await productSchema.deleteMany({ shopUrl: shopUrl });
-  } catch (error) {
-    throw error;
-  }
-}
-
-module.exports.deleteManyByProductId = async (products) => {
-  try {
-    return await productSchema.deleteMany({ productId:{'$in': products}});
-  } catch (error) {
-    throw error;
-  }
-}
-
-// module.exports.syncProducts = async (productArray) => {
-//   try {
-//     return await syncProductSchema.insertMany(productArray);
-//   } catch (error) {
-//     throw error;
-//   }
-// }
 
 module.exports.syncProducts = async (productObj) => {
   try {
-    return await syncProductSchema.findOneAndUpdate({ productId: productObj.productId }, {$set : productObj } , { new: true, upsert:true }).lean().exec();
+    return await productSchema.findOneAndUpdate({ productId: productObj.productId }, { $set: productObj }, { new: true, upsert: true }).lean().exec();
   } catch (error) {
     throw error;
   }
 }
 
 
+module.exports.bulkWrite = async (data) => {
+  try {
+    return await productSchema.bulkWrite(data);
+  } catch (error) {
+    throw error;
+  }
+}
+
+module.exports.getProductFilter = async (query, userQuery, skip, limit, sort) => {
+  try {
+    return await productSchema.aggregate([
+      {
+        "$facet": {
+          "query": [
+            {
+              $match: {
+                $and: [
+                  query,
+                  userQuery
+                ]
+              }
+            },
+            { $sort: sort },
+            {
+              $skip: skip
+            }, {
+              $limit: limit
+            }
+          ],
+          "queryCount": [
+            {
+              $match: {
+                $and: [
+                  query,
+                  userQuery
+                ]
+              }
+            },
+            { "$count": "Total" },
+          ]
+        }
+      },
+      {
+        "$project": {
+          "products": "$query",
+          "count": { "$arrayElemAt": ["$queryCount.Total", 0] },
+        }
+      }
+    ])
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+
+
+module.exports.deleteMany = async (query) => {
+  try {
+      return await productSchema.deleteMany(query);
+  } catch (error) {
+      throw error;
+  }
+}

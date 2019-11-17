@@ -13,14 +13,9 @@ module.exports.getUsers = async (req, res) => {
         let limit = query.limit ? parseInt(query.limit) : 10;
         let skip = query.page ?  ((parseInt(query.page) - 1) * (limit)) : 0;
         let sort = {created: -1};
-		const count = await userModel.getUsersCount();
-		const users = await userModel.getUsers(skip, limit, sort);
-		rcResponse.data = {
-            users: users,
-            count: count
-        };
+		rcResponse.data = await userModel.findWithCount(skip, limit, sort);
 	} catch (err) {
-		handleError(err, req, rcResponse);
+		handleError(err, rcResponse);
     }
     return res.status(rcResponse.code).send(rcResponse);
 };

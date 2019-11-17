@@ -8,8 +8,8 @@ Description : This file consist of files related functions
 const multer = require('multer');
 const path = require('path');
 const appDir = path.dirname(require.main.filename);
-const fs = require('fs');
-const { SetResponse, RequestErrorMsg, ErrMessages, ApiResponse } = require('./../helpers/common');
+const { SetError, ApiResponse } = require('./../helpers/common');
+const { handleError } = require('./utils');
 
 const storage = multer.diskStorage({
   destination: function (req, file, callback) {
@@ -26,16 +26,15 @@ const upload = multer({ storage: storage }).fields([
 module.exports.uploadObj = upload;
 
 module.exports.uploadMedia = async (req, res) => {
-  /* Contruct response object */
   let rcResponse = new ApiResponse();
-  let httpStatus = 200;
-
-  if (!req.files || !req.files.file) {
-    SetResponse(rcResponse, 400, RequestErrorMsg('NoImage', req, null), false);
-    httpStatus = 400;
-    return res.status(httpStatus).send(rcResponse);
+  try {
+    if (!req.files || !req.files.file) {
+      throw SetError({}, 400, 'InvalidParams');
+    }
+    rcResponse.message = 'Media file has been successfullly uploaded';
+    rcResponse.data = { fileName: req.files.file[0].filename }
+  } catch (err) {
+    handleError(err, rcResponse);
   }
-  rcResponse.message = 'Media file has been successfullly uploaded';
-  rcResponse.data = { fileName: req.files.file[0].filename }
-  return res.status(httpStatus).send(rcResponse);
+  return res.status(rcResponse.code).send(rcResponse);
 };
