@@ -63,7 +63,7 @@ const Plans = {
     minProduct: 500,
     maxProduct: 1000
   },
-  Silver: {
+  Gold: {
     minProduct: 1000,
     maxProduct: 5000
   },
