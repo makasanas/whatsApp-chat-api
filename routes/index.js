@@ -90,8 +90,6 @@ router.get('/admin/user', checkToken.validateToken,  checkToken.isAdminUser,  ad
 
 router.get('/admin/access_token', checkToken.validateToken,  checkToken.isAdminUser, adminCtrl.generateAccessToken);
 
-router.get('/admin/user', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getUsers);
-
 router.get('/admin/deleteduser', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getDeletedUsers);
 
 
