@@ -30,7 +30,7 @@ exports.validateToken = function (req, res, next) {
   }
 };
 
-exports.validateAcessToken = function (req, res, next) {
+module.exports.validateAcessToken = function (req, res, next) {
   /* Contruct response object */
   let rcResponse = new ApiResponse();
   // check header or url parameters or post parameters for token

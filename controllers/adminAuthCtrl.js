@@ -6,20 +6,19 @@ const adminModel = require('./../model/admin');
 
 /* Authenticate user */
 module.exports.login = async (req, res) => {
-	// await this.register({
-	// 	body: {
-	// 		name: "Sanjay Makasana",
-	// 		password: "sanjay.143",
-	// 		email: "makasanas@yahoo.in",
-	// 		phone: 9724690996,
-	// 		type: 1,
-	// 		adminKey:"OxxGyAfT8UXG4NJbvTqOftCyeGBxH5GvoinSKkvPxSwT5KYrB27OHuNyyWRKljgnvQGLPwD01jRXYPPJoK52YSJ2N4SZD37SY1Gc"
-	// 	}
-	// });
-
 	let rcResponse = new ApiResponse();
-
 	try {
+		// await this.register({
+		// 	body: {
+		// 		name: "Sanjay Makasana",
+		// 		password: "sanjay.143",
+		// 		email: "makasanas@yahoo.in",
+		// 		phone: 9724690996,
+		// 		type: 1,
+		// 		adminKey: "OxxGyAfT8UXG4NJbvTqOftCyeGBxH5GvoinSKkvPxSwT5KYrB27OHuNyyWRKljgnvQGLPwD01jRXYPPJoK52YSJ2N4SZD37SY1Gc"
+		// 	}
+		// });
+
 		if (!req.body.email || !req.body.password) {
 			throw SetError({}, 403, 'InvalidParams');
 		}
@@ -33,17 +32,17 @@ module.exports.login = async (req, res) => {
 
 		if (user) {
 			/* Compare password */
-			const comparePasswordResult = await comparePassword(req.body.password, findUser.password);
+			const comparePasswordResult = await comparePassword(req.body.password, user.password);
 
 			if (comparePasswordResult) {
 				/* Password matched */
 				const encodedData = {
-					userId: findUser._id,
-					role: findUser.role
+					id: user._id,
+					role: user.role
 				};
 
 				// generate accessToken using JWT
-				const token = jwt.sign(encodedData, process.env['ADMIN_KEY']);
+				const token = jwt.sign(encodedData, process.env['SECRET']);
 
 				rcResponse.data = { ...user, ...{ token: token } };
 			} else {
@@ -60,8 +59,7 @@ module.exports.login = async (req, res) => {
 
 /* Register user */
 module.exports.register = async (req) => {
-	let rcResponse = new ApiResponse();
-
+	console.log(req);
 	try {
 		if (!req.body.email || !req.body.password || !req.body.name || !req.body.phone || !req.body.type) {
 			throw SetError({}, 400, 'InvalidParams');
@@ -81,22 +79,16 @@ module.exports.register = async (req) => {
 		};
 
 		user = await adminModel.create(user);
-		const encodedData = {
-			userId: createUser._id,
-			role: createUser.role
-		};
-
-		// generate accessToken using JWT
-		const token = jwt.sign(encodedData, process.env['ADMIN_KEY']);
-		rcResponse.data = { _id: createUser._id, role: createUser.role, name: createUser.name, email: createUser.email, phone: createUser.phone, token: token };
 	} catch (err) {
 		if (err.code === 11000) {
 			throw SetError({}, 400, 'EmailExists');
 		} else {
-			handleError(err, rcResponse);
+			// handleError(err, rcResponse);
+			throw err;
 		}
 	}
-	return res.status(rcResponse.code).send(rcResponse);
+	return true;
+	// return res.status(rcResponse.code).send(rcResponse);
 };
 
 /* Get user's profile information */
@@ -104,6 +96,7 @@ module.exports.getUserProfile = async (req, res) => {
 	/* Contruct response object */
 	let rcResponse = new ApiResponse();
 	const { decoded } = req;
+	console.log(decoded);
 
 	try {
 		rcResponse.data = await adminModel.findOne({ _id: decoded.id });
@@ -114,22 +107,3 @@ module.exports.getUserProfile = async (req, res) => {
 
 };
 
-module.exports.generateAccessToken = async (req, res) => {
-	let rcResponse = new ApiResponse();
-	const { query } = req;
-
-	try {
-
-		const encodedData = {
-			shopUrl: query.shopUrl,
-			adminId: req.decoded.userId,
-			role: req.decoded.role
-		};
-		const token = jwt.sign(encodedData, process.env['ADMIN_KEY']);
-
-		rcResponse.data = { 'token': token };
-	} catch (err) {
-		handleError(err, rcResponse);
-	}
-	return res.status(rcResponse.code).send(rcResponse);
-};

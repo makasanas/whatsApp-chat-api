@@ -79,7 +79,6 @@ router.get('/admin/profile', checkToken.validateToken,  checkToken.isAdminUser, 
 
 // router.post('/admin/reset/:token', adminAuthCtrl.resetPassword);
 
-router.get('/admin/access_token', checkToken.validateToken,  checkToken.isAdminUser, adminAuthCtrl.generateAccessToken);
 
 
 
@@ -88,5 +87,13 @@ router.get('/admin/access_token', checkToken.validateToken,  checkToken.isAdminU
  *****************************/
 
 router.get('/admin/user', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getUsers);
+
+router.get('/admin/access_token', checkToken.validateToken,  checkToken.isAdminUser, adminCtrl.generateAccessToken);
+
+router.get('/admin/user', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getUsers);
+
+router.get('/admin/deleteduser', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getDeletedUsers);
+
+
 
 module.exports = router;

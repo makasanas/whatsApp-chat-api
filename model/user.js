@@ -27,7 +27,7 @@ module.exports.findOneAndUpdate = async (query, data, fields) => {
 
 module.exports.findWithCount = async (query, userQuery, skip, limit, sort) => {
   try {
-    return await productSchema.aggregate([
+    return await userSchema.aggregate([
       {
         "$facet": {
           "query": [
@@ -61,14 +61,13 @@ module.exports.findWithCount = async (query, userQuery, skip, limit, sort) => {
       },
       {
         "$project": {
-          "user": "$query",
+          "users": "$query",
           "count": { "$arrayElemAt": ["$queryCount.Total", 0] },
         }
       }
     ])
-  } catch (error) {
-    console.log(error);
-    throw error;
+  } catch (err) {
+    throw err;
   }
 }
 
