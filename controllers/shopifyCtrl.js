@@ -138,7 +138,7 @@ createOrUpdateShop = async (shopData) => {
 
         let user = await userModel.findOne({ shopUrl: shopData.shopUrl });
         let shop = {};
-        let productCount = {};
+        let productCount;
         let plan = {};
 
         if (!user) {

@@ -4,6 +4,7 @@ const { ApiResponse } = require('./../helpers/common');
 const { handleError } = require('./../helpers/utils');
 const userModel = require('./../model/user');
 const deletedUserModel = require('./../model/deletedUser');
+const jwt = require('jsonwebtoken');
 
 
 module.exports.getUsers = async (req, res) => {
