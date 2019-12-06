@@ -8,6 +8,7 @@ const deletedUserModel = require('./../model/deletedUser');
 const activePlanModel = require('./../model/activePlan');
 const productSyncDetailModel = require('./../model/productSyncDetail');
 const productTypeModel = require('./../model/productType');
+const emailNotificationModel = require('./../model/emailNotification');
 
 function securityCheck(req) {
     let securityPass = false;
@@ -77,29 +78,31 @@ generatorAcessToekn = async (req) => {
 createShop = async (shop, productCount, shopData) => {
     let response = {};
     try {
-        let user = {
-            storeName: shop.name,
-            shopUrl: shop.myshopify_domain,
-            domain: shop.domain,
-            hasDiscounts: shop.has_discounts,
-            storeId: shop.id,
-            email: shop.email,
-            currency: shop.currency,
-            language: shop.primary_locale,
-            country_code: shop.country_code,
-            country_name: shop.country_name,
-            plan_display_name: shop.plan_display_name,
-            plan_name: shop.plan_name,
-            phone: shop.phone,
-            customer_email: shop.customer_email,
-            accessToken: shopData.accessToken,
-            scope: shopData.scope,
-            productCount: productCount,
-            recurringPlanName: 'Free',
-            recurringPlanType: 'Free',
+        let data = {
+            $set: {
+                storeName: shop.name,
+                shopUrl: shop.myshopify_domain,
+                domain: shop.domain,
+                hasDiscounts: shop.has_discounts,
+                storeId: shop.id,
+                email: shop.email,
+                currency: shop.currency,
+                language: shop.primary_locale,
+                country_code: shop.country_code,
+                country_name: shop.country_name,
+                plan_display_name: shop.plan_display_name,
+                plan_name: shop.plan_name,
+                phone: shop.phone,
+                customer_email: shop.customer_email,
+                accessToken: shopData.accessToken,
+                scope: shopData.scope,
+                productCount: productCount,
+                recurringPlanName: 'Free',
+                recurringPlanType: 'Free',
+            }
         };
 
-        user = await userModel.create(user);
+        user = await userModel.findOneAndUpdate({ shopUrl: user.shopUrl }, data);
 
         var utc = new Date().toJSON().slice(0, 10);
 
@@ -110,6 +113,7 @@ createShop = async (shop, productCount, shopData) => {
             planPrice: 0,
             status: "active",
             type: "monthly",
+            products: 5,
             currentMonthStartDate: new Date(utc),
             nextMonthStartDate: new Date(new Date(utc).getTime() + (30 * 24 * 60 * 60 * 1000)),
             chargeInfo: {
@@ -119,7 +123,18 @@ createShop = async (shop, productCount, shopData) => {
             }
         }
 
-        plan = await activePlanModel.create(plan);
+        plan = await activePlanModel.findOneAndUpdate({ shopUrl: shop.myshopify_domain }, plan);
+
+        let email = {
+            $set: {
+                shopUrl: shop.myshopify_domain,
+                userId: user._id,
+                days: new Date().getDay(),
+                hour: new Date().getHours(),
+            }
+        }
+
+        await emailNotificationModel.findOneAndUpdate({ shopUrl: shop.myshopify_domain }, email);
 
         response = {
             plan: plan,
@@ -131,6 +146,7 @@ createShop = async (shop, productCount, shopData) => {
     }
     return response;
 }
+
 
 createOrUpdateShop = async (shopData) => {
     var response = {};
@@ -245,6 +261,7 @@ module.exports.deleteApp = async (req, res) => {
             let promise = [
                 userModel.deleteMany({ shopUrl: user.shopUrl }),
                 activePlanModel.deleteMany({ shopUrl: user.shopUrl }),
+                emailNotificationModel.deleteMany({ shopUrl: user.shopUrl }),
                 productModel.deleteMany({ shopUrl: user.shopUrl }),
                 productSyncDetailModel.deleteMany({ shopUrl: user.shopUrl }),
                 productTypeModel.deleteMany({ shopUrl: user.shopUrl })

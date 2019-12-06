@@ -22,6 +22,7 @@ const planSchema = new Schema({
     currentMonthStartDate: { type: Date },
     nextMonthStartDate: { type: Date },
     chargeInfo: [{
+        id: { type: Number },
         startDate: { type: Date },
         planName: { type: String },
         planPrice: { type: Number }

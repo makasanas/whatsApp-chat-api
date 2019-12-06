@@ -33,15 +33,11 @@ module.exports.getPlan = async (req, res) => {
 module.exports.activePlan = async (req, res) => {
     let rcResponse = new ApiResponse();
     const { decoded, params } = req;
-
     try {
-        let currentPlan = await activePlanModel.findOne({ userId: decoded.id });
-        console.log(currentPlan.planId);
-        console.log(params.planId);
-        if (currentPlan.planId != params.planId) {
+        let plan = await activePlanModel.findOne({ userId: decoded.id, chargeInfo: { $elemMatch: { id: params.planId } } });
+        if (plan) {
             let shopifyResponse = await handleshopifyRequest('post', 'https://' + decoded.shopUrl + process.env.apiVersion + 'recurring_application_charges/' + params.planId + '/activate.json', decoded.accessToken);
             let plan = shopifyResponse.body.recurring_application_charge;
-            console.log(plan);
             let data = {
                 $set: {
                     planName: plan.name,
@@ -62,7 +58,8 @@ module.exports.activePlan = async (req, res) => {
                     chargeInfo: {
                         startDate: plan.activated_on,
                         planName: plan.name,
-                        planPrice: plan.price
+                        planPrice: plan.price,
+                        id: plan.id,
                     }
                 }
             }
@@ -77,7 +74,6 @@ module.exports.activePlan = async (req, res) => {
                     trial_start: plan.activated_on,
                 }
             }
-
             rcResponse.data = await userModel.findOneAndUpdate({ _id: decoded.id }, user, { accessToken: 0 });
         } else {
             rcResponse.data = await userModel.findOne({ _id: decoded.id }, { accessToken: 0 });
@@ -125,7 +121,8 @@ module.exports.updatePlanOnMonth = async (plan) => {
                 chargeInfo: {
                     startDate: new Date(utc),
                     planName: plan.planName,
-                    planPrice: plan.planPrice
+                    planPrice: plan.planPrice,
+                    id: plan.planId,
                 }
             }
         }

@@ -54,7 +54,7 @@ module.exports.handleError = async (err, rcResponse) => {
       SetResponse(rcResponse, 500, err.errmsg, false);
     } else if (err instanceof ReferenceError) {
       SetResponse(rcResponse, 500, err.message, false);
-      if (process.env.errorEmail === 'true') {
+      if (process.env.NODE_ENV === 'prod') {
         let mailBody = "ReferenceError Error in somewhere is project\n" + err.stack;
         await this.sendMail("makasanas@yahoo.in", mailBody, "ReferenceError Error in somewhere is project");
       }else{
