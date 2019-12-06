@@ -2,75 +2,63 @@ const { ApiResponse } = require('./../helpers/common');
 const { handleError, handleshopifyRequest, getPaginationLink } = require('./../helpers/utils');
 const productModel = require('./../model/product')
 const productTypeModel = require('./../model/productType');
-const productSyncDetailModel = require('./../model/productSyncDetail');
+const syncDetailModel = require('./../model/syncDetail');
 const userModel = require('./../model/user')
 const mongoose = require('mongoose');
 
-module.exports.getProductFilter = async (req, res) => {
+module.exports.getProduct = async (req, res) => {
     /* Contruct response object */
     let rcResponse = new ApiResponse();
-    let { decoded, body } = req;
+    let { query, decoded } = req;
     try {
-        rcResponse.data = body;
-        let limit = body.limit ? parseInt(body.limit) : 50;
-        let skip = body.page ? ((parseInt(body.page)) * (limit)) : 0;
-        let sort = { created: -1 };
-        let userQuery = { userId: mongoose.Types.ObjectId(decoded.id) };
-        let findQuery = {};
-        if (body.filters) {
-            body.filters.forEach(filter => {
-                if (filter.type) {
-                    if (filter.value == 'true' || filter.value == 'false') {
-                        findQuery[filter.type + '.' + filter.key] = JSON.parse(filter.value);
-                    } else {
-                        var regex = new RegExp(["^", filter.value, "$"].join(""), "i");
-                        if (filter.key === 'title') {
-                            regex = new RegExp(`^${filter.value}`, 'i');
-                        }
-                        findQuery[filter.type + '.' + filter.key] = regex;
-                    }
-                } else {
-                    var regex = new RegExp(["^", filter.value, "$"].join(""), "i");
-                    findQuery[filter.key] = regex;
-                }
-            });
-        }
+        let limit = query.limit ? parseInt(query.limit) : 10;
+        let skip = query.page ? ((parseInt(query.page) - 1) * (limit)) : 0;
+        let sort = { created: - 1 };
 
-        const products = await productModel.getProductFilter(findQuery, userQuery, skip, limit, sort);
-        if (products.length) {
-            rcResponse.data = products[0];
-        } else {
-            rcResponse.data = {}
+        let userQuery = { userId: mongoose.Types.ObjectId(decoded.id), shopifyData: { $exists: true } };
+        let searchQuery = [];
+
+        if (query.search) {
+            searchQuery.push({ $text: { $search: query.search } });
+            sort = { score: { $meta: "textScore" }, created: - 1 };
         }
+        if (query.type) {
+            modelQuery.push({ 'shopifyData.product_type': { $regex: new RegExp(query.type, "i") } })
+        }
+        searchQuery.push(userQuery);
+        rcResponse.data = (await productModel.findWithCount(searchQuery, userQuery, skip, limit, sort))[0];
+        console.log(rcResponse.data);
     } catch (err) {
+        console.log(err);
         handleError(err, rcResponse);
     }
     return res.status(rcResponse.code).send(rcResponse);
-};
+}
+
 
 module.exports.syncProducts = async (req, res) => {
     let rcResponse = new ApiResponse();
     let { decoded } = req;
     try {
         let product_type = [];
+        let allProducts = [];
         let totalProduct = 0;
-        // here we need logic for plan upgread before it's sync all other product 
-        
 
-        await getAllProducts('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json?limit=250', decoded, product_type, totalProduct);
-        rcResponse.data = true;
+        // here we need logic for plan upgread before it's sync all other product 
+        await getAllProducts('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json?limit=250', decoded, product_type, totalProduct, allProducts, rcResponse);
     } catch (err) {
         handleError(err, rcResponse);
     }
     return res.status(rcResponse.code).send(rcResponse);
 }
 
-getAllProducts = async (next, decoded, product_type, totalProduct) => {
+getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, rcResponse) => {
     try {
         if (next) {
             var productData = await handleshopifyRequest('get', next, decoded.accessToken);
             let pagination = await getPaginationLink(productData);
             let promise = [];
+
             productData.body.products.forEach((product) => {
                 let data = {
                     userId: decoded.id,
@@ -78,54 +66,66 @@ getAllProducts = async (next, decoded, product_type, totalProduct) => {
                     productId: product.id,
                     shopifyData: product
                 }
+
                 if (product.product_type !== '') {
                     let str = product.product_type;
                     str = str.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
                     product_type.indexOf(str) === -1 ? product_type.push(str) : '';
                 }
 
-                promise.push(
+                allProducts.push(
                     {
                         updateOne: {
                             filter: { productId: data.productId },
                             update: data,
-                            "upsert": true
+                            "upsert": true,
+                            "setDefaultsOnInsert": true
                         }
                     }
                 )
             });
-
-            await productModel.bulkWrite(promise);
-            totalProduct += promise.length;
-            await getAllProducts(pagination.next, decoded, product_type, totalProduct);
+            await getAllProducts(pagination.next, decoded, product_type, totalProduct, allProducts, rcResponse);
         } else {
-            // handel product type data 
-            product_type.sort(function (a, b) {
-                if (a < b) { return -1; }
-                if (a > b) { return 1; }
-                return 0;
-            })
-
-            let data = {
-                product_type: product_type,
-                userId: decoded.id,
-                shopUrl: decoded.shopUrl
-            }
-            await productTypeModel.findOneAndUpdate({ userId: decoded.id }, data);
-
-            // product count data in table 
-            let syncDetail = {
-                userId: decoded.id,
-                shopUrl: decoded.shopUrl,
-                totalProduct: totalProduct
-            }
-
-            await productSyncDetailModel.create(syncDetail);
-            await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: { productCount: totalProduct } });
-            return true;
+            rcResponse.data = await writeData(decoded, product_type, totalProduct, allProducts);
         }
+
     } catch (err) {
-        console.log(err);
         throw err;
     }
+}
+
+writeData = async (decoded, product_type, totalProduct, allProducts) => {
+    await productModel.bulkWrite(allProducts);
+    totalProduct = allProducts.length;
+
+    // handel product type data 
+    product_type.sort(function (a, b) {
+        if (a < b) { return -1; }
+        if (a > b) { return 1; }
+        return 0;
+    })
+
+    let data = {
+        product_type: product_type,
+        userId: decoded.id,
+        shopUrl: decoded.shopUrl
+    }
+
+    await productTypeModel.findOneAndUpdate({ shopUrl: decoded.shopUrl }, data);
+
+    await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: { productCount: totalProduct } });
+
+    let syncData = {
+        $set: {
+            shopUrl: decoded.shopUrl,
+            userId: decoded.id,
+            productSync: {
+                lastSync: new Date(),
+                status: 'Synced',
+                count: totalProduct
+            }
+        }
+    }
+
+    return await syncDetailModel.findOneAndUpdate({ shopUrl: decoded.shopUrl }, syncData);
 }

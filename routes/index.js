@@ -17,6 +17,7 @@ const shopifyCtrl = require('./../controllers/shopifyCtrl');
 const recurringCtrl = require('./../controllers/recurringCtrl');
 const productCtrl = require('./../controllers/productCtrl');
 const contactCtrl = require('./../controllers/contactCtrl');
+const syncCtrl = require('../controllers/syncCtrl');
 
 
 /*****************************
@@ -47,9 +48,18 @@ router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurri
 /*****************************
   Product Get
  *****************************/
-router.post('/product', checkToken.validateToken,  productCtrl.getProductFilter);
 
-router.get('/syncProducts', checkToken.validateToken, productCtrl.syncProducts);
+router.get('/sync/products', checkToken.validateToken, productCtrl.syncProducts);
+
+router.get('/products', checkToken.validateToken, productCtrl.getProduct);
+
+
+
+/*****************************
+ Sync
+ *****************************/
+
+router.get('/syncDetails', checkToken.validateToken, syncCtrl.syncDetails);
 
 
 /*****************************

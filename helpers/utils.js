@@ -53,14 +53,13 @@ module.exports.handleError = async (err, rcResponse) => {
     } else if (err.name === 'MongoError') {
       SetResponse(rcResponse, 500, err.errmsg, false);
     } else if (err instanceof ReferenceError) {
-      SetResponse(rcResponse, 500, err.message, false);
       if (process.env.NODE_ENV === 'prod') {
         let mailBody = "ReferenceError Error in somewhere is project\n" + err.stack;
         await this.sendMail("makasanas@yahoo.in", mailBody, "ReferenceError Error in somewhere is project");
-      }else{
+      } else {
         console.log(err);
       }
-
+    //  SetResponse(rcResponse, 500, err.message, false);
     } else {
       SetResponse(rcResponse, 500, err.message, false);
     }
@@ -87,7 +86,7 @@ module.exports.sendMail = async (email, mailBody, subject) => {
       from: process.env.appName + ' <hello@webrexstudio.com>'
     }
 
-    await smtpTransport.sendMail(mailOptions, function (error, response) {
+    await smtpTransport.sendMail(mailOptions, function (err, response) {
       if (err) {
         throw err;
       }

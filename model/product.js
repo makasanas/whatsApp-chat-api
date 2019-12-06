@@ -17,59 +17,42 @@ module.exports.bulkWrite = async (data) => {
   }
 }
 
-module.exports.getProductFilter = async (query, userQuery, skip, limit, sort) => {
+module.exports.findWithCount = async (query, userQuery, skip, limit, sort) => {
   try {
     return await productSchema.aggregate([
       {
-        "$facet": {
-          "query": [
+        $match: {
+          $and: query
+        }
+      },
+      { $sort: sort },
+      {
+        $facet: {
+          products: [{ $skip: skip }, { $limit: limit }],
+          count: [
             {
-              $match: {
-                $and: [
-                  query,
-                  userQuery
-                ]
-              }
-            },
-            { $sort: sort },
-            {
-              $skip: skip
-            }, {
-              $limit: limit
+              $count: 'count'
             }
-          ],
-          "queryCount": [
-            {
-              $match: {
-                $and: [
-                  query,
-                  userQuery
-                ]
-              }
-            },
-            { "$count": "Total" },
           ]
         }
       },
       {
         "$project": {
-          "products": "$query",
-          "count": { "$arrayElemAt": ["$queryCount.Total", 0] },
+          "products": "$products",
+          "count": { "$arrayElemAt": ["$count.count", 0] },
         }
       }
     ])
-  } catch (error) {
-    console.log(error);
-    throw error;
+  } catch (err) {
+    throw err;
   }
 }
 
 
-
 module.exports.deleteMany = async (query) => {
   try {
-      return await productSchema.deleteMany(query);
+    return await productSchema.deleteMany(query);
   } catch (error) {
-      throw error;
+    throw error;
   }
 }

@@ -6,7 +6,7 @@ const userModel = require('./../model/user')
 const productModel = require('./../model/product');
 const deletedUserModel = require('./../model/deletedUser');
 const activePlanModel = require('./../model/activePlan');
-const productSyncDetailModel = require('./../model/productSyncDetail');
+const productSyncDetailModel = require('../model/syncDetail');
 const productTypeModel = require('./../model/productType');
 const emailNotificationModel = require('./../model/emailNotification');
 
