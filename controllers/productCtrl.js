@@ -1,5 +1,5 @@
 const { ApiResponse } = require('./../helpers/common');
-const { handleError, handleshopifyRequest, getPaginationLink } = require('./../helpers/utils');
+const { handleError, handleshopifyRequest, sendMail, getPaginationLink } = require('./../helpers/utils');
 const productModel = require('./../model/product')
 const productTypeModel = require('./../model/productType');
 const syncDetailModel = require('./../model/syncDetail');
@@ -10,6 +10,7 @@ module.exports.getProduct = async (req, res) => {
     /* Contruct response object */
     let rcResponse = new ApiResponse();
     let { query, decoded } = req;
+
     try {
         let limit = query.limit ? parseInt(query.limit) : 10;
         let skip = query.page ? ((parseInt(query.page) - 1) * (limit)) : 0;
@@ -27,10 +28,10 @@ module.exports.getProduct = async (req, res) => {
         }
         searchQuery.push(userQuery);
         rcResponse.data = (await productModel.findWithCount(searchQuery, userQuery, skip, limit, sort))[0];
-        console.log(rcResponse.data);
     } catch (err) {
         console.log(err);
         handleError(err, rcResponse);
+
     }
     return res.status(rcResponse.code).send(rcResponse);
 }

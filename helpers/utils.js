@@ -59,7 +59,8 @@ module.exports.handleError = async (err, rcResponse) => {
       } else {
         console.log(err);
       }
-    //  SetResponse(rcResponse, 500, err.message, false);
+      console.log("errerrerrerrerrerrerr", err);
+      SetResponse(rcResponse, 500, err.message, false);
     } else {
       SetResponse(rcResponse, 500, err.message, false);
     }
@@ -85,12 +86,7 @@ module.exports.sendMail = async (email, mailBody, subject) => {
       text: mailBody,
       from: process.env.appName + ' <hello@webrexstudio.com>'
     }
-
-    await smtpTransport.sendMail(mailOptions, function (err, response) {
-      if (err) {
-        throw err;
-      }
-    });
+    await smtpTransport.sendMail(mailOptions);
   } catch (err) {
     throw err;
   }
