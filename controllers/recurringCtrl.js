@@ -35,7 +35,7 @@ module.exports.activePlan = async (req, res) => {
     const { decoded, params } = req;
     try {
         let plan = await activePlanModel.findOne({ userId: decoded.id, chargeInfo: { $elemMatch: { id: params.planId } } });
-        if (plan) {
+        if (!plan) {
             let shopifyResponse = await handleshopifyRequest('post', 'https://' + decoded.shopUrl + process.env.apiVersion + 'recurring_application_charges/' + params.planId + '/activate.json', decoded.accessToken);
             let plan = shopifyResponse.body.recurring_application_charge;
             let data = {
@@ -75,6 +75,7 @@ module.exports.activePlan = async (req, res) => {
                 }
             }
             rcResponse.data = await userModel.findOneAndUpdate({ _id: decoded.id }, user, { accessToken: 0 });
+            console.log( rcResponse.data);
         } else {
             rcResponse.data = await userModel.findOne({ _id: decoded.id }, { accessToken: 0 });
         }

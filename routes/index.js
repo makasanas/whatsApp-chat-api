@@ -12,6 +12,7 @@ const adminAuthCtrl = require('./../controllers/adminAuthCtrl');
 const adminCtrl = require('./../controllers/adminCtrl');
 const dbConnection = require('./../config/dbConnection');
 const checkToken = require('./../middlewares/checkToken');
+const checkPlan = require('./../middlewares/checkPlan');
 const cronCtrl = require('./../controllers/cronCtrl');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
 const recurringCtrl = require('./../controllers/recurringCtrl');
@@ -38,18 +39,18 @@ router.get('/user/checktoken', checkToken.validateToken, authCtrl.checkToken);
 /*****************************
  Recurring Plan
  *****************************/
-router.post('/recurring/plan/', checkToken.validateToken,  recurringCtrl.create);
+router.post('/recurring/plan/', checkToken.validateToken, recurringCtrl.create);
 
-router.get('/recurring/plan/', checkToken.validateToken,  recurringCtrl.getPlan);
+router.get('/recurring/plan/', checkToken.validateToken, recurringCtrl.getPlan);
 
-router.post('/recurring/plan/active/:planId', checkToken.validateToken,  recurringCtrl.activePlan);
+router.post('/recurring/plan/active/:planId', checkToken.validateToken, recurringCtrl.activePlan);
 
 
 /*****************************
   Product Get
  *****************************/
 
-router.get('/sync/products', checkToken.validateToken, productCtrl.syncProducts);
+router.get('/sync/products', checkToken.validateToken, checkPlan.isValidPlan, productCtrl.syncProducts);
 
 router.get('/products', checkToken.validateToken, productCtrl.getProduct);
 
@@ -65,7 +66,7 @@ router.get('/syncDetails', checkToken.validateToken, syncCtrl.syncDetails);
 /*****************************
   Contact
  *****************************/
-router.post('/contact', checkToken.validateToken,  contactCtrl.creat);
+router.post('/contact', checkToken.validateToken, contactCtrl.creat);
 
 
 /*****************************
@@ -74,16 +75,16 @@ router.post('/contact', checkToken.validateToken,  contactCtrl.creat);
 
 // router.post('/webhooks/app/delete', checkToken.validateWebhook, shopifyCtrl.deleteApp);
 
-router.post('/webhooks/app/delete',  shopifyCtrl.deleteApp);
+router.post('/webhooks/app/delete', shopifyCtrl.deleteApp);
 
 
 /*****************************
  ADMIN
  *****************************/
 
-router.post('/admin/login',  adminAuthCtrl.login);
+router.post('/admin/login', adminAuthCtrl.login);
 
-router.get('/admin/profile', checkToken.validateToken,  checkToken.isAdminUser, adminAuthCtrl.getUserProfile);
+router.get('/admin/profile', checkToken.validateToken, checkToken.isAdminUser, adminAuthCtrl.getUserProfile);
 
 // router.post('/admin/forgetPassword', adminAuthCtrl.forgetPassword);
 
@@ -96,11 +97,11 @@ router.get('/admin/profile', checkToken.validateToken,  checkToken.isAdminUser, 
  ADMIN Other routes
  *****************************/
 
-router.get('/admin/user', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getUsers);
+router.get('/admin/user', checkToken.validateToken, checkToken.isAdminUser, adminCtrl.getUsers);
 
-router.get('/admin/access_token', checkToken.validateToken,  checkToken.isAdminUser, adminCtrl.generateAccessToken);
+router.get('/admin/access_token', checkToken.validateToken, checkToken.isAdminUser, adminCtrl.generateAccessToken);
 
-router.get('/admin/deleteduser', checkToken.validateToken,  checkToken.isAdminUser,  adminCtrl.getDeletedUsers);
+router.get('/admin/deleteduser', checkToken.validateToken, checkToken.isAdminUser, adminCtrl.getDeletedUsers);
 
 
 

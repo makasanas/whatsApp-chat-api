@@ -50,19 +50,14 @@ module.exports.handleError = async (err, rcResponse) => {
       SetResponse(rcResponse, err.code, ErrMessages[err.message], false);
     } else if (err.response && err.response.headers && err.response.headers['x-shopify-stage']) {
       SetResponse(rcResponse, err.statusCode, err.message, false);
-    } else if (err.name === 'MongoError') {
-      SetResponse(rcResponse, 500, err.errmsg, false);
-    } else if (err instanceof ReferenceError) {
+    } else {
       if (process.env.NODE_ENV === 'prod') {
         let mailBody = "ReferenceError Error in somewhere is project\n" + err.stack;
-        await this.sendMail("makasanas@yahoo.in", mailBody, "ReferenceError Error in somewhere is project");
+        this.sendmail("makasanas@yahoo.in", mailBody, "ReferenceError Error in somewhere is project");
       } else {
         console.log(err);
       }
-      console.log("errerrerrerrerrerrerr", err);
-      SetResponse(rcResponse, 500, err.message, false);
-    } else {
-      SetResponse(rcResponse, 500, err.message, false);
+      SetResponse(rcResponse, 500, ErrMessages['ISE'], false);
     }
   } catch (err) {
     SetResponse(rcResponse, 500, err.message, false);
@@ -92,7 +87,6 @@ module.exports.sendMail = async (email, mailBody, subject) => {
   }
 }
 
-
 module.exports.verify = function (query) {
   try {
     var validate = hmacValidator({
@@ -118,7 +112,6 @@ module.exports.verify = function (query) {
   }
 };
 
-
 module.exports.handleshopifyRequest = async (type, url, token, body) => {
   try {
     let options = {
@@ -137,7 +130,6 @@ module.exports.handleshopifyRequest = async (type, url, token, body) => {
     throw err;
   }
 }
-
 
 module.exports.handlePromiseRequest = async (options) => {
   try {

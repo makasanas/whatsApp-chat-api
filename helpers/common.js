@@ -10,12 +10,13 @@ const ErrMessages = {
   RequestNotFromShopify: 'Request not from shopify',
   ShopNotExists: 'Shop not found',
   InvalidParams: 'Invalid Params',
-  InvalidAdminKey:'Invalid admin key',
-  UserNotFound:'User not found',
-  InvalidPassword:'Invalid Password',
-  EmailExists:'Email already exists',
-  NotAdmin:'You are not admin',
-  NoImage:'Image not found'
+  InvalidAdminKey: 'Invalid admin key',
+  UserNotFound: 'User not found',
+  InvalidPassword: 'Invalid Password',
+  EmailExists: 'Email already exists',
+  NotAdmin: 'You are not admin',
+  NoImage: 'Image not found',
+  UpgradePlan: 'You need to upgrade plan.'
 };
 
 /**
@@ -57,7 +58,7 @@ function UserRoles() {
 const Plans = {
   Basic: {
     minProduct: 0,
-    maxProduct: 500
+    maxProduct: 500,
   },
   Silver: {
     minProduct: 500,

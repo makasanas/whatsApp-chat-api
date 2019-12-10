@@ -6,6 +6,7 @@ const syncDetailModel = require('./../model/syncDetail');
 const userModel = require('./../model/user')
 const mongoose = require('mongoose');
 
+
 module.exports.getProduct = async (req, res) => {
     /* Contruct response object */
     let rcResponse = new ApiResponse();
@@ -36,7 +37,6 @@ module.exports.getProduct = async (req, res) => {
     return res.status(rcResponse.code).send(rcResponse);
 }
 
-
 module.exports.syncProducts = async (req, res) => {
     let rcResponse = new ApiResponse();
     let { decoded } = req;
@@ -47,6 +47,7 @@ module.exports.syncProducts = async (req, res) => {
 
         // here we need logic for plan upgread before it's sync all other product 
         await getAllProducts('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json?limit=250', decoded, product_type, totalProduct, allProducts, rcResponse);
+
     } catch (err) {
         handleError(err, rcResponse);
     }
@@ -56,6 +57,7 @@ module.exports.syncProducts = async (req, res) => {
 getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, rcResponse) => {
     try {
         if (next) {
+
             var productData = await handleshopifyRequest('get', next, decoded.accessToken);
             let pagination = await getPaginationLink(productData);
             let promise = [];
@@ -85,7 +87,9 @@ getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, 
                     }
                 )
             });
+
             await getAllProducts(pagination.next, decoded, product_type, totalProduct, allProducts, rcResponse);
+
         } else {
             rcResponse.data = await writeData(decoded, product_type, totalProduct, allProducts);
         }

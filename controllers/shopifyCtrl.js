@@ -102,7 +102,7 @@ createShop = async (shop, productCount, shopData) => {
             }
         };
 
-        user = await userModel.findOneAndUpdate({ shopUrl: user.shopUrl }, data);
+        let user = await userModel.findOneAndUpdate({ shopUrl: shop.myshopify_domain }, data);
 
         var utc = new Date().toJSON().slice(0, 10);
 
@@ -147,7 +147,6 @@ createShop = async (shop, productCount, shopData) => {
     return response;
 }
 
-
 createOrUpdateShop = async (shopData) => {
     var response = {};
     try {
@@ -182,6 +181,7 @@ createOrUpdateShop = async (shopData) => {
             }).catch(function (err) {
                 throw err;
             });
+
         } else {
             plan = await activePlanModel.findOne({ userId: user._id });
         }
@@ -250,7 +250,7 @@ module.exports.deleteApp = async (req, res) => {
     try {
         // console.log(sanjay);
         let user = await userModel.findOne({ storeId: body.id });
-        console.log(user);
+        // console.log(user);
         if (user) {
             user.userId = user._id;
             user.updated = Date.now();
