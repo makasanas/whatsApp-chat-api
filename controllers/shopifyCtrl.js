@@ -2,13 +2,7 @@ const { SetError, ApiResponse } = require('./../helpers/common');
 const { handleError, verify, handleshopifyRequest } = require('./../helpers/utils');
 var url = require('url');
 const jwt = require('jsonwebtoken');
-const userModel = require('./../model/user')
-const productModel = require('./../model/product');
-const deletedUserModel = require('./../model/deletedUser');
-const activePlanModel = require('./../model/activePlan');
-const productSyncDetailModel = require('../model/syncDetail');
-const productTypeModel = require('./../model/productType');
-const emailNotificationModel = require('./../model/emailNotification');
+const commonModel = require('./../model/common');
 
 function securityCheck(req) {
     let securityPass = false;
@@ -102,7 +96,7 @@ createShop = async (shop, productCount, shopData) => {
             }
         };
 
-        let user = await userModel.findOneAndUpdate({ shopUrl: shop.myshopify_domain }, data);
+        let user = await commonModel.findOneAndUpdate('user', { shopUrl: shop.myshopify_domain }, data);
 
         var utc = new Date().toJSON().slice(0, 10);
 
@@ -123,7 +117,7 @@ createShop = async (shop, productCount, shopData) => {
             }
         }
 
-        plan = await activePlanModel.findOneAndUpdate({ shopUrl: shop.myshopify_domain }, plan);
+        plan = await commonModel.findOneAndUpdate('activePlan', { shopUrl: shop.myshopify_domain }, plan);
 
         let email = {
             $set: {
@@ -134,7 +128,7 @@ createShop = async (shop, productCount, shopData) => {
             }
         }
 
-        await emailNotificationModel.findOneAndUpdate({ shopUrl: shop.myshopify_domain }, email);
+        await commonModel.findOneAndUpdate('emailNotification', { shopUrl: shop.myshopify_domain }, email);
 
         response = {
             plan: plan,
@@ -151,7 +145,7 @@ createOrUpdateShop = async (shopData) => {
     var response = {};
     try {
 
-        let user = await userModel.findOne({ shopUrl: shopData.shopUrl });
+        let user = await commonModel.findOne('user', { shopUrl: shopData.shopUrl });
         let shop = {};
         let productCount;
         let plan = {};
@@ -183,7 +177,7 @@ createOrUpdateShop = async (shopData) => {
             });
 
         } else {
-            plan = await activePlanModel.findOne({ userId: user._id });
+            plan = await commonModel.findOne('activePlan', { userId: user._id });
         }
 
         const encodedData = {
@@ -249,22 +243,22 @@ module.exports.deleteApp = async (req, res) => {
     let { body } = req;
     try {
         // console.log(sanjay);
-        let user = await userModel.findOne({ storeId: body.id });
+        let user = await commonModel.findOne('user', { storeId: body.id });
         // console.log(user);
         if (user) {
             user.userId = user._id;
             user.updated = Date.now();
             delete user._id;
 
-            await deletedUserModel.findOneAndUpdate({ shopUrl: user.shopUrl }, { $set: user });
+            await commonModel.findOneAndUpdate('deletedUser', { shopUrl: user.shopUrl }, { $set: user });
 
             let promise = [
-                userModel.deleteMany({ shopUrl: user.shopUrl }),
-                activePlanModel.deleteMany({ shopUrl: user.shopUrl }),
-                emailNotificationModel.deleteMany({ shopUrl: user.shopUrl }),
-                productModel.deleteMany({ shopUrl: user.shopUrl }),
-                productSyncDetailModel.deleteMany({ shopUrl: user.shopUrl }),
-                productTypeModel.deleteMany({ shopUrl: user.shopUrl })
+                commonModel.deleteMany('user', { shopUrl: user.shopUrl }),
+                commonModel.deleteMany('activePlan', { shopUrl: user.shopUrl }),
+                commonModel.deleteMany('emailNotification', { shopUrl: user.shopUrl }),
+                commonModel.deleteMany('product', { shopUrl: user.shopUrl }),
+                commonModel.deleteMany('productType', { shopUrl: user.shopUrl }),
+                commonModel.deleteMany('syncDetail', { shopUrl: user.shopUrl })
             ]
 
             await Promise.all(promise).then(async () => {

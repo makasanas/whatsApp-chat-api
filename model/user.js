@@ -24,7 +24,6 @@ module.exports.findOneAndUpdate = async (query, data, fields) => {
   }
 }
 
-
 module.exports.findWithCount = async (query, userQuery, skip, limit, sort) => {
   try {
     return await userSchema.aggregate([
@@ -70,7 +69,6 @@ module.exports.findWithCount = async (query, userQuery, skip, limit, sort) => {
     throw err;
   }
 }
-
 
 module.exports.deleteMany = async (query) => {
   try {
