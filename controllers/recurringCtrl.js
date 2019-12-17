@@ -1,8 +1,6 @@
-
 const { ApiResponse, SetError, Plans } = require('./../helpers/common');
 const { handleError, handleshopifyRequest, sendMail } = require('./../helpers/utils');
-const activePlanModel = require('../model/activePlan');
-const userModel = require('../model/user');
+const commonModel = require('./../model/common');
 
 module.exports.create = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -23,7 +21,7 @@ module.exports.getPlan = async (req, res) => {
     let rcResponse = new ApiResponse();
     const { decoded } = req;
     try {
-        rcResponse.data = await activePlanModel.findOne({ userId: decoded.id });
+        rcResponse.data = await commonModel.findOne('activePlan',{ userId: decoded.id });
     } catch (err) {
         handleError(err, rcResponse);
     }
@@ -34,7 +32,7 @@ module.exports.activePlan = async (req, res) => {
     let rcResponse = new ApiResponse();
     const { decoded, params } = req;
     try {
-        let plan = await activePlanModel.findOne({ userId: decoded.id, chargeInfo: { $elemMatch: { id: params.planId } } });
+        let plan = await commonModel.findOne('activePlan',{ userId: decoded.id, chargeInfo: { $elemMatch: { id: params.planId } } });
         if (!plan) {
             let shopifyResponse = await handleshopifyRequest('post', 'https://' + decoded.shopUrl + process.env.apiVersion + 'recurring_application_charges/' + params.planId + '/activate.json', decoded.accessToken);
             let plan = shopifyResponse.body.recurring_application_charge;
@@ -64,7 +62,7 @@ module.exports.activePlan = async (req, res) => {
                 }
             }
 
-            let updatedPlan = await activePlanModel.findOneAndUpdate({ userId: decoded.id }, data);
+            let updatedPlan = await commonModel.findOneAndUpdate('activePlan', { userId: decoded.id }, data);
 
             let user = {
                 $set: {
@@ -74,10 +72,10 @@ module.exports.activePlan = async (req, res) => {
                     trial_start: plan.activated_on,
                 }
             }
-            rcResponse.data = await userModel.findOneAndUpdate({ _id: decoded.id }, user, { accessToken: 0 });
-            console.log( rcResponse.data);
+            rcResponse.data = await commonModel.findOneAndUpdate('user', { _id: decoded.id }, user, { accessToken: 0 });
+            console.log(rcResponse.data);
         } else {
-            rcResponse.data = await userModel.findOne({ _id: decoded.id }, { accessToken: 0 });
+            rcResponse.data = await commonModel.findOne('user', { _id: decoded.id }, { accessToken: 0 });
         }
     } catch (err) {
         handleError(err, rcResponse);
@@ -90,7 +88,7 @@ module.exports.recurringPlanCronJob = async () => {
     try {
         var today = new Date();
         let findQuery = { 'nextMonthStartDate': { $lte: today } };
-        let plans = await activePlanModel.find(findQuery);
+        let plans = await commonModel.find('activePlan',findQuery);
 
         let promise = [];
         plans.forEach(async (plan) => {
@@ -128,7 +126,7 @@ module.exports.updatePlanOnMonth = async (plan) => {
             }
         }
 
-        await activePlanModel.findOneAndUpdate({ userId: plan.userId }, data);
+        await commonModel.findOneAndUpdate('activePlan', { userId: plan.userId }, data);
     } catch (err) {
         throw err;
     }

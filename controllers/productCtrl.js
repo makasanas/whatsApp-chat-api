@@ -1,11 +1,7 @@
 const { ApiResponse } = require('./../helpers/common');
 const { handleError, handleshopifyRequest, sendMail, getPaginationLink } = require('./../helpers/utils');
-const productModel = require('./../model/product')
-const productTypeModel = require('./../model/productType');
-const syncDetailModel = require('./../model/syncDetail');
-const userModel = require('./../model/user')
 const mongoose = require('mongoose');
-
+const commonModel = require('./../model/common');
 
 module.exports.getProduct = async (req, res) => {
     /* Contruct response object */
@@ -28,7 +24,7 @@ module.exports.getProduct = async (req, res) => {
             modelQuery.push({ 'shopifyData.product_type': { $regex: new RegExp(query.type, "i") } })
         }
         searchQuery.push(userQuery);
-        rcResponse.data = (await productModel.findWithCount(searchQuery, userQuery, skip, limit, sort))[0];
+        rcResponse.data = (await commonModel.findWithCount('product', searchQuery, userQuery, skip, limit, sort))[0];
     } catch (err) {
         console.log(err);
         handleError(err, rcResponse);
@@ -100,7 +96,7 @@ getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, 
 }
 
 writeData = async (decoded, product_type, totalProduct, allProducts) => {
-    await productModel.bulkWrite(allProducts);
+    await commonModel.bulkWrite('product', allProducts);
     totalProduct = allProducts.length;
 
     // handel product type data 
@@ -116,9 +112,9 @@ writeData = async (decoded, product_type, totalProduct, allProducts) => {
         shopUrl: decoded.shopUrl
     }
 
-    await productTypeModel.findOneAndUpdate({ shopUrl: decoded.shopUrl }, data);
+    await commonModel.findOneAndUpdate('productType', { shopUrl: decoded.shopUrl }, data);
 
-    await userModel.findOneAndUpdate({ _id: decoded.id }, { $set: { productCount: totalProduct } });
+    await commonModel.findOneAndUpdate('user', { _id: decoded.id }, { $set: { productCount: totalProduct } });
 
     let syncData = {
         $set: {
@@ -132,5 +128,5 @@ writeData = async (decoded, product_type, totalProduct, allProducts) => {
         }
     }
 
-    return await syncDetailModel.findOneAndUpdate({ shopUrl: decoded.shopUrl }, syncData);
+    return await commonModel.findOneAndUpdate('syncDetail',{ shopUrl: decoded.shopUrl }, syncData);
 }

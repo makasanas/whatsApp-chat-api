@@ -2,10 +2,8 @@
 
 const { ApiResponse } = require('./../helpers/common');
 const { handleError } = require('./../helpers/utils');
-const userModel = require('./../model/user');
-const deletedUserModel = require('./../model/deletedUser');
 const jwt = require('jsonwebtoken');
-
+const commonModel = require('./../model/common');
 
 module.exports.getUsers = async (req, res) => {
     /* Contruct response object */
@@ -15,7 +13,7 @@ module.exports.getUsers = async (req, res) => {
         let limit = query.limit ? parseInt(query.limit) : 10;
         let skip = query.page ? ((parseInt(query.page) - 1) * (limit)) : 0;
         let sort = { created: -1 };
-        rcResponse.data = (await userModel.findWithCount({}, {}, skip, limit, sort))[0];
+        rcResponse.data = (await commonModel.findWithCount('user', {}, {}, skip, limit, sort))[0];
     } catch (err) {
         handleError(err, rcResponse);
     }
@@ -49,7 +47,7 @@ module.exports.getDeletedUsers = async (req, res) => {
         let limit = query.limit ? parseInt(query.limit) : 10;
         let skip = query.page ? ((parseInt(query.page) - 1) * (limit)) : 0;
         let sort = { created: -1 };
-        rcResponse.data = (await deletedUserModel.findWithCount({}, {}, skip, limit, sort))[0];
+        rcResponse.data = (await commonModel.findWithCount('deletedUser', {}, {}, skip, limit, sort))[0];
     } catch (err) {
         handleError(err, rcResponse);
     }

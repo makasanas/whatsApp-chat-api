@@ -1,7 +1,7 @@
 /* DEPENDENCIES */
 const { ApiResponse, SetError } = require('./../helpers/common');
 const { handleError } = require('./../helpers/utils');
-const userModel = require('./../model/user');
+const commonModel = require('./../model/common');
 
 /* Get user's profile information */
 module.exports.getUserProfile = async (req, res) => {
@@ -10,7 +10,7 @@ module.exports.getUserProfile = async (req, res) => {
 	const { decoded } = req;
 
 	try {
-		rcResponse.data = await userModel.findOne({_id:decoded.id}, {accessToken:0});
+		rcResponse.data = await commonModel.findOne('user',{_id:decoded.id}, {accessToken:0});
 	} catch (err) {
 		handleError(err, rcResponse);
 	}
@@ -21,7 +21,7 @@ module.exports.checkToken = async (req, res) => {
 	let rcResponse = new ApiResponse();
 	const { decoded } = req; 
     try {
-		const user = await userModel.findOne({_id:decoded.id});
+		const user = await commonModel.findOne('user',{_id:decoded.id});
 		if(!user){
 			throw SetError({}, 403, 'ShopNotExists');
 		}		

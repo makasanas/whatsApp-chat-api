@@ -104,5 +104,11 @@ router.get('/admin/access_token', checkToken.validateToken, checkToken.isAdminUs
 router.get('/admin/deleteduser', checkToken.validateToken, checkToken.isAdminUser, adminCtrl.getDeletedUsers);
 
 
+/*****************************
+ APP Status routes
+ *****************************/
+router.get('/appStatus', shopifyCtrl.getEnabledApp);
+router.put('/appStatus', checkToken.validateToken, shopifyCtrl.changeAppStatus);
+
 
 module.exports = router;

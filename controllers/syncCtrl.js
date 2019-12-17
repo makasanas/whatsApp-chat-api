@@ -1,6 +1,6 @@
 const { ApiResponse } = require('../helpers/common');
-const syncDetailModel = require('../model/syncDetail');
 const { handleError } = require('../helpers/utils');
+const commonModel = require('./../model/common');
 
 module.exports.syncDetails = async (req, res) => {
     let rcResponse = new ApiResponse();

@@ -2,7 +2,8 @@
 const { ApiResponse, SetError } = require('./../helpers/common');
 const { handleError, comparePassword, generatePasswordHash } = require('./../helpers/utils');
 const jwt = require('jsonwebtoken');
-const adminModel = require('./../model/admin');
+const commonModel = require('./../model/common');
+
 
 /* Authenticate user */
 module.exports.login = async (req, res) => {
@@ -28,7 +29,7 @@ module.exports.login = async (req, res) => {
 		}
 
 		/* Check if email exists */
-		const user = await adminModel.findOne({ email: req.body.email });
+		const user = await commonModel.findOne('admin',{ email: req.body.email });
 
 		if (user) {
 			/* Compare password */
@@ -78,7 +79,7 @@ module.exports.register = async (req) => {
 			role: parseInt(req.body.type)
 		};
 
-		user = await adminModel.create(user);
+		user = await commonModel.create('admin',user);
 	} catch (err) {
 		if (err.code === 11000) {
 			throw SetError({}, 400, 'EmailExists');
@@ -99,7 +100,7 @@ module.exports.getUserProfile = async (req, res) => {
 	console.log(decoded);
 
 	try {
-		rcResponse.data = await adminModel.findOne({ _id: decoded.id });
+		rcResponse.data = await commonModel.findOne('admin',{ _id: decoded.id });
 	} catch (err) {
 		handleError(err, rcResponse);
 	}

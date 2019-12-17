@@ -6,6 +6,9 @@ module.exports.emailNotification = require('./../schema/emailNotification');
 module.exports.deletedUser = require('./../schema/deletedUser');
 module.exports.product = require('./../schema/product');
 module.exports.productType = require('./../schema/productType');
+module.exports.admin = require('./../schema/admin');
+module.exports.contact = require('./../schema/contact');
+
 
 module.exports.findOne = async (collection, query, property) => {
     try {
@@ -80,6 +83,14 @@ module.exports.findWithCount = async (collection, query, userQuery, skip, limit,
 module.exports.deleteMany = async (collection, query) => {
     try {
         return await this[collection].deleteMany(query);
+    } catch (error) {
+        throw error;
+    }
+}
+
+module.exports.bulkWrite = async (collection, data) => {
+    try {
+        return await this[collection].bulkWrite(data);
     } catch (error) {
         throw error;
     }
