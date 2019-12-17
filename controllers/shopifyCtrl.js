@@ -313,3 +313,106 @@ createWebHook = async (shopData) => {
 
     return true;
 }
+
+
+/* Get App status information */
+module.exports.getEnabledApp = async (req, res) => {
+    /* Contruct response object */
+    let rcResponse = new ApiResponse();
+    let httpStatus = 200;
+
+    try {
+        const AppStatus = await userModel.findOne({ shopUrl: req.query.shopUrl });
+
+        let app;
+        if (AppStatus) {
+            app = { appEnabled: AppStatus.appEnabled }
+        } else {
+            throw err;
+        }
+        rcResponse.data = { app };
+    } catch (err) {
+        handleError(err, rcResponse);
+    }
+    return res.status(httpStatus).send(rcResponse);
+};
+
+/* Change App status information */
+module.exports.changeAppStatus = async (req, res) => {
+    /* Contruct response object */
+    let rcResponse = new ApiResponse();
+    let { decoded, body } = req;
+
+    /* Check body params */
+    // if (!req.body.shopUrl) {
+    //     throw SetError({}, 403, 'InvalidParams');
+    // }
+    try {
+
+        //UNCOMMENT THIS AND CHANGE THE PATH OF THE SCRIPT IF APPLICABLE
+        // if (req.body.appEnabled) {
+        //     await addScript(decoded);
+        // } else {
+        //     await removeScript(decoded);
+        // }
+        let data = {
+            $set: {
+                appEnabled: body.appEnabled
+            }
+        }
+        rcResponse.data = await userModel.findOneAndUpdate({ _id: decoded.id }, data);
+    } catch (err) {
+        handleError(err, rcResponse);
+    }
+    return res.status(rcResponse.code).send(rcResponse);
+};
+
+addScript = async (decoded) => {
+
+    try {
+
+        let scripts = await handleshopifyRequest('get', 'https://' + decoded.shopUrl + process.env.apiVersion + 'script_tags.json', decoded.accessToken);
+
+        scripts = scripts.body.script_tags.filter(function (script) {
+            return script.src == process.env.appUrl + '/js/tab.js';
+        });
+
+        if (scripts.length === 0) {
+            let body = {
+                "script_tag": {
+                    "event": "onload",
+                    "src": process.env.appUrl + '/js/tab.js',//ADD HERE YOUR SCRIPT PATH
+                    "display_scope": "online_store"
+                }
+            };
+
+            await handleshopifyRequest('post', 'https://' + decoded.shopUrl + process.env.apiVersion + 'script_tags.json', decoded.accessToken, body);
+        }
+    } catch (err) {
+        throw err;
+    }
+    return true;
+};
+
+removeScript = async (decoded) => {
+    try {
+
+        let scriptDeleteArray = [];
+
+        let scripts = await handleshopifyRequest('get', 'https://' + decoded.shopUrl + process.env.apiVersion + 'script_tags.json', decoded.accessToken);
+
+        scripts.body.script_tags.forEach(async (element, index) => {
+            scriptDeleteArray.push(handleshopifyRequest('delete', 'https://' + decoded.shopUrl + process.env.apiVersion + 'script_tags/' + element.id + '.json', decoded.accessToken));
+        });
+
+        await Promise.all(scriptDeleteArray).then(async responses => {
+            return true;
+        }).catch(function (error) {
+            throw err;
+        });
+
+    } catch (err) {
+        throw err;
+    }
+
+};
