@@ -28,6 +28,7 @@ const userSchema = new Schema({
   customer_email: { type: String },
   trial_days: { type: Number },
   trial_start: { type: Date },
+  appEnabled: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now },
 });
