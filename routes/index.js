@@ -27,6 +27,7 @@ const syncCtrl = require('../controllers/syncCtrl');
  *****************************/
 router.get('/shopify/auth', checkToken.validateAcessToken, shopifyCtrl.auth);
 
+
 /*****************************
  USERS
  *****************************/
@@ -117,6 +118,7 @@ router.get('/admin/deleteduser', checkToken.validateToken, checkToken.isAdminUse
  APP Status routes
  *****************************/
 router.get('/appStatus', shopifyCtrl.getEnabledApp);
+
 router.put('/appStatus', checkToken.validateToken, shopifyCtrl.changeAppStatus);
 
 

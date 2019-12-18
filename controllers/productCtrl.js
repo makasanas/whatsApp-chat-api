@@ -55,7 +55,7 @@ module.exports.syncProducts = async (req, res) => {
         let totalProduct = 0;
 
         // here we need logic for plan upgread before it's sync all other product 
-        await getAllProducts('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json?limit=250', decoded, product_type, totalProduct, allProducts, rcResponse);
+        await this.getAllProducts('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json?limit=250', decoded, product_type, totalProduct, allProducts, rcResponse);
 
     } catch (err) {
         handleError(err, rcResponse);
@@ -63,14 +63,12 @@ module.exports.syncProducts = async (req, res) => {
     return res.status(rcResponse.code).send(rcResponse);
 }
 
-getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, rcResponse) => {
+module.exports.getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, rcResponse) => {
     try {
         if (next) {
-
             var productData = await handleshopifyRequest('get', next, decoded.accessToken);
             let pagination = await getPaginationLink(productData);
-            let promise = [];
-
+            let products = [];
             productData.body.products.forEach((product) => {
                 let data = {
                     userId: decoded.id,
@@ -85,7 +83,7 @@ getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, 
                     product_type.indexOf(str) === -1 ? product_type.push(str) : '';
                 }
 
-                allProducts.push(
+                products.push(
                     {
                         updateOne: {
                             filter: { productId: data.productId },
@@ -97,8 +95,9 @@ getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, 
                 )
             });
 
-            await getAllProducts(pagination.next, decoded, product_type, totalProduct, allProducts, rcResponse);
-
+            await commonModel.bulkWrite('product', products);
+            allProducts = allProducts.concat(products);
+            await this.getAllProducts(pagination.next, decoded, product_type, totalProduct, allProducts, rcResponse);
         } else {
             rcResponse.data = await writeData(decoded, product_type, totalProduct, allProducts);
         }
@@ -109,7 +108,7 @@ getAllProducts = async (next, decoded, product_type, totalProduct, allProducts, 
 }
 
 writeData = async (decoded, product_type, totalProduct, allProducts) => {
-    await commonModel.bulkWrite('product', allProducts);
+    
     totalProduct = allProducts.length;
 
     // handel product type data 

@@ -1,6 +1,7 @@
 const { ApiResponse, SetError, Plans } = require('./../helpers/common');
 const { handleError, handleshopifyRequest, sendMail } = require('./../helpers/utils');
 const commonModel = require('./../model/common');
+const productCtrl = require('./../controllers/productCtrl');
 
 module.exports.create = async (req, res) => {
     let rcResponse = new ApiResponse();
@@ -21,7 +22,7 @@ module.exports.getPlan = async (req, res) => {
     let rcResponse = new ApiResponse();
     const { decoded } = req;
     try {
-        rcResponse.data = await commonModel.findOne('activePlan',{ userId: decoded.id });
+        rcResponse.data = await commonModel.findOne('activePlan', { userId: decoded.id });
     } catch (err) {
         handleError(err, rcResponse);
     }
@@ -32,7 +33,7 @@ module.exports.activePlan = async (req, res) => {
     let rcResponse = new ApiResponse();
     const { decoded, params } = req;
     try {
-        let plan = await commonModel.findOne('activePlan',{ userId: decoded.id, chargeInfo: { $elemMatch: { id: params.planId } } });
+        let plan = await commonModel.findOne('activePlan', { userId: decoded.id, chargeInfo: { $elemMatch: { id: params.planId } } });
         if (!plan) {
             let shopifyResponse = await handleshopifyRequest('post', 'https://' + decoded.shopUrl + process.env.apiVersion + 'recurring_application_charges/' + params.planId + '/activate.json', decoded.accessToken);
             let plan = shopifyResponse.body.recurring_application_charge;
@@ -64,6 +65,9 @@ module.exports.activePlan = async (req, res) => {
 
             let updatedPlan = await commonModel.findOneAndUpdate('activePlan', { userId: decoded.id }, data);
 
+            userData = await commonModel.findOne('user', { _id: decoded.id });
+            this.syncProducts(decoded, userData);
+
             let user = {
                 $set: {
                     recurringPlanName: updatedPlan.planName,
@@ -72,8 +76,9 @@ module.exports.activePlan = async (req, res) => {
                     trial_start: plan.activated_on,
                 }
             }
+
             rcResponse.data = await commonModel.findOneAndUpdate('user', { _id: decoded.id }, user, { accessToken: 0 });
-            console.log(rcResponse.data);
+
         } else {
             rcResponse.data = await commonModel.findOne('user', { _id: decoded.id }, { accessToken: 0 });
         }
@@ -84,11 +89,26 @@ module.exports.activePlan = async (req, res) => {
 }
 
 
+module.exports.syncProducts = async (decoded, user) => {
+    let rcResponse = new ApiResponse();
+    try {
+        if (user.recurringPlanType === 'Free') {
+            let product_type = [];
+            let allProducts = [];
+            let totalProduct = 0;
+            productCtrl.getAllProducts('https://' + decoded.shopUrl + process.env.apiVersion + 'products.json?limit=250', decoded, product_type, totalProduct, allProducts, rcResponse);
+        }
+    } catch (err) {
+        handleError(err, rcResponse);
+    }
+}
+
+
 module.exports.recurringPlanCronJob = async () => {
     try {
         var today = new Date();
         let findQuery = { 'nextMonthStartDate': { $lte: today } };
-        let plans = await commonModel.find('activePlan',findQuery);
+        let plans = await commonModel.find('activePlan', findQuery);
 
         let promise = [];
         plans.forEach(async (plan) => {
