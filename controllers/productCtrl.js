@@ -27,7 +27,6 @@ module.exports.getProduct = async (req, res) => {
 
         searchQuery.push(userQuery);
 
-
         let promise = [];
         promise.push(commonModel.findWithCount('product', searchQuery, skip, limit, sort));
         promise.push(productModel.getCount(userQuery));
@@ -142,5 +141,5 @@ writeData = async (decoded, product_type, totalProduct, allProducts) => {
         }
     }
 
-    return await commonModel.findOneAndUpdate('syncDetail', { shopUrl: decoded.shopUrl }, syncData, { acctedd: 0 });
+    return await commonModel.findOneAndUpdate('syncDetail', { shopUrl: decoded.shopUrl }, syncData);
 }
