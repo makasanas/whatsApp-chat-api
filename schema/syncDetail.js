@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const productSyncDetailSchema = new Schema({
+const syncDetailSchema = new Schema({
     shopUrl: { type: String, required: true },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -16,4 +16,4 @@ const productSyncDetailSchema = new Schema({
 });
 
 
-module.exports = mongoose.model('productSyncDetails', productSyncDetailSchema);
+module.exports = mongoose.model('syncDetail', syncDetailSchema);

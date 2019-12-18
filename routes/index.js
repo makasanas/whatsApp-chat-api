@@ -60,7 +60,7 @@ router.get('/products', checkToken.validateToken, productCtrl.getProduct);
  Sync
  *****************************/
 
-router.get('/syncDetails', checkToken.validateToken, syncCtrl.syncDetails);
+router.get('/syncDetails', checkToken.validateToken,  syncCtrl.syncDetails);
 
 
 /*****************************

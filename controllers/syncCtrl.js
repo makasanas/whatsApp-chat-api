@@ -6,7 +6,7 @@ module.exports.syncDetails = async (req, res) => {
     let rcResponse = new ApiResponse();
     let { decoded } = req;
     try {
-        rcResponse.data = await syncDetailModel.findOne({ userId: decoded.id }, { created: -1 });
+        rcResponse.data = await commonModel.findOne('syncDetail', { userId: decoded.id });
     } catch (err) {
         handleError(err, rcResponse);
     }

@@ -4,7 +4,6 @@ module.exports.product = require('./../schema/product');
 module.exports.activePlan = require('./../schema/activePlan');
 module.exports.emailNotification = require('./../schema/emailNotification');
 module.exports.deletedUser = require('./../schema/deletedUser');
-module.exports.product = require('./../schema/product');
 module.exports.productType = require('./../schema/productType');
 module.exports.admin = require('./../schema/admin');
 module.exports.contact = require('./../schema/contact');
@@ -26,6 +25,15 @@ module.exports.create = async (collection, data) => {
     }
 }
 
+module.exports.find = async (collection, query, sort, limit, skip) => {
+    try {
+        return await this[collection].find(query).sort(sort).limit(limit).skip(skip);
+    } catch (error) {
+        throw error;
+    }
+}
+
+
 module.exports.findOneAndUpdate = async (collection, query, data, fields) => {
     try {
         return await this[collection].findOneAndUpdate(query, data, { fields, setDefaultsOnInsert: true, new: true, upsert: true }).lean().exec();
@@ -34,44 +42,30 @@ module.exports.findOneAndUpdate = async (collection, query, data, fields) => {
     }
 }
 
-module.exports.findWithCount = async (collection, query, userQuery, skip, limit, sort) => {
+
+module.exports.findWithCount = async (collection, query, skip, limit, sort) => {
     try {
         return await this[collection].aggregate([
             {
-                "$facet": {
-                    "query": [
+                $match: {
+                    $and: query
+                }
+            },
+            { $sort: sort },
+            {
+                $facet: {
+                    products: [{ $skip: skip }, { $limit: limit }],
+                    count: [
                         {
-                            $match: {
-                                $and: [
-                                    query,
-                                    userQuery
-                                ]
-                            }
-                        },
-                        { $sort: sort },
-                        {
-                            $skip: skip
-                        }, {
-                            $limit: limit
+                            $count: 'count'
                         }
-                    ],
-                    "queryCount": [
-                        {
-                            $match: {
-                                $and: [
-                                    query,
-                                    userQuery
-                                ]
-                            }
-                        },
-                        { "$count": "Total" },
                     ]
                 }
             },
             {
                 "$project": {
-                    "users": "$query",
-                    "count": { "$arrayElemAt": ["$queryCount.Total", 0] },
+                    [collection]: "$products",
+                    "count": { "$arrayElemAt": ["$count.count", 0] },
                 }
             }
         ])

@@ -1,7 +1,8 @@
 const { ApiResponse } = require('./../helpers/common');
-const { handleError, handleshopifyRequest, sendMail, getPaginationLink } = require('./../helpers/utils');
+const { handleError, handleshopifyRequest, getPaginationLink } = require('./../helpers/utils');
 const mongoose = require('mongoose');
 const commonModel = require('./../model/common');
+const productModel = require('./../model/product');
 
 module.exports.getProduct = async (req, res) => {
     /* Contruct response object */
@@ -23,12 +24,25 @@ module.exports.getProduct = async (req, res) => {
         if (query.type) {
             modelQuery.push({ 'shopifyData.product_type': { $regex: new RegExp(query.type, "i") } })
         }
-        searchQuery.push(userQuery);
-        rcResponse.data = (await commonModel.findWithCount('product', searchQuery, userQuery, skip, limit, sort))[0];
-    } catch (err) {
-        console.log(err);
-        handleError(err, rcResponse);
 
+        searchQuery.push(userQuery);
+
+
+        let promise = [];
+        promise.push(commonModel.findWithCount('product', searchQuery, skip, limit, sort));
+        promise.push(productModel.getCount(userQuery));
+
+
+        await Promise.all(promise).then(async (res) => {
+            rcResponse.data = {
+                result: res[0][0],
+                count: res[1][0]
+            }
+        }).catch((err) => {
+            throw err;
+        });
+    } catch (err) {
+        handleError(err, rcResponse);
     }
     return res.status(rcResponse.code).send(rcResponse);
 }
@@ -128,5 +142,5 @@ writeData = async (decoded, product_type, totalProduct, allProducts) => {
         }
     }
 
-    return await commonModel.findOneAndUpdate('syncDetail',{ shopUrl: decoded.shopUrl }, syncData);
+    return await commonModel.findOneAndUpdate('syncDetail', { shopUrl: decoded.shopUrl }, syncData, { acctedd: 0 });
 }
