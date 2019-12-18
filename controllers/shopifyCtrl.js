@@ -72,6 +72,12 @@ generatorAcessToekn = async (req) => {
 createShop = async (shop, productCount, shopData) => {
     let response = {};
     try {
+        let trial_days;
+        let deletedUser = await commonModel.findOne('deletedUser', { shopUrl: shop.myshopify_domain });
+        if(deletedUser){
+            trial_days = deletedUser.trial_days
+        }
+
         let data = {
             $set: {
                 storeName: shop.name,
@@ -93,6 +99,7 @@ createShop = async (shop, productCount, shopData) => {
                 productCount: productCount,
                 recurringPlanName: 'Free',
                 recurringPlanType: 'Free',
+                trial_days: trial_days
             }
         };
 
@@ -248,8 +255,10 @@ module.exports.deleteApp = async (req, res) => {
         if (user) {
             user.userId = user._id;
             user.updated = Date.now();
+            user.trial_days = user.trial_days - date_diff_indays(user.trial_start, Date.now()) < 0 ? 0 : user.trial_days - date_diff_indays(user.trial_start, Date.now());
             delete user._id;
-
+            
+            console.log(user.trial_days);
             await commonModel.findOneAndUpdate('deletedUser', { shopUrl: user.shopUrl }, { $set: user });
 
             let promise = [
@@ -272,6 +281,12 @@ module.exports.deleteApp = async (req, res) => {
     }
     return res.status(rcResponse.code).send(rcResponse);
 };
+
+var date_diff_indays = function (date1, date2) {
+    dt1 = new Date(date1);
+    dt2 = new Date(date2);
+    return Math.floor((Date.UTC(dt2.getFullYear(), dt2.getMonth(), dt2.getDate()) - Date.UTC(dt1.getFullYear(), dt1.getMonth(), dt1.getDate())) / (1000 * 60 * 60 * 24));
+}
 
 
 createWebHook = async (shopData) => {
