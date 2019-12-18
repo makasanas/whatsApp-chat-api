@@ -258,7 +258,6 @@ module.exports.deleteApp = async (req, res) => {
             user.trial_days = user.trial_days - date_diff_indays(user.trial_start, Date.now()) < 0 ? 0 : user.trial_days - date_diff_indays(user.trial_start, Date.now());
             delete user._id;
             
-            console.log(user.trial_days);
             await commonModel.findOneAndUpdate('deletedUser', { shopUrl: user.shopUrl }, { $set: user });
 
             let promise = [

@@ -17,6 +17,7 @@ const cronCtrl = require('./../controllers/cronCtrl');
 const shopifyCtrl = require('./../controllers/shopifyCtrl');
 const recurringCtrl = require('./../controllers/recurringCtrl');
 const productCtrl = require('./../controllers/productCtrl');
+const productTypeCtrl = require('./../controllers/productTypeCtrl');
 const contactCtrl = require('./../controllers/contactCtrl');
 const syncCtrl = require('../controllers/syncCtrl');
 
@@ -53,6 +54,14 @@ router.post('/recurring/plan/active/:planId', checkToken.validateToken, recurrin
 router.get('/sync/products', checkToken.validateToken, checkPlan.isValidPlan, productCtrl.syncProducts);
 
 router.get('/products', checkToken.validateToken, productCtrl.getProduct);
+
+
+/*****************************
+  Product Type
+ *****************************/
+
+
+router.get('/producttype', checkToken.validateToken, productTypeCtrl.getProductType);
 
 
 
