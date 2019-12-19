@@ -17,7 +17,7 @@ module.exports.getProduct = async (req, res) => {
         let userQuery = { userId: mongoose.Types.ObjectId(decoded.id), shopifyData: { $exists: true } };
         let searchQuery = [];
 
-        if (query.search) {
+        if (query.search && query.search != '') {
             searchQuery.push({ $text: { $search: query.search } });
             sort = { score: { $meta: "textScore" }, created: - 1 };
         }
@@ -108,7 +108,7 @@ module.exports.getAllProducts = async (next, decoded, product_type, totalProduct
 }
 
 writeData = async (decoded, product_type, totalProduct, allProducts) => {
-    
+
     totalProduct = allProducts.length;
 
     // handel product type data 
