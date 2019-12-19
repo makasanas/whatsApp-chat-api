@@ -22,7 +22,7 @@ module.exports.getProduct = async (req, res) => {
             sort = { score: { $meta: "textScore" }, created: - 1 };
         }
         if (query.type) {
-            modelQuery.push({ 'shopifyData.product_type': { $regex: new RegExp(query.type, "i") } })
+            searchQuery.push({ 'shopifyData.product_type': { $regex: new RegExp(query.type, "i") } })
         }
 
         searchQuery.push(userQuery);
