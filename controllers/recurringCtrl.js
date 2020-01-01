@@ -7,7 +7,11 @@ module.exports.create = async (req, res) => {
     let rcResponse = new ApiResponse();
     const { decoded, body } = req;
     try {
-        if (!req.body.recurring_application_charge.name || !req.body.recurring_application_charge.price || !req.body.recurring_application_charge.return_url || !req.body.recurring_application_charge.trial_days) {
+        if (req.body.recurring_application_charge) {
+            if (Object.keys(req.body.recurring_application_charge).indexOf('name') == -1 || Object.keys(req.body.recurring_application_charge).indexOf('price') == -1 || Object.keys(req.body.recurring_application_charge).indexOf('return_url') == -1 || Object.keys(req.body.recurring_application_charge).indexOf('trial_days') == -1) {
+                throw SetError({}, 400, 'InvalidParams');
+            }
+        } else {
             throw SetError({}, 400, 'InvalidParams');
         }
         let shopifyResponse = await handleshopifyRequest('post', 'https://' + decoded.shopUrl + process.env.apiVersion + 'recurring_application_charges.json', decoded.accessToken, body);

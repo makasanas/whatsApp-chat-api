@@ -33,7 +33,6 @@ module.exports.find = async (collection, query, sort, limit, skip) => {
     }
 }
 
-
 module.exports.findOneAndUpdate = async (collection, query, data, fields) => {
     try {
         return await this[collection].findOneAndUpdate(query, data, { fields, setDefaultsOnInsert: true, new: true, upsert: true }).lean().exec();
@@ -41,7 +40,6 @@ module.exports.findOneAndUpdate = async (collection, query, data, fields) => {
         throw error;
     }
 }
-
 
 module.exports.findWithCount = async (collection, query, skip, limit, sort) => {
     try {
