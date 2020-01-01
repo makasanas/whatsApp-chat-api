@@ -70,7 +70,7 @@ router.get('/producttype', checkToken.validateToken, productTypeCtrl.getProductT
  Sync
  *****************************/
 
-router.get('/syncDetails', checkToken.validateToken,  syncCtrl.syncDetails);
+router.get('/syncDetails', checkToken.validateToken, syncCtrl.syncDetails);
 
 
 /*****************************
@@ -83,9 +83,11 @@ router.post('/contact', checkToken.validateToken, contactCtrl.creat);
  Webhook
  *****************************/
 
-// router.post('/webhooks/app/delete', checkToken.validateWebhook, shopifyCtrl.deleteApp);
-
-router.post('/webhooks/app/delete', shopifyCtrl.deleteApp);
+if (process.env.NODE_ENV === 'prod') {
+  router.post('/webhooks/app/delete', checkToken.validateWebhook, shopifyCtrl.deleteApp);
+} else {
+  router.post('/webhooks/app/delete', shopifyCtrl.deleteApp);
+}
 
 
 /*****************************
