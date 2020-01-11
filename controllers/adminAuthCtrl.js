@@ -29,7 +29,7 @@ module.exports.login = async (req, res) => {
 		}
 
 		/* Check if email exists */
-		const user = await commonModel.findOne('admin',{ email: req.body.email });
+		const user = await commonModel.findOne('admin', { email: req.body.email });
 
 		if (user) {
 			/* Compare password */
@@ -79,7 +79,7 @@ module.exports.register = async (req) => {
 			role: parseInt(req.body.type)
 		};
 
-		user = await commonModel.create('admin',user);
+		user = await commonModel.create('admin', user);
 	} catch (err) {
 		if (err.code === 11000) {
 			throw SetError({}, 400, 'EmailExists');
@@ -100,11 +100,10 @@ module.exports.getUserProfile = async (req, res) => {
 	console.log(decoded);
 
 	try {
-		rcResponse.data = await commonModel.findOne('admin',{ _id: decoded.id });
+		rcResponse.data = await commonModel.findOne('admin', { _id: decoded.id });
 	} catch (err) {
 		handleError(err, rcResponse);
 	}
 	return res.status(rcResponse.code).send(rcResponse);
 
 };
-

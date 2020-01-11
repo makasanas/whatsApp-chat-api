@@ -186,13 +186,19 @@ createOrUpdateShop = async (shopData) => {
         } else {
             plan = await commonModel.findOne('activePlan', { userId: user._id });
         }
-
+        console.log(shopData);
         const encodedData = {
             id: user._id,
             shopUrl: user.shopUrl,
-            role: user.role,
+            role: shopData.role ? shopData.role : user.role,
             accessToken: user.accessToken
         };
+
+        if (shopData.adminId) {
+            encodedData['adminId'] = shopData.adminId;
+        }
+
+        console.log(encodedData);
 
         // generate accessToken using JWT
         const jwtToken = jwt.sign(encodedData, process.env['SECRET']);

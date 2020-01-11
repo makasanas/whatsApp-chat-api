@@ -13,7 +13,7 @@ module.exports.getUsers = async (req, res) => {
         let limit = query.limit ? parseInt(query.limit) : 10;
         let skip = query.page ? ((parseInt(query.page) - 1) * (limit)) : 0;
         let sort = { created: -1 };
-        rcResponse.data = (await commonModel.findWithCount('user', {}, {}, skip, limit, sort))[0];
+        rcResponse.data = (await commonModel.findWithCount('user', [{}], skip, limit, sort))[0];
     } catch (err) {
         handleError(err, rcResponse);
     }
@@ -22,14 +22,14 @@ module.exports.getUsers = async (req, res) => {
 
 module.exports.generateAccessToken = async (req, res) => {
     let rcResponse = new ApiResponse();
-    const { query } = req;
+    const { query, decoded } = req;
     try {
         const encodedData = {
             shopUrl: query.shopUrl,
-            adminId: req.decoded.userId,
+            adminId: decoded.id,
             role: req.decoded.role
         };
-        const token = jwt.sign(encodedData, process.env['ADMIN_KEY']);
+        const token = await jwt.sign(encodedData, process.env['ADMIN_KEY']);
 
         rcResponse.data = { 'token': token };
     } catch (err) {
@@ -47,7 +47,7 @@ module.exports.getDeletedUsers = async (req, res) => {
         let limit = query.limit ? parseInt(query.limit) : 10;
         let skip = query.page ? ((parseInt(query.page) - 1) * (limit)) : 0;
         let sort = { created: -1 };
-        rcResponse.data = (await commonModel.findWithCount('deletedUser', {}, {}, skip, limit, sort))[0];
+        rcResponse.data = (await commonModel.findWithCount('deletedUser', [{}], skip, limit, sort))[0];
     } catch (err) {
         handleError(err, rcResponse);
     }
