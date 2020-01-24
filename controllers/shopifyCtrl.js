@@ -154,7 +154,7 @@ createOrUpdateShop = async (shopData) => {
 
         let user = await commonModel.findOne('user', { shopUrl: shopData.shopUrl });
         let shop = {};
-        let productCount;
+        let productCount = {};
         let plan = {};
 
         if (!user) {
