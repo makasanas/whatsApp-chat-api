@@ -18,4 +18,7 @@ const emailNotificationSchema = new Schema({
     updated: { type: Date, default: Date.now },
 });
 
+const index = {"shopUrl": 1 };
+emailNotificationSchema.index(index);
+
 module.exports = mongoose.model('emailNotification', emailNotificationSchema);

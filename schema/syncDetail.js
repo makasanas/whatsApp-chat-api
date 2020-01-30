@@ -15,5 +15,7 @@ const syncDetailSchema = new Schema({
     updated: { type: Date, default: Date.now },
 });
 
+const index = {"shopUrl": 1 };
+syncDetailSchema.index(index)
 
 module.exports = mongoose.model('syncDetail', syncDetailSchema);

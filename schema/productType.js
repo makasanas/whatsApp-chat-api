@@ -15,5 +15,7 @@ const productTypeSchema = new Schema({
 
 productTypeSchema.index({ shopifyData: { title: 'text' } })
 
+const index = {"shopUrl": 1 };
+productTypeSchema.index(index);
 
 module.exports = mongoose.model('ProductTypes', productTypeSchema);

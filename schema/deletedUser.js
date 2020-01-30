@@ -35,4 +35,8 @@ const deletedUserSchema = new Schema({
     updated: { type: Date, default: Date.now },
 });
 
+
+const index = {"shopUrl": 1 };
+deletedUserSchema.index(index);
+
 module.exports = mongoose.model('DeletedUsers', deletedUserSchema);

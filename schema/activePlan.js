@@ -33,4 +33,7 @@ const planSchema = new Schema({
     updated: { type: Date, default: Date.now }
 });
 
+const index = {"shopUrl": 1 };
+planSchema.index(index);
+
 module.exports = mongoose.model('plans', planSchema);

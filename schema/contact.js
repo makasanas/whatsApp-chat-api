@@ -21,4 +21,7 @@ const contactSchema = new Schema({
     updated: { type: Date, default: Date.now },
 });
 
+const index = {"shopUrl": 1 };
+contactSchema.index(index);
+
 module.exports = mongoose.model('Contacts', contactSchema);

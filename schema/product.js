@@ -33,7 +33,7 @@ const productSchema = new Schema({
     updated: { type: Date, default: Date.now },
 });
 
-const index = { "shopifyData.title": 'text', "shopifyData.description": 'text', "shopifyData.product_type": 'text' };
+const index = { "shopifyData.title": 'text', "shopifyData.description": 'text', "shopifyData.product_type": 'text', "shopUrl": 1 };
 const weight = { name: 'sych text index', weights: { "shopifyData.title": 10, "shopifyData.description": 4, "shopifyData.product_type": 2 } }
 productSchema.index(index, weight);
 
