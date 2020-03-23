@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const { SetResponse, ErrMessages } = require('./common');
 var nodemailer = require("nodemailer");
 const request = require('request-promise');
+const pug = require('pug');
+const mailgun = require("mailgun-js");
+
 
 /* Generate hash for password */
 module.exports.generatePasswordHash = async (password) => {
@@ -156,3 +159,28 @@ module.exports.getPaginationLink = async (responses) => {
 }
 
 
+
+module.exports.mailWithTemplate = async (user, subject, template) => {
+  try {
+
+    console.log("sending mail......");
+    
+    const DOMAIN = "mail.webrexstudio.com";
+    const mg = mailgun({ apiKey: "key-af642c7a1c48a8849078995f1be4b8d9", domain: DOMAIN });
+
+    user['appName'] = process.env.appName;
+
+    const data = {
+      from: process.env.appName + " <hello@webrexstudio.com>",
+      replayTo: "<hello@webrexstudio.com>",
+      // to: user.email,
+      to: "ravi.webrexstudio@gmail.com",
+      subject: subject,
+      html: pug.renderFile(__dirname + '/../emails/' + template + '.pug', user),
+    };
+
+    mg.messages().send(data);
+  } catch (err) {
+    throw err;
+  }
+}

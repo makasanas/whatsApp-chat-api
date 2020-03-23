@@ -1,0 +1,61 @@
+doctype html
+// <link href="https://fonts.googleapis.com/css?family=sans-serif:300,400,500,600&display=swap" rel="stylesheet">
+head
+  //if gte mso 9
+    xml
+      o:officedocumentsettings
+        o:allowpng
+          o:pixelsperinch 96
+  // fix outlook zooming on 120 DPI windows devices
+  meta(http-equiv='Content-Type' content='text/html; charset=UTF-8')
+  meta(name='viewport' content='width=device-width, initial-scale=1')
+  // So that mobile will display zoomed in
+  meta(http-equiv='X-UA-Compatible' content='IE=edge')
+  // enable media queries for windows phone 8
+  meta(name='format-detection' content='date=no')
+  // disable auto date linking in iOS 7-9
+  meta(name='format-detection' content='telephone=no')
+  // disable auto telephone linking in iOS 7-9
+  title User sign-up
+// 100% background wrapper (grey background)
+table(border='0' width='100%' height='100%' cellpadding='0' cellspacing='0' bgcolor='#F0F0F0')
+  tr
+    td(align='center' valign='top' bgcolor='#F0F0F0' style='background-color: #F0F0F0;')
+      // 600px container (white background)
+      table.container(border='0' width='600' cellpadding='0' cellspacing='0' style='width:600px;max-width:600px')
+        tr
+          td.container-padding.header(align='center' style='padding:15px; justify-content:center;align-items:center' bgcolor='#3E82B0')
+            img(src='https://announcement-bar.webrexstudio.com/app/assets/Logo.png' style='width: 60px;height: auto;object-fit: cover;')
+            h3(style='margin:0; padding:0; color: #ffffff;margin-bottom: 5px;margin-left: 10px;    font-size: 20px; font-weight: 500;') #{appName}
+        tr
+          td.content(align='left' style='padding-top:12px;padding-bottom:0px;background-color:#ffffff')
+            table.force-row(width='600' border='0' cellpadding='0' cellspacing='0' style='width: 600px;')
+              tr
+                td.content-wrapper(style='padding-left:24px;padding-right:24px')
+                  br
+                  .title(style='font-family:sans-serif;font-size:16px;font-weight:400;color:#585858;line-height: 24px;padding-bottom: 24px;')
+                    strong(style='display: flex ;color: #333; align-item:center;font-size: 18px;')
+                      | Hello &nbsp; 
+                      nbsp
+                        h4(style='margin: 0;text-transform: capitalize;') #{storeName}, 
+                    br
+                    |  Welcome to #{appName} for Shopify!
+                    br
+                    br
+                    |  Thank you for installing our app.
+                    br
+                    br
+                    |  If you have any questions or comments about the app, please use our chat support from app and we will respond promptly.
+                    br
+                    br
+                    |  We have a few more apps that can help you to reach more customer, modify your customer shopping experince and grow your business.
+                    br
+                    a(href='https://apps.shopify.com/partners/webrexstudio') Shopify Partner Webrex Studio 
+              tr
+                td.content-wrapper(style='padding-left:24px;padding-right:24px')
+                  div(style='color: #757575;font-size: 14px;font-weight: 400; margin-bottom: 30px')
+                    br
+                    |  Have a Nice Day! 
+                    br
+                    |  Friends at #{appName}
+

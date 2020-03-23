@@ -1,5 +1,5 @@
 const { SetError, ApiResponse } = require('./../helpers/common');
-const { handleError, verify, handleshopifyRequest } = require('./../helpers/utils');
+const { handleError, verify, handleshopifyRequest, mailWithTemplate } = require('./../helpers/utils');
 var url = require('url');
 const jwt = require('jsonwebtoken');
 const commonModel = require('./../model/common');
@@ -74,7 +74,7 @@ createShop = async (shop, productCount, shopData) => {
     try {
         let trial_days;
         let deletedUser = await commonModel.findOne('deletedUser', { shopUrl: shop.myshopify_domain });
-        if(deletedUser){
+        if (deletedUser) {
             trial_days = deletedUser.trial_days
         }
 
@@ -104,6 +104,10 @@ createShop = async (shop, productCount, shopData) => {
         };
 
         let user = await commonModel.findOneAndUpdate('user', { shopUrl: shop.myshopify_domain }, data);
+
+        if (user) {
+            mailWithTemplate(user, "Welcome To Starter Kit", "register");
+        }
 
         var utc = new Date().toJSON().slice(0, 10);
 
@@ -262,14 +266,14 @@ module.exports.deleteApp = async (req, res) => {
             user.userId = user._id;
             user.updated = Date.now();
             console.log(date_diff_indays(user.trial_start, Date.now()));
-            
-            if(user.trial_days && user.trial_start){    
+
+            if (user.trial_days && user.trial_start) {
                 user.trial_days = user.trial_days - date_diff_indays(user.trial_start, Date.now()) < 0 ? 0 : user.trial_days - date_diff_indays(user.trial_start, Date.now());
             }
 
 
             delete user._id;
-            
+
             await commonModel.findOneAndUpdate('deletedUser', { shopUrl: user.shopUrl }, { $set: user });
 
             let promise = [
@@ -282,6 +286,7 @@ module.exports.deleteApp = async (req, res) => {
             ]
 
             await Promise.all(promise).then(async () => {
+                mailWithTemplate(user, "Please Help us Improve", "uninstall");
                 rcResponse.data = true;
             }).catch((err) => {
                 throw err;
