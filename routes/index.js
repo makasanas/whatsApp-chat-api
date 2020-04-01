@@ -20,6 +20,7 @@ const productCtrl = require('./../controllers/productCtrl');
 const productTypeCtrl = require('./../controllers/productTypeCtrl');
 const contactCtrl = require('./../controllers/contactCtrl');
 const syncCtrl = require('../controllers/syncCtrl');
+const emailCtrl = require('../controllers/emailCtrl');
 
 
 /*****************************
@@ -123,5 +124,11 @@ router.get('/appStatus', shopifyCtrl.getEnabledApp);
 
 router.put('/appStatus', checkToken.validateToken, shopifyCtrl.changeAppStatus);
 
+
+/*****************************
+ EMAIL NOTIFICATION 
+ *****************************/
+router.post('/sendmail/deletedUser', emailCtrl.deletedUser)
+router.post('/sendmail/appUpdates', emailCtrl.appUpdates)
 
 module.exports = router;

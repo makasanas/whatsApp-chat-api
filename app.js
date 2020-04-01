@@ -33,14 +33,14 @@ process.on('SIGINT', function () {
 });
 
 app.use(bodyParser.json({
-  type:'*/*',
+  type: '*/*',
   limit: '50mb',
-  verify: function(req, res, buf) {
-      if (req.url.startsWith('/webhooks')){
-        req.rawbody = buf;
-      }
+  verify: function (req, res, buf) {
+    if (req.url.startsWith('/webhooks')) {
+      req.rawbody = buf;
+    }
   }
- })
+})
 );
 
 app.use('/', routes);
@@ -78,5 +78,6 @@ app.use(function (err, req, res, next) {
   });
 });
 
+app.locals.env = process.env;
 
 module.exports = app;

@@ -7,6 +7,7 @@ const pug = require('pug');
 const mailgun = require("mailgun-js");
 
 
+
 /* Generate hash for password */
 module.exports.generatePasswordHash = async (password) => {
   try {
@@ -158,17 +159,16 @@ module.exports.getPaginationLink = async (responses) => {
   }
 }
 
-
-
 module.exports.mailWithTemplate = async (user, subject, template) => {
   try {
 
     console.log("sending mail......");
-    
+
     const DOMAIN = "mail.webrexstudio.com";
     const mg = mailgun({ apiKey: "key-af642c7a1c48a8849078995f1be4b8d9", domain: DOMAIN });
 
     user['appName'] = process.env.appName;
+    user['appUrl'] = process.env.appUrl;
 
     const data = {
       from: process.env.appName + " <hello@webrexstudio.com>",
@@ -181,6 +181,34 @@ module.exports.mailWithTemplate = async (user, subject, template) => {
 
     mg.messages().send(data);
   } catch (err) {
+    throw err;
+  }
+}
+
+// this.mailWithTemplate({}, "Please Help us Improve", "uninstall")
+
+module.exports.BulkMailWithTemplet = async (bulkData, mailData, template) => {
+  console.log(mailData);
+  console.log("sending Bulk mail...");
+
+  try {
+    const DOMAIN = "mail.webrexstudio.com";
+    const mg = mailgun({ apiKey: "key-af642c7a1c48a8849078995f1be4b8d9", domain: DOMAIN });
+    var data = {
+      from: 'Excited User <hello@webrexstudio.com>',
+      to: '' + mailData.join(',') + '',
+      subject: 'Hey %recipient.storeName%',
+      html: pug.renderFile(__dirname + '/../emails/' + template + '.pug'),
+      'recipient-variables': bulkData
+    };
+    mg.messages().send(data, function (err, body) {
+      if (err) {
+        throw err;
+      }
+      console.log(body);
+    });
+  } catch (err) {
+    console.log("dwd");
     throw err;
   }
 }

@@ -3,6 +3,9 @@ const { handleError, verify, handleshopifyRequest, mailWithTemplate } = require(
 var url = require('url');
 const jwt = require('jsonwebtoken');
 const commonModel = require('./../model/common');
+var moment = require('moment');
+var tz = require('moment-timezone');
+
 
 function securityCheck(req) {
     let securityPass = false;
@@ -153,6 +156,13 @@ createShop = async (shop, productCount, shopData) => {
 }
 
 createOrUpdateShop = async (shopData) => {
+
+    let cnZone = moment.tz.zonesForCountry('IN');
+    console.log("cnZone---------");
+    console.log(cnZone);
+    let timeZone = moment.tz.zone(cnZone[0]);
+    console.log("timeZone---------");
+    console.log(timeZone);
     var response = {};
     try {
 
@@ -160,6 +170,13 @@ createOrUpdateShop = async (shopData) => {
         let shop = {};
         let productCount = {};
         let plan = {};
+        console.log("user---------------------");
+        console.log(user);
+        console.log("user-----------timezone----------");
+        console.log(user.country_code);
+
+        // const usercountry = ct.getCountry(user.country_code);
+        // console.log(usercountry);
 
         if (!user) {
             let promise = [];
@@ -212,6 +229,7 @@ createOrUpdateShop = async (shopData) => {
 
         response = { ...userObj, ...planObj, token: jwtToken };
     } catch (err) {
+        console.log(err);
         throw err;
     }
     return response;

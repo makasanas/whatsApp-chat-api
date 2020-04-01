@@ -1,12 +1,5 @@
 doctype html
-// <link href="https://fonts.googleapis.com/css?family=sans-serif:300,400,500,600&display=swap" rel="stylesheet">
 head
-  //if gte mso 9
-    xml
-      o:officedocumentsettings
-        o:allowpng
-          o:pixelsperinch 96
-  // fix outlook zooming on 120 DPI windows devices
   meta(http-equiv='Content-Type' content='text/html; charset=UTF-8')
   meta(name='viewport' content='width=device-width, initial-scale=1')
   // So that mobile will display zoomed in
@@ -22,40 +15,52 @@ table(border='0' width='100%' height='100%' cellpadding='0' cellspacing='0' bgco
   tr
     td(align='center' valign='top' bgcolor='#F0F0F0' style='background-color: #F0F0F0;')
       // 600px container (white background)
-      table.container(border='0' width='600' cellpadding='0' cellspacing='0' style='width:600px;max-width:600px')
+      table.container(border='0' width='600' cellpadding='0' cellspacing='0' style='font-family: sans-serif;width:600px;max-width:600px')
         tr
           td.container-padding.header(align='center' style='padding:15px; justify-content:center;align-items:center' bgcolor='#3E82B0')
             img(src=appUrl+"/app/assets/logo-white.png" style='width: 60px;height: auto;object-fit: cover;')
-            h3(style='margin:0; padding:0; color: #ffffff;margin-bottom: 5px;margin-left: 10px;    font-size: 20px; font-weight: 500;') #{appName}
+            h3(style='margin:0; padding:0; color: #ffffff;margin-bottom: 5px;margin-left: 10px;font-size: 20px; font-weight: 500;') %recipient.appName%
         tr
-          td.content(align='left' style='padding-top:12px;padding-bottom:0px;background-color:#ffffff')
+          td.content(align='left' style='font-family: sans-serif;padding-top:12px;padding-bottom:0px;background-color:#ffffff')
             table.force-row(width='600' border='0' cellpadding='0' cellspacing='0' style='width: 600px;')
               tr
                 td.content-wrapper(style='padding-left:24px;padding-right:24px')
-                  br
                   .title(style='font-family:sans-serif;font-size:16px;font-weight:400;color:#585858;line-height: 24px;padding-bottom: 24px;')
+                    br
                     strong(style='display: flex ;color: #333; align-item:center;font-size: 18px;')
-                      | Hello &nbsp; 
-                      nbsp
-                        h4(style='margin: 0;text-transform: capitalize;') #{storeName}, 
+                        | Hello &nbsp; 
+                        nbsp
+                          h4(style='margin: 0; text-transform: capitalize') %recipient.storeName%,
                     br
-                    |  Welcome to #{appName} for Shopify!
-                    br
-                    br
-                    |  Thank you for installing our app.
+                    |  Recently you have installed our app(Announcement Bar with Slider) and then uninstalled it. I would like to tell you that we are working hard to improve our app and providing the best service to our users.
                     br
                     br
-                    |  If you have any questions or comments about the app, please use our chat support from app and we will respond promptly.
+                    |  We have fixed bugs and also added new features like...
                     br
                     br
-                    |  We have a few more apps that can help you to reach more customer, modify your customer shopping experince and grow your business.
+                    strong 1. Work with fixed header Store
                     br
-                    a(href='https://apps.shopify.com/partners/webrexstudio') Shopify Partner Webrex Studio 
+                    strong 2. Countdown Timer
+                    br  
+                    strong 3. Auto responsive
+                    br  
+                    strong 4. Page wise Different Announcement
+                    br
+                    strong 5. 20+ In/out Animations
+                    br
+                    br
+                    |  Can you spare two minutes for feedback? we would like the opportunity to resolve your issue and make the best out of it. 
+                    br
+                    |  Here is link of our new updated app 
+                    br
+                    
+                    br
+                    a(style='background:rgb(62, 130, 176);color:white;text-align:center;padding:10px 15px;border-radius:3px;text-decoration:none;', class='button', href='https://apps.shopify.com/announcement-bar-with-slider') Install App
+                    
               tr
                 td.content-wrapper(style='padding-left:24px;padding-right:24px')
                   div(style='color: #757575;font-size: 14px;font-weight: 400; margin-bottom: 30px')
                     br
                     |  Have a Nice Day! 
                     br
-                    |  Friends at #{appName}
-
+                    |  Friends at %recipient.appName%
