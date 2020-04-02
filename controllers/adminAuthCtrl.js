@@ -60,7 +60,7 @@ module.exports.login = async (req, res) => {
 
 /* Register user */
 module.exports.register = async (req) => {
-	console.log(req);
+	// console.log(req);
 	try {
 		if (!req.body.email || !req.body.password || !req.body.name || !req.body.phone || !req.body.type) {
 			throw SetError({}, 400, 'InvalidParams');
@@ -97,7 +97,7 @@ module.exports.getUserProfile = async (req, res) => {
 	/* Contruct response object */
 	let rcResponse = new ApiResponse();
 	const { decoded } = req;
-	console.log(decoded);
+	// console.log(decoded);
 
 	try {
 		rcResponse.data = await commonModel.findOne('admin', { _id: decoded.id });

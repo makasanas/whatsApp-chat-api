@@ -1,10 +1,8 @@
 const { SetError, ApiResponse } = require('./../helpers/common');
-const { handleError, verify, handleshopifyRequest, mailWithTemplate } = require('./../helpers/utils');
+const { handleError, verify, handleshopifyRequest, mailWithTemplate, getNextWeekDate } = require('./../helpers/utils');
 var url = require('url');
 const jwt = require('jsonwebtoken');
 const commonModel = require('./../model/common');
-var moment = require('moment');
-var tz = require('moment-timezone');
 
 
 function securityCheck(req) {
@@ -157,12 +155,7 @@ createShop = async (shop, productCount, shopData) => {
 
 createOrUpdateShop = async (shopData) => {
 
-    let cnZone = moment.tz.zonesForCountry('IN');
-    console.log("cnZone---------");
-    console.log(cnZone);
-    let timeZone = moment.tz.zone(cnZone[0]);
-    console.log("timeZone---------");
-    console.log(timeZone);
+
     var response = {};
     try {
 
@@ -170,14 +163,13 @@ createOrUpdateShop = async (shopData) => {
         let shop = {};
         let productCount = {};
         let plan = {};
-        console.log("user---------------------");
-        console.log(user);
-        console.log("user-----------timezone----------");
-        console.log(user.country_code);
 
-        // const usercountry = ct.getCountry(user.country_code);
-        // console.log(usercountry);
+        let nextReviewDate = await getNextWeekDate(user);
+        console.log("nextReviewDate");
+        console.log(nextReviewDate);
 
+        await commonModel.findOneAndUpdate('user', { shopUrl: user.shopUrl }, { nextReviewDate: nextReviewDate })
+        
         if (!user) {
             let promise = [];
 
@@ -207,7 +199,7 @@ createOrUpdateShop = async (shopData) => {
         } else {
             plan = await commonModel.findOne('activePlan', { userId: user._id });
         }
-        console.log(shopData);
+        // console.log(shopData);
         const encodedData = {
             id: user._id,
             shopUrl: user.shopUrl,
@@ -219,7 +211,7 @@ createOrUpdateShop = async (shopData) => {
             encodedData['adminId'] = shopData.adminId;
         }
 
-        console.log(encodedData);
+        // console.log(encodedData);
 
         // generate accessToken using JWT
         const jwtToken = jwt.sign(encodedData, process.env['SECRET']);

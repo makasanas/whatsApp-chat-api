@@ -28,12 +28,13 @@ const userSchema = new Schema({
   customer_email: { type: String },
   trial_days: { type: Number },
   trial_start: { type: Date },
+  nextReviewDate: { type: Date },
   appEnabled: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now },
 });
 
-const index = {"shopUrl": 1 };
+const index = { "shopUrl": 1 };
 userSchema.index(index)
 
 module.exports = mongoose.model('Users', userSchema);

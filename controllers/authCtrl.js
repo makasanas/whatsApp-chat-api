@@ -10,7 +10,7 @@ module.exports.getUserProfile = async (req, res) => {
 	const { decoded } = req;
 	let admin;
 	try {
-		console.log(decoded);
+		// console.log(decoded);
 		if (decoded.role === 1) {
 			admin = await commonModel.findOne("admin", { _id: decoded.adminId });
 		}

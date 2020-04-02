@@ -5,6 +5,8 @@ var nodemailer = require("nodemailer");
 const request = require('request-promise');
 const pug = require('pug');
 const mailgun = require("mailgun-js");
+var moment = require('moment');
+var tz = require('moment-timezone');
 
 
 
@@ -174,7 +176,7 @@ module.exports.mailWithTemplate = async (user, subject, template) => {
       from: process.env.appName + " <hello@webrexstudio.com>",
       replayTo: "<hello@webrexstudio.com>",
       // to: user.email,
-      to: "ravi.webrexstudio@gmail.com",
+      to: "ravi@webrexstudio.com",
       subject: subject,
       html: pug.renderFile(__dirname + '/../emails/' + template + '.pug', user),
     };
@@ -209,6 +211,62 @@ module.exports.BulkMailWithTemplet = async (bulkData, mailData, template) => {
     });
   } catch (err) {
     console.log("dwd");
+    throw err;
+  }
+}
+
+
+module.exports.getNextWeekDate = async (user) => {
+
+  try {
+
+    //Get Current UTC Time
+    var currentUtcTime = moment().utc().format();
+    console.log("currentUtcTime");
+    console.log(currentUtcTime);
+    console.log("*---------*");
+
+    //Get date after 7 day from now UTC
+    var nextWeek = moment(currentUtcTime).add(7, 'days').utc().format();
+    console.log("nextWeek")
+    console.log(nextWeek);
+    console.log("*---------*");
+
+
+    //Add 11:00 time
+    var nextWeekUserTimeWith11 = moment(nextWeek).set({ 'hour': 11, 'minute': 30, 'second': 00 });
+    console.log("nextWeekUserTime after set 11:00");
+    console.log(nextWeekUserTimeWith11);
+
+    //Get User country time Zone
+    let cnTimeZone = moment.tz.zonesForCountry(user.country_code)[0];
+    console.log("cnZone---------");
+    console.log(cnTimeZone);
+    console.log("*---------*");
+
+    // Convert it into user's timezone
+    var nextWeekUserTime = moment.tz(nextWeekUserTimeWith11, cnTimeZone).format();
+    console.log("nextWeekUserTime");
+    console.log(nextWeekUserTime);
+
+    var stringDate = moment(nextWeekUserTime).toISOString(false);
+    console.log("stringDate");
+    console.log(stringDate);
+
+    var timeZoneDiff = moment(nextWeekUserTime).tz(cnTimeZone).format('Z');
+    console.log("timeZoneDiff");
+    console.log(timeZoneDiff);
+
+    // var finalTime;
+    // if(timeZoneDiff.includes("+")){
+    //   finalTime = moment.add(timeZoneDiff.split(''))
+    // }else{
+
+    // }
+
+    return stringDate;
+  } catch (err) {
+    console.log(err);
     throw err;
   }
 }
