@@ -65,7 +65,6 @@ module.exports.appUpdates = async (req, res) => {
 }
 
 module.exports.regularAppReview = async (users) => {
-    console.log(users);
     try {
         data = {};
         mailData = [];
@@ -80,7 +79,6 @@ module.exports.regularAppReview = async (users) => {
 
         for (let i = 0; i < users.length; i++) {
             const user = users[i];
-            console.log(user);
             if (user.reviewMailCount == 0) {
                 let nextReviewDate = moment(user.nextReviewDate).add(30, 'days');
                 await commonModel.findOneAndUpdate('user', { _id: user._id }, { nextReviewDate: nextReviewDate, $inc: { reviewMailCount: 1 } });
@@ -88,11 +86,8 @@ module.exports.regularAppReview = async (users) => {
                 let nextReviewDate = moment(user.nextReviewDate).add(60, 'days');
                 await commonModel.findOneAndUpdate('user', { _id: user._id }, { nextReviewDate: nextReviewDate });
             }
-            console.log(user);
-
         }
-
-        // await BulkMailWithTemplet(data, mailData, "regularReview");
+        await BulkMailWithTemplet(data, mailData, "regularReview");
     } catch (err) {
         console.log(err);
 
