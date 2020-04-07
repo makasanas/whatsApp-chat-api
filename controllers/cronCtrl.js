@@ -11,7 +11,7 @@ cron.schedule('00 01 * * *', async () => {
 });
 
 
-cron.schedule('00 01 * * *', async () => {
+cron.schedule('00 0/1 * * *', async () => {
     await emailCtrl.regularAppReview();
     return true;
 }, {
@@ -19,17 +19,17 @@ cron.schedule('00 01 * * *', async () => {
 });
 
 
-(async () => {
-    console.log("test clone job");
-    try {
-        let stores = await commonModel.find('user', { nextReviewDate: { $gt: new Date().getTime(), $lt: new Date().getTime() + 1000 * 60 * 60 } });
-        // console.log()
-        await emailCtrl.regularAppReview(stores);
-    } catch (err) {
-        console.log("error--------------");
-        console.log(err);
-        // let mailBody = "error in cron schedule wherer\n" + err.stack;
-        // await sendMail("makasanas@yahoo.in", mailBody, "Error in process");
-    }
-    return true;
-})();
+// (async () => {
+//     console.log("test clone job");
+//     try {
+//         let stores = await commonModel.find('user', { nextReviewDate: { $gt: new Date().getTime(), $lt: new Date().getTime() + 1000 * 60 * 60 } });
+//         // console.log()
+//         await emailCtrl.regularAppReview(stores);
+//     } catch (err) {
+//         console.log("error--------------");
+//         console.log(err);
+//         // let mailBody = "error in cron schedule wherer\n" + err.stack;
+//         // await sendMail("makasanas@yahoo.in", mailBody, "Error in process");
+//     }
+//     return true;
+// })();

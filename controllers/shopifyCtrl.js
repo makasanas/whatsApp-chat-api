@@ -275,7 +275,7 @@ module.exports.deleteApp = async (req, res) => {
         if (user) {
             user.userId = user._id;
             user.updated = Date.now();
-            console.log(date_diff_indays(user.trial_start, Date.now()));
+            // console.log(date_diff_indays(user.trial_start, Date.now()));
 
             if (user.trial_days && user.trial_start) {
                 user.trial_days = user.trial_days - date_diff_indays(user.trial_start, Date.now()) < 0 ? 0 : user.trial_days - date_diff_indays(user.trial_start, Date.now());

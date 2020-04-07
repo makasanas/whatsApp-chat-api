@@ -167,7 +167,7 @@ module.exports.getPaginationLink = async (responses) => {
 module.exports.sendMail = async (email, mailBody, subject) => {
   try {
 
-    console.log("sending mail......");
+    // console.log("sending mail......");
 
     const DOMAIN = "mail.webrexstudio.com";
     const mg = mailgun({ apiKey: "key-af642c7a1c48a8849078995f1be4b8d9", domain: DOMAIN });
@@ -192,17 +192,15 @@ module.exports.sendMail = async (email, mailBody, subject) => {
 
 module.exports.mailWithTemplate = async (user, subject, template) => {
   try {
-    console.log(template);
-    console.log("sending mail......");
+    // console.log("sending mail......");
 
     const DOMAIN = "mail.webrexstudio.com";
     const mg = mailgun({ apiKey: "key-af642c7a1c48a8849078995f1be4b8d9", domain: DOMAIN });
 
     user['appName'] = process.env.appName;
     user['appUrl'] = process.env.appUrl;
-    user['template'] = template + '.pug';
-
-    console.log(user);
+    user['shopifyAppUrl'] = process.env.shopifyAppUrl;
+    user['template'] = template;
 
     const data = {
       from: process.env.appName + " <hello@webrexstudio.com>",
@@ -210,10 +208,9 @@ module.exports.mailWithTemplate = async (user, subject, template) => {
       // to: user.email,
       to: "ravi.webrexstudio@gmail.com",
       subject: subject,
+      // html: pug.renderFile(__dirname + '/../emails/' + template + '.pug', user),
       html: pug.renderFile(__dirname + '/../emails/common.pug', user),
     };
-
-    console.log(data);
 
     mg.messages().send(data);
   } catch (err) {
@@ -221,11 +218,11 @@ module.exports.mailWithTemplate = async (user, subject, template) => {
   }
 }
 
-// this.mailWithTemplate({ user: { storeName: "Ravi's Store" } }, "Please Help us Improve", "uninstall")
+// this.mailWithTemplate({ user: { storeName: "Ravi's Store" } }, "Register app", "register")
 
 module.exports.BulkMailWithTemplet = async (bulkData, mailData, template) => {
-  console.log(mailData);
-  console.log("sending Bulk mail...");
+
+  // console.log("sending Bulk mail...");
 
   try {
     const DOMAIN = "mail.webrexstudio.com";
@@ -241,10 +238,8 @@ module.exports.BulkMailWithTemplet = async (bulkData, mailData, template) => {
       if (err) {
         throw err;
       }
-      console.log(body);
     });
   } catch (err) {
-    console.log("dwd");
     throw err;
   }
 }
@@ -257,7 +252,7 @@ module.exports.getNextWeekDate = async (user) => {
     let cnTimeZone = (moment.tz.zonesForCountry(user.country_code, { offset: true })[0].offset) * 60;
     let tz_userTime = 14 * 60 * 60;
     let finalTimeStamp = (parseInt(tz_currentUtcTime) + tz_userTime + cnTimeZone) * 1000;
-    console.log(new Date(finalTimeStamp));
+    // console.log(new Date(finalTimeStamp));
     return new Date(finalTimeStamp);
 
   } catch (err) {
