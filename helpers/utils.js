@@ -70,28 +70,6 @@ module.exports.handleError = async (err, rcResponse) => {
   }
 }
 
-module.exports.sendMail = async (email, mailBody, subject) => {
-  try {
-    var smtpTransport = nodemailer.createTransport({
-      host: "smtp.zoho.com",
-      port: 465,
-      secure: true, //ssl
-      auth: {
-        user: "hello@webrexstudio.com",
-        pass: "Sanjay.143"
-      }
-    });
-    var mailOptions = {
-      to: email,
-      subject: subject,
-      text: mailBody,
-      from: process.env.appName + ' <hello@webrexstudio.com>'
-    }
-    await smtpTransport.sendMail(mailOptions);
-  } catch (err) {
-    throw err;
-  }
-}
 
 module.exports.verify = function (query) {
   try {
@@ -161,7 +139,32 @@ module.exports.getPaginationLink = async (responses) => {
   }
 }
 
-module.exports.mailWithTemplate = async (user, subject, template) => {
+// OLD nodemailer logic
+// module.exports.sendMail = async (email, mailBody, subject) => {
+//   try {
+//     var smtpTransport = nodemailer.createTransport({
+//       host: "smtp.zoho.com",
+//       port: 465,
+//       secure: true, //ssl
+//       auth: {
+//         user: "hello@webrexstudio.com",
+//         pass: "Sanjay.143"
+//       }
+//     });
+//     var mailOptions = {
+//       to: email,
+//       subject: subject,
+//       text: mailBody,
+//       from: process.env.appName + ' <hello@webrexstudio.com>'
+//     }
+//     await smtpTransport.sendMail(mailOptions);
+//   } catch (err) {
+//     throw err;
+//   }
+// }
+
+
+module.exports.sendMail = async (email, mailBody, subject) => {
   try {
 
     console.log("sending mail......");
@@ -169,16 +172,13 @@ module.exports.mailWithTemplate = async (user, subject, template) => {
     const DOMAIN = "mail.webrexstudio.com";
     const mg = mailgun({ apiKey: "key-af642c7a1c48a8849078995f1be4b8d9", domain: DOMAIN });
 
-    user['appName'] = process.env.appName;
-    user['appUrl'] = process.env.appUrl;
-
     const data = {
       from: process.env.appName + " <hello@webrexstudio.com>",
       replayTo: "<hello@webrexstudio.com>",
-      // to: user.email,
+      // to: email,
       to: "ravi@webrexstudio.com",
       subject: subject,
-      html: pug.renderFile(__dirname + '/../emails/' + template + '.pug', user),
+      html: mailBody,
     };
 
     mg.messages().send(data);
@@ -187,7 +187,41 @@ module.exports.mailWithTemplate = async (user, subject, template) => {
   }
 }
 
-// this.mailWithTemplate({}, "Please Help us Improve", "uninstall")
+// let mailBody = "error in cron schedule wherer\n";
+// this.sendMail("makasanas@yahoo.in", mailBody, "Error in process");
+
+module.exports.mailWithTemplate = async (user, subject, template) => {
+  try {
+    console.log(template);
+    console.log("sending mail......");
+
+    const DOMAIN = "mail.webrexstudio.com";
+    const mg = mailgun({ apiKey: "key-af642c7a1c48a8849078995f1be4b8d9", domain: DOMAIN });
+
+    user['appName'] = process.env.appName;
+    user['appUrl'] = process.env.appUrl;
+    user['template'] = template + '.pug';
+
+    console.log(user);
+
+    const data = {
+      from: process.env.appName + " <hello@webrexstudio.com>",
+      replayTo: "<hello@webrexstudio.com>",
+      // to: user.email,
+      to: "ravi.webrexstudio@gmail.com",
+      subject: subject,
+      html: pug.renderFile(__dirname + '/../emails/common.pug', user),
+    };
+
+    console.log(data);
+
+    mg.messages().send(data);
+  } catch (err) {
+    throw err;
+  }
+}
+
+// this.mailWithTemplate({ user: { storeName: "Ravi's Store" } }, "Please Help us Improve", "uninstall")
 
 module.exports.BulkMailWithTemplet = async (bulkData, mailData, template) => {
   console.log(mailData);
@@ -215,56 +249,17 @@ module.exports.BulkMailWithTemplet = async (bulkData, mailData, template) => {
   }
 }
 
-
 module.exports.getNextWeekDate = async (user) => {
 
   try {
 
-    //Get Current UTC Time
-    var currentUtcTime = moment().utc().format();
-    console.log("currentUtcTime");
-    console.log(currentUtcTime);
-    console.log("*---------*");
+    var tz_currentUtcTime = parseInt(moment().startOf('day').utc().format("X")) + (330 * 60);
+    let cnTimeZone = (moment.tz.zonesForCountry(user.country_code, { offset: true })[0].offset) * 60;
+    let tz_userTime = 14 * 60 * 60;
+    let finalTimeStamp = (parseInt(tz_currentUtcTime) + tz_userTime + cnTimeZone) * 1000;
+    console.log(new Date(finalTimeStamp));
+    return new Date(finalTimeStamp);
 
-    //Get date after 7 day from now UTC
-    var nextWeek = moment(currentUtcTime).add(7, 'days').utc().format();
-    console.log("nextWeek")
-    console.log(nextWeek);
-    console.log("*---------*");
-
-
-    //Add 11:00 time
-    var nextWeekUserTimeWith11 = moment(nextWeek).set({ 'hour': 11, 'minute': 30, 'second': 00 });
-    console.log("nextWeekUserTime after set 11:00");
-    console.log(nextWeekUserTimeWith11);
-
-    //Get User country time Zone
-    let cnTimeZone = moment.tz.zonesForCountry(user.country_code)[0];
-    console.log("cnZone---------");
-    console.log(cnTimeZone);
-    console.log("*---------*");
-
-    // Convert it into user's timezone
-    var nextWeekUserTime = moment.tz(nextWeekUserTimeWith11, cnTimeZone).format();
-    console.log("nextWeekUserTime");
-    console.log(nextWeekUserTime);
-
-    var stringDate = moment(nextWeekUserTime).toISOString(false);
-    console.log("stringDate");
-    console.log(stringDate);
-
-    var timeZoneDiff = moment(nextWeekUserTime).tz(cnTimeZone).format('Z');
-    console.log("timeZoneDiff");
-    console.log(timeZoneDiff);
-
-    // var finalTime;
-    // if(timeZoneDiff.includes("+")){
-    //   finalTime = moment.add(timeZoneDiff.split(''))
-    // }else{
-
-    // }
-
-    return stringDate;
   } catch (err) {
     console.log(err);
     throw err;

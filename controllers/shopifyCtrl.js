@@ -3,6 +3,7 @@ const { handleError, verify, handleshopifyRequest, mailWithTemplate, getNextWeek
 var url = require('url');
 const jwt = require('jsonwebtoken');
 const commonModel = require('./../model/common');
+var moment = require('moment');
 
 
 function securityCheck(req) {
@@ -164,12 +165,6 @@ createOrUpdateShop = async (shopData) => {
         let productCount = {};
         let plan = {};
 
-        let nextReviewDate = await getNextWeekDate(user);
-        console.log("nextReviewDate");
-        console.log(nextReviewDate);
-
-        await commonModel.findOneAndUpdate('user', { shopUrl: user.shopUrl }, { nextReviewDate: nextReviewDate })
-        
         if (!user) {
             let promise = [];
 
@@ -192,6 +187,11 @@ createOrUpdateShop = async (shopData) => {
                 let data = await createShop(shop, productCount, shopData);
                 user = data.user;
                 plan = data.plan;
+
+                //adding next review date after 7 days
+                let nextReviewDate = moment(await getNextWeekDate(user)).add(7, 'days');
+                await commonModel.findOneAndUpdate('user', { shopUrl: user.shopUrl }, { nextReviewDate: nextReviewDate, reviewMailCount: 0 })
+
             }).catch(function (err) {
                 throw err;
             });

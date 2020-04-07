@@ -29,6 +29,7 @@ const userSchema = new Schema({
   trial_days: { type: Number },
   trial_start: { type: Date },
   nextReviewDate: { type: Date },
+  reviewMailCount: { type: Number },
   appEnabled: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   updated: { type: Date, default: Date.now },
