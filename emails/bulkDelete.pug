@@ -1,66 +1,18 @@
-doctype html
-head
-  meta(http-equiv='Content-Type' content='text/html; charset=UTF-8')
-  meta(name='viewport' content='width=device-width, initial-scale=1')
-  // So that mobile will display zoomed in
-  meta(http-equiv='X-UA-Compatible' content='IE=edge')
-  // enable media queries for windows phone 8
-  meta(name='format-detection' content='date=no')
-  // disable auto date linking in iOS 7-9
-  meta(name='format-detection' content='telephone=no')
-  // disable auto telephone linking in iOS 7-9
-  title User sign-up
-// 100% background wrapper (grey background)
-table(border='0' width='100%' height='100%' cellpadding='0' cellspacing='0' bgcolor='#F0F0F0')
-  tr
-    td(align='center' valign='top' bgcolor='#F0F0F0' style='background-color: #F0F0F0;')
-      // 600px container (white background)
-      table.container(border='0' width='600' cellpadding='0' cellspacing='0' style='font-family: sans-serif;width:600px;max-width:600px')
-        tr
-          td.container-padding.header(align='center' style='padding:15px; justify-content:center;align-items:center' bgcolor='#3E82B0')
-            img(src=appUrl+"/app/assets/logo-white.png" style='width: 60px;height: auto;object-fit: cover;')
-            h3(style='margin:0; padding:0; color: #ffffff;margin-bottom: 5px;margin-left: 10px;font-size: 20px; font-weight: 500;') %recipient.appName%
-        tr
-          td.content(align='left' style='font-family: sans-serif;padding-top:12px;padding-bottom:0px;background-color:#ffffff')
-            table.force-row(width='600' border='0' cellpadding='0' cellspacing='0' style='width: 600px;')
-              tr
-                td.content-wrapper(style='padding-left:24px;padding-right:24px')
-                  .title(style='font-family:sans-serif;font-size:16px;font-weight:400;color:#585858;line-height: 24px;padding-bottom: 24px;')
-                    br
-                    strong(style='display: flex ;color: #333; align-item:center;font-size: 18px;')
-                        | Hello &nbsp; 
-                        nbsp
-                          h4(style='margin: 0; text-transform: capitalize') %recipient.storeName%,
-                    br
-                    |  Recently you have installed our app(Announcement Bar with Slider) and then uninstalled it. I would like to tell you that we are working hard to improve our app and providing the best service to our users.
-                    br
-                    br
-                    |  We have fixed bugs and also added new features like...
-                    br
-                    br
-                    strong 1. Work with fixed header Store
-                    br
-                    strong 2. Countdown Timer
-                    br  
-                    strong 3. Auto responsive
-                    br  
-                    strong 4. Page wise Different Announcement
-                    br
-                    strong 5. 20+ In/out Animations
-                    br
-                    br
-                    |  Can you spare two minutes for feedback? we would like the opportunity to resolve your issue and make the best out of it. 
-                    br
-                    |  Here is link of our new updated app 
-                    br
-                    
-                    br
-                    a(style='background:rgb(62, 130, 176);color:white;text-align:center;padding:10px 15px;border-radius:3px;text-decoration:none;', class='button', href='https://apps.shopify.com/announcement-bar-with-slider') Install App
-                    
-              tr
-                td.content-wrapper(style='padding-left:24px;padding-right:24px')
-                  div(style='color: #757575;font-size: 14px;font-weight: 400; margin-bottom: 30px')
-                    br
-                    |  Have a Nice Day! 
-                    br
-                    |  Friends at %recipient.appName%
+|  Recently you have installed our app( #{appName} ) and then uninstalled it. I would like to tell you that we are working hard to improve our app and providing the best service to our users.
+br
+|  We have fixed bugs and also added new features like...
+br
+ol
+  li Work with fixed header Store
+  li Countdown Timer
+  li Auto responsive
+  li Page wise Different Announcement
+  li 20+ In/out Animations
+br
+|  Can you spare two minutes for feedback? we would like the opportunity to resolve your issue and make the best out of it. 
+br
+|  Here is link of our new updated app 
+br
+
+br
+a(style='background:rgb(62, 130, 176);color:white;text-align:center;padding:10px 15px;border-radius:3px;text-decoration:none;' class='button' href=shopifyAppUrl) Install App

@@ -205,8 +205,8 @@ module.exports.mailWithTemplate = async (user, subject, template) => {
     const data = {
       from: process.env.appName + " <hello@webrexstudio.com>",
       replayTo: "<hello@webrexstudio.com>",
-      // to: user.email,
-      to: "ravi.webrexstudio@gmail.com",
+      to: user.email,
+      // to: "ravi.webrexstudio@gmail.com",
       subject: subject,
       // html: pug.renderFile(__dirname + '/../emails/' + template + '.pug', user),
       html: pug.renderFile(__dirname + '/../emails/common.pug', user),
@@ -218,20 +218,20 @@ module.exports.mailWithTemplate = async (user, subject, template) => {
   }
 }
 
-// this.mailWithTemplate({ user: { storeName: "Ravi's Store" } }, "Register app", "register")
+// this.mailWithTemplate(user, "Register app", "register")
 
-module.exports.BulkMailWithTemplet = async (bulkData, mailData, template) => {
+module.exports.BulkMailWithTemplet = async (commonData, bulkData, mailData, template) => {
 
   // console.log("sending Bulk mail...");
-
   try {
     const DOMAIN = "mail.webrexstudio.com";
     const mg = mailgun({ apiKey: "key-af642c7a1c48a8849078995f1be4b8d9", domain: DOMAIN });
+    let user = {};
     var data = {
-      from: 'Excited User <hello@webrexstudio.com>',
+      from: 'Shopify Partner Webrexstudio <hello@webrexstudio.com>',
       to: '' + mailData.join(',') + '',
       subject: 'Hey %recipient.storeName%',
-      html: pug.renderFile(__dirname + '/../emails/' + template + '.pug'),
+      html: pug.renderFile(__dirname + '/../emails/bulkCommon.pug', commonData),
       'recipient-variables': bulkData
     };
     mg.messages().send(data, function (err, body) {
