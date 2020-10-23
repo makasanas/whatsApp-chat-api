@@ -89,8 +89,11 @@ router.post('/contact', checkToken.validateToken, contactCtrl.creat);
 
 if (process.env.NODE_ENV === 'prod') {
   router.post('/webhooks/app/delete', checkToken.validateWebhook, shopifyCtrl.deleteApp);
+  router.post('/webhooks/shop/update', checkToken.validateWebhook, shopifyCtrl.storeUpdate);
 } else {
   router.post('/webhooks/app/delete', shopifyCtrl.deleteApp);
+  router.post('/webhooks/shop/update', shopifyCtrl.storeUpdate);
+
 }
 
 

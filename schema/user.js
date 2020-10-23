@@ -35,7 +35,30 @@ const userSchema = new Schema({
   updated: { type: Date, default: Date.now },
 });
 
-const index = { "shopUrl": 1 };
-userSchema.index(index)
+
+// userSchema.index(
+//   { shopUrl: 1 },
+//   { name: "cronJobshopUrl" }
+// );
+
+// userSchema.index(
+//   { storeId: 1 },
+//   { name: "storeId" }
+// );
+userSchema.index(
+  { storeName: "text" },
+  { name: "storeName" }
+);
+// userSchema.index(
+//   { email: "text" },
+//   { name: "email" }
+// );
+// userSchema.index(
+//   { shopUrl: "text" },
+//   { name: "shopUrl" }
+// );
+
+// userSchema.index({ storeName: "text" });
+
 
 module.exports = mongoose.model('Users', userSchema);

@@ -154,9 +154,39 @@ createShop = async (shop, productCount, shopData) => {
     return response;
 }
 
+module.exports.storeUpdate = async (req, res) => {
+    let rcResponse = new ApiResponse();
+    let { body } = req;
+    let shopUrl;
+    let user;
+    try {
+        // shopUrl = req.get('x-shopify-shop-domain');
+        let shopUrl = 'dev-srore.myshopify.com';
+
+        let bodyData = {
+            "shopUrl": shopUrl,
+            "country_code": body.country_code,
+            "country_name": body.country_name,
+            "currency": body.currency,
+            "customer_email": body.customer_email,
+            "domain": body.domain,
+            "email": body.email,
+            "phone": body.phone,
+            "plan_display_name": body.plan_display_name,
+            "plan_name": body.plan_name,
+            "storeId": body.id,
+            "storeName": body.name,
+        }
+
+        user = await commonModel.findOneAndUpdate('user', { shopUrl: shopUrl }, bodyData);
+        rcResponse.data = true;
+    } catch (err) {
+        handleError(err, rcResponse);
+    }
+    return res.status(rcResponse.code).send(rcResponse);
+};
+
 createOrUpdateShop = async (shopData) => {
-
-
     var response = {};
     try {
 
@@ -323,6 +353,12 @@ createWebHook = async (shopData) => {
                 "webhook": {
                     "topic": "app/uninstalled",
                     "address": hostname + "/webhooks/app/delete",
+                    "format": "json"
+                }
+            }, {
+                "webhook": {
+                    "topic": "shop/update",
+                    "address": hostname + "/webhooks/shop/update",
                     "format": "json"
                 }
             }
