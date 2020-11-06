@@ -10,11 +10,11 @@ mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
 
 // database connection
-mongoose.connect(process.env['MONGO_URL'], { useNewUrlParser: true, useUnifiedTopology: true, poolSize: 10, auto_reconnect: true });
+mongoose.connect('mongodb://127.0.0.1:27017/starterKitDb', { useNewUrlParser: true, useUnifiedTopology: true, poolSize: 10, auto_reconnect: true });
 
 // When successfully connected
 mongoose.connection.on('connected', function () {
-  console.log('Mongoose default connection open to ' + process.env['MONGO_URL']);
+  console.log('Mongoose default connection open to mongodb://127.0.0.1:27017/starterKitDb');
 });
 
 // If the connection throws an error
