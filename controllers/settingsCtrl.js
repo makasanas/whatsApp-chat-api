@@ -12,3 +12,14 @@ module.exports.addOrUpdateSettings = async (req, res) => {
     }
     return res.status(rcResponse.code).send(rcResponse);
 }
+
+module.exports.getSettingsByShopUrl = async (req, res) => {
+    let rcResponse = new ApiResponse();
+    let { params } = req;
+    try {
+        rcResponse.data = await commonModel.findOne('settings', { shopUrl: params.shopUrl });
+    } catch (err) {
+        handleError(err, rcResponse);
+    }
+    return res.status(rcResponse.code).send(rcResponse);
+}
