@@ -7,6 +7,7 @@ module.exports.deletedUser = require('./../schema/deletedUser');
 module.exports.productType = require('./../schema/productType');
 module.exports.admin = require('./../schema/admin');
 module.exports.contact = require('./../schema/contact');
+module.exports.settings = require('./../schema/settings');
 
 
 module.exports.findOne = async (collection, query, property) => {

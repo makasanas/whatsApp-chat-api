@@ -24,6 +24,7 @@ const productTypeCtrl = require('./../controllers/productTypeCtrl');
 const contactCtrl = require('./../controllers/contactCtrl');
 const syncCtrl = require('../controllers/syncCtrl');
 const emailCtrl = require('../controllers/emailCtrl');
+const settingsCtrl = require('../controllers/settingsCtrl');
 
 
 /*****************************
@@ -138,5 +139,10 @@ router.post('/sendmail/deletedUser', emailCtrl.deletedUser)
 router.post('/sendmail/appUpdates', emailCtrl.appUpdates)
 
 // getNextWeekDate({ country_code: 'IN' });
+
+/*****************************
+ Settings
+ *****************************/
+router.post('/settings', checkToken.validateToken, settingsCtrl.addOrUpdateSettings);
 
 module.exports = router;
