@@ -6,7 +6,7 @@ module.exports.addOrUpdateSettings = async (req, res) => {
     let rcResponse = new ApiResponse();
     let { decoded, body } = req;
     try {
-        rcResponse.data = await commonModel.findOneAndUpdate('settings', { userId: decoded.id }, body);
+        rcResponse.data = await commonModel.findOneAndUpdate('settings', { userId: decoded.id }, { configurations: body });
     } catch (err) {
         handleError(err, rcResponse);
     }

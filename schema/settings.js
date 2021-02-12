@@ -7,11 +7,7 @@ const settingsSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Users',
     },
-    position: { type: String },
-    left: { type: String },
-    right: { type: String },
-    bottom: { type: String },
-    providers: { type: Array },
+    configurations:{ type:Object},
     created: { type: Date, default: Date.now },
     updated: { type: Date, default: Date.now },
 });
