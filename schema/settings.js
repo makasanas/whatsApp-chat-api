@@ -7,7 +7,8 @@ const settingsSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Users',
     },
-    configurations:{ type:Object},
+    active: { type: Boolean, default: false },
+    configurations: { type: Object },
     created: { type: Date, default: Date.now },
     updated: { type: Date, default: Date.now },
 });

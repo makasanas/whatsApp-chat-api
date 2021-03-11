@@ -17,7 +17,19 @@ module.exports.getSettingsByShopUrl = async (req, res) => {
     let rcResponse = new ApiResponse();
     let { params } = req;
     try {
-        rcResponse.data = await commonModel.findOne('settings', { shopUrl: params.shopUrl });
+        rcResponse.data = await commonModel.findOne('settings', { shopUrl: params.shopUrl, active: true });
+    } catch (err) {
+        handleError(err, rcResponse);
+    }
+    return res.status(rcResponse.code).send(rcResponse);
+}
+
+
+module.exports.getWidgets = async (req, res) => {
+    let rcResponse = new ApiResponse();
+    let { decoded } = req;
+    try {
+        rcResponse.data = await commonModel.find('settings', { shopUrl: decoded.shopUrl });
     } catch (err) {
         handleError(err, rcResponse);
     }

@@ -145,5 +145,6 @@ router.post('/sendmail/appUpdates', emailCtrl.appUpdates)
  *****************************/
 router.post('/settings', checkToken.validateToken, settingsCtrl.addOrUpdateSettings);
 router.get('/settings/:shopUrl', settingsCtrl.getSettingsByShopUrl);
+router.get('/widgets', checkToken.validateToken, settingsCtrl.getWidgets);
 
 module.exports = router;
