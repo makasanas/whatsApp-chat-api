@@ -13,12 +13,13 @@ module.exports.createSettings = async (req, res) => {
     return res.status(rcResponse.code).send(rcResponse);
 }
 
-
 module.exports.updateSettings = async (req, res) => {
     let rcResponse = new ApiResponse();
     let { body } = req;
     try {
-        rcResponse.data = await commonModel.findOneAndUpdate('settings', { id: body.id }, body.data);
+        let id = body.id;
+        delete body.id;
+        rcResponse.data = await commonModel.findOneAndUpdate('settings', { id: id }, body.data);
     } catch (err) {
         handleError(err, rcResponse);
     }
