@@ -143,7 +143,8 @@ router.post('/sendmail/appUpdates', emailCtrl.appUpdates)
 /*****************************
  Settings
  *****************************/
-router.post('/settings', checkToken.validateToken, settingsCtrl.addOrUpdateSettings);
+router.post('/settings', checkToken.validateToken, settingsCtrl.createSettings);
+router.put('/settings', checkToken.validateToken, settingsCtrl.updateSettings);
 router.get('/settings/:shopUrl', settingsCtrl.getSettingsByShopUrl);
 router.get('/widgets', checkToken.validateToken, settingsCtrl.getWidgets);
 
